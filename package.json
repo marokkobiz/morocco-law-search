@@ -1,0 +1,33 @@
+{
+  "name": "morocco-law-search-backend",
+  "version": "1.0.0",
+  "description": "Backend skeleton for a Moroccan legal search engine.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "import:real-estate": "node src/scripts/importRealEstateLaws.js",
+    "import:other-laws": "node src/scripts/importOtherLaws.js",
+    "translate:real-estate": "node src/scripts/translateRealEstateLaws.js"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "mysql",
+    "legal-search",
+    "morocco"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vitalets/google-translate-api": "^9.2.1",
+    "dotenv": "^17.4.1",
+    "express": "^4.22.1",
+    "mysql2": "^3.21.0",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "type": "commonjs"
+}
