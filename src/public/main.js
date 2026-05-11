@@ -4,6 +4,7 @@ const statusMessage = document.getElementById("status-message");
 const resultsList = document.getElementById("results-list");
 const resultsTitle = document.getElementById("results-title");
 const resultsMeta = document.getElementById("results-meta");
+const resultsShell = document.querySelector(".results-shell");
 const quickSearchButtons = document.querySelectorAll("[data-suggestion]");
 const overviewStats = document.getElementById("overview-stats");
 const categoryHighlights = document.getElementById("category-highlights");
@@ -60,6 +61,17 @@ const formatCategoryLabel = (category) =>
     .join(" ");
 
 const formatCount = (value) => new Intl.NumberFormat("en-US").format(Number(value || 0));
+
+const scrollResultsIntoView = () => {
+  if (!resultsShell) {
+    return;
+  }
+
+  resultsShell.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+};
 const SEARCH_ICON = "⌕";
 
 const renderOverview = (overview) => {
@@ -327,6 +339,7 @@ const searchLaws = async (query) => {
 
     const payload = await response.json();
     renderResults(payload);
+    scrollResultsIntoView();
   } catch (error) {
     if (error.name === "AbortError") {
       return;
@@ -336,6 +349,7 @@ const searchLaws = async (query) => {
     statusMessage.textContent = "Search failed. Please try again.";
     resultsTitle.textContent = "Search unavailable";
     resultsMeta.textContent = "";
+    scrollResultsIntoView();
   } finally {
     activeSearchController = null;
   }
