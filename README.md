@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # morocco-law-search
 
 Moroccan legal search application built with Node.js, Express, and MySQL.
@@ -75,3 +76,6 @@ npm run import:other-laws
 - Do not commit `.env`
 - Do not commit `node_modules`
 - Database dumps should be shared separately unless intentionally versioned
+=======
+# morocco-law-search
+>>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c

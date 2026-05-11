@@ -44,6 +44,7 @@ const normalizeLine = (line) =>
     .replace(/\s+/g, " ")
     .trim();
 
+<<<<<<< HEAD
 const extractArticleHeading = (line) => {
   const articleMatch = line.match(
     /^Article\s*(premier|\d+(?:\s*(?:bis|ter|quater))?)\s*:?\s*(.*)$/i
@@ -67,6 +68,10 @@ const extractArticleHeading = (line) => {
 
   return null;
 };
+=======
+const isStandaloneArticleHeading = (line) =>
+  /^Article\s*(premier|\d+(?:\s*(?:bis|ter|quater))?)\s*:?\s*$/i.test(line);
+>>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 
 const parseArticlesFromText = (text) => {
   const rawLines = text.split(/\r?\n/);
@@ -97,9 +102,13 @@ const parseArticlesFromText = (text) => {
       continue;
     }
 
+<<<<<<< HEAD
     const articleHeading = extractArticleHeading(line);
 
     if (articleHeading) {
+=======
+    if (isStandaloneArticleHeading(line)) {
+>>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
       if (currentArticle && currentArticle.contentParts.length > 0) {
         articles.push({
           articleNumber: currentArticle.articleNumber,
@@ -107,7 +116,14 @@ const parseArticlesFromText = (text) => {
         });
       }
 
+<<<<<<< HEAD
       const articleNumber = normalizeArticleToken(articleHeading.token, previousNumericArticle);
+=======
+      const tokenMatch = line.match(
+        /^Article\s*(premier|\d+(?:\s*(?:bis|ter|quater))?)\s*:?\s*$/i
+      );
+      const articleNumber = normalizeArticleToken(tokenMatch[1], previousNumericArticle);
+>>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
       const numericMatch = articleNumber.match(/Article\s+(\d+)/i);
 
       if (numericMatch) {
@@ -118,11 +134,14 @@ const parseArticlesFromText = (text) => {
         articleNumber,
         contentParts: []
       };
+<<<<<<< HEAD
 
       if (articleHeading.inlineContent) {
         currentArticle.contentParts.push(articleHeading.inlineContent);
       }
 
+=======
+>>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
       continue;
     }
 

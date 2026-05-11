@@ -160,6 +160,7 @@ const otherLawSources = [
     sourceUrl:
       "https://adala.justice.gov.ma/api/uploads/2024/03/15/LOI%20RELATIVE%20AU%20MARCHE%20A%20TERME%20D%27INSTRUMENTS%20FINANCIERS-1710512795770.pdf",
     tags: ["banking", "finance", "capital-markets", "financial-instruments"]
+<<<<<<< HEAD
   },
   {
     documentTitle: "Code de recouvrement des creances publiques",
@@ -646,6 +647,8 @@ const otherLawSources = [
     sourceUrl:
       "https://adala.justice.gov.ma/api/uploads/2025/06/18/Dahir%20n%C2%BA%201-23-21%20du%2019%20rejeb%201444%20%2810%20f%C3%A9vrier%202023%29%20portant%20promulgation%20de%20la%20loi%20n%C2%B0%2082-21%20relative%20%C3%A0%20l%27autoproduction%20de%20l%27%C3%A9nergie%20%C3%A9lectrique-1750255552226.pdf",
     tags: ["energy", "electricity", "autoproduction", "renewables"]
+=======
+>>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   }
 ];
 

@@ -92,6 +92,7 @@ const initializeDatabase = async () => {
     );
     await ensureIndex(
       connection,
+<<<<<<< HEAD
       "laws",
       "idx_laws_category",
       "CREATE INDEX idx_laws_category ON laws (category)"
@@ -110,6 +111,8 @@ const initializeDatabase = async () => {
     );
     await ensureIndex(
       connection,
+=======
+>>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
       "law_translations",
       "uniq_law_translation",
       "CREATE UNIQUE INDEX uniq_law_translation ON law_translations (law_id, target_language)"
