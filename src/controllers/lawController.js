@@ -1,11 +1,8 @@
 const {
   getLawById,
   getLawLibraryOverview,
-<<<<<<< HEAD
   SEARCH_RESULT_LIMIT,
   getSearchSuggestions,
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   searchLawsByKeyword
 } = require("../models/lawModel");
 const { getStoredTranslation, saveTranslation } = require("../models/translationModel");
@@ -18,7 +15,6 @@ const {
 const searchLaws = async (req, res) => {
   try {
     const { q } = req.query;
-<<<<<<< HEAD
     const searchPayload = await searchLawsByKeyword(q || "", SEARCH_RESULT_LIMIT);
 
     res.json({
@@ -27,14 +23,6 @@ const searchLaws = async (req, res) => {
       results: searchPayload.results,
       hasMore: searchPayload.hasMore,
       limit: searchPayload.limit
-=======
-    const laws = await searchLawsByKeyword(q || "");
-
-    res.json({
-      query: q || "",
-      count: laws.length,
-      results: laws
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
     });
   } catch (error) {
     console.error(error);
@@ -127,7 +115,6 @@ const getLibraryOverview = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
 const getSuggestions = async (req, res) => {
   try {
     const { q } = req.query;
@@ -150,10 +137,4 @@ module.exports = {
   translateLawArticle,
   getLibraryOverview,
   getSuggestions
-=======
-module.exports = {
-  searchLaws,
-  translateLawArticle,
-  getLibraryOverview
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 };

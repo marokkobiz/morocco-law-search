@@ -3,10 +3,7 @@
   --bg-deep: #dbeafe;
   --panel: rgba(255, 255, 255, 0.88);
   --panel-strong: #ffffff;
-<<<<<<< HEAD
   --panel-soft: rgba(248, 251, 255, 0.94);
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   --text: #0f172a;
   --muted: #64748b;
   --line: rgba(37, 99, 235, 0.14);
@@ -15,10 +12,7 @@
   --accent: #0284c7;
   --accent-soft: rgba(37, 99, 235, 0.1);
   --highlight: #dbeafe;
-<<<<<<< HEAD
   --glow: rgba(59, 130, 246, 0.24);
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   --shadow: 0 22px 70px rgba(30, 64, 175, 0.14);
 }
 
@@ -190,18 +184,11 @@ body {
 
 .search-panel {
   margin-top: 30px;
-<<<<<<< HEAD
   padding: 24px;
   border-radius: 24px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(239, 246, 255, 0.82));
   border: 1px solid rgba(37, 99, 235, 0.1);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
-=======
-  padding: 22px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(37, 99, 235, 0.1);
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 }
 
 .search-label {
@@ -211,21 +198,15 @@ body {
   font-weight: 600;
 }
 
-<<<<<<< HEAD
 .search-stack {
   position: relative;
 }
 
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 .search-row {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 12px;
-<<<<<<< HEAD
   align-items: stretch;
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 }
 
 .search-row input,
@@ -236,7 +217,6 @@ body {
   font: inherit;
 }
 
-<<<<<<< HEAD
 .search-field-shell {
   position: relative;
   display: flex;
@@ -254,13 +234,6 @@ body {
   padding: 0 48px 0 48px;
   border: 0;
   background: transparent;
-=======
-.search-row input {
-  min-height: 62px;
-  padding: 0 18px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.9);
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   color: var(--text);
 }
 
@@ -268,7 +241,6 @@ body {
   color: #7c8aa0;
 }
 
-<<<<<<< HEAD
 .search-icon {
   position: absolute;
   left: 16px;
@@ -291,8 +263,6 @@ body {
   cursor: pointer;
 }
 
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 .search-row button {
   min-width: 142px;
   padding: 0 24px;
@@ -307,31 +277,22 @@ body {
 
 .search-row button:hover,
 .translate-button:hover,
-<<<<<<< HEAD
 .quick-chip:hover,
 .clear-search:hover,
 .suggestion-item:hover {
-=======
-.quick-chip:hover {
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   transform: translateY(-1px);
 }
 
 .search-row input:focus,
 .search-row button:focus,
 .translate-button:focus,
-<<<<<<< HEAD
 .quick-chip:focus,
 .clear-search:focus,
 .suggestion-item:focus {
-=======
-.quick-chip:focus {
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   outline: 2px solid rgba(37, 99, 235, 0.24);
   outline-offset: 2px;
 }
 
-<<<<<<< HEAD
 .search-field-shell:focus-within {
   border-color: rgba(37, 99, 235, 0.28);
   box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.08), 0 22px 40px rgba(59, 130, 246, 0.12);
@@ -414,8 +375,6 @@ body {
   font-weight: 700;
 }
 
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 .quick-searches {
   display: flex;
   flex-wrap: wrap;
@@ -440,7 +399,6 @@ body {
   line-height: 1.6;
 }
 
-<<<<<<< HEAD
 .search-tools {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -472,8 +430,6 @@ body {
   line-height: 1.5;
 }
 
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 .hero-panel {
   display: flex;
   flex-direction: column;
@@ -574,7 +530,6 @@ body {
   font-weight: 600;
 }
 
-<<<<<<< HEAD
 .results-toolbar {
   position: relative;
   z-index: 1;
@@ -593,8 +548,6 @@ body {
   font-weight: 700;
 }
 
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 .status-message {
   position: relative;
   z-index: 1;
@@ -619,10 +572,7 @@ body {
   border-radius: 24px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.94));
   animation: rise 280ms ease both;
-<<<<<<< HEAD
   box-shadow: 0 12px 26px rgba(37, 99, 235, 0.06);
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 }
 
 .result-card h3 {
@@ -803,13 +753,10 @@ body {
     display: grid;
   }
 
-<<<<<<< HEAD
   .suggestions-panel {
     right: 0;
   }
 
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   .search-row button {
     min-height: 54px;
   }
@@ -823,11 +770,8 @@ body {
   .overview-stats {
     grid-template-columns: 1fr;
   }
-<<<<<<< HEAD
 
   .search-tools {
     grid-template-columns: 1fr;
   }
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 }

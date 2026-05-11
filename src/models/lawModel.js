@@ -1,6 +1,5 @@
 const { pool } = require("../db/db");
 
-<<<<<<< HEAD
 const SEARCH_RESULT_LIMIT = 40;
 const SUGGESTION_LIMIT = 8;
 const SEARCH_CACHE_TTL_MS = 60 * 1000;
@@ -9,8 +8,6 @@ const searchCache = new Map();
 const suggestionCache = new Map();
 let overviewCache = null;
 
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 const baseLawFields = `
   id,
   title,
@@ -25,7 +22,6 @@ const baseLawFields = `
   language
 `;
 
-<<<<<<< HEAD
 const clearExpiredCacheEntries = (cache, now = Date.now()) => {
   for (const [key, entry] of cache.entries()) {
     if (entry.expiresAt <= now) {
@@ -71,28 +67,17 @@ const searchLawsByKeyword = async (keyword, limit = SEARCH_RESULT_LIMIT) => {
 
   if (cachedEntry && cachedEntry.expiresAt > now) {
     return cachedEntry.value;
-=======
-const searchLawsByKeyword = async (keyword) => {
-  const normalizedKeyword = keyword.trim();
-
-  if (!normalizedKeyword) {
-    return [];
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   }
 
   const searchTerm = `%${normalizedKeyword}%`;
   const prefixTerm = `${normalizedKeyword}%`;
-<<<<<<< HEAD
   const booleanSearchTerm = buildBooleanSearchTerm(normalizedKeyword);
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   const terms = normalizedKeyword
     .split(/\s+/)
     .map((term) => term.trim())
     .filter(Boolean);
 
   const scoreClauses = [
-<<<<<<< HEAD
     "CASE WHEN title = ? THEN 160 ELSE 0 END",
     "CASE WHEN title LIKE ? THEN 120 ELSE 0 END",
     "CASE WHEN document_title LIKE ? THEN 85 ELSE 0 END",
@@ -109,14 +94,6 @@ const searchLawsByKeyword = async (keyword) => {
     "CASE WHEN document_title LIKE ? THEN 80 ELSE 0 END",
     "CASE WHEN law_reference LIKE ? THEN 70 ELSE 0 END",
     "CASE WHEN category LIKE ? THEN 25 ELSE 0 END"
-=======
-    "CASE WHEN LOWER(title) = LOWER(?) THEN 120 ELSE 0 END",
-    "CASE WHEN LOWER(title) LIKE LOWER(?) THEN 80 ELSE 0 END",
-    "CASE WHEN LOWER(document_title) LIKE LOWER(?) THEN 70 ELSE 0 END",
-    "CASE WHEN LOWER(law_reference) LIKE LOWER(?) THEN 60 ELSE 0 END",
-    "CASE WHEN LOWER(article_number) = LOWER(?) THEN 50 ELSE 0 END",
-    "CASE WHEN LOWER(content) LIKE LOWER(?) THEN 30 ELSE 0 END"
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   ];
 
   const queryParams = [
@@ -125,7 +102,6 @@ const searchLawsByKeyword = async (keyword) => {
     searchTerm,
     searchTerm,
     normalizedKeyword,
-<<<<<<< HEAD
     normalizedKeyword,
     normalizedKeyword,
     searchTerm,
@@ -148,27 +124,10 @@ const searchLawsByKeyword = async (keyword) => {
     queryParams.push(`%${term}%`);
 
     scoreClauses.push("CASE WHEN article_number LIKE ? THEN 10 ELSE 0 END");
-=======
-    searchTerm
-  ];
-
-  for (const term of terms) {
-    scoreClauses.push("CASE WHEN LOWER(title) LIKE LOWER(?) THEN 25 ELSE 0 END");
-    queryParams.push(`%${term}%`);
-
-    scoreClauses.push("CASE WHEN LOWER(document_title) LIKE LOWER(?) THEN 18 ELSE 0 END");
-    queryParams.push(`%${term}%`);
-
-    scoreClauses.push("CASE WHEN LOWER(law_reference) LIKE LOWER(?) THEN 16 ELSE 0 END");
-    queryParams.push(`%${term}%`);
-
-    scoreClauses.push("CASE WHEN LOWER(content) LIKE LOWER(?) THEN 10 ELSE 0 END");
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
     queryParams.push(`%${term}%`);
   }
 
   const whereClauses = [
-<<<<<<< HEAD
     "title LIKE ?",
     "document_title LIKE ?",
     "law_reference LIKE ?",
@@ -205,23 +164,10 @@ const searchLawsByKeyword = async (keyword) => {
         WHEN article_number LIKE 'Article premier%' THEN 1
         ELSE CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(article_number, ' ', 2), ' ', -1) AS UNSIGNED)
       END AS article_sort_number,
-=======
-    "LOWER(title) LIKE LOWER(?)",
-    "LOWER(document_title) LIKE LOWER(?)",
-    "LOWER(law_reference) LIKE LOWER(?)",
-    "LOWER(article_number) LIKE LOWER(?)",
-    "LOWER(content) LIKE LOWER(?)"
-  ];
-
-  const query = `
-    SELECT
-      ${baseLawFields},
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
       (${scoreClauses.join(" + ")}) AS relevance_score
     FROM laws
     WHERE ${whereClauses.join(" OR ")}
     ORDER BY
-<<<<<<< HEAD
       document_match_score DESC,
       document_title ASC,
       article_sort_number ASC,
@@ -246,22 +192,6 @@ const searchLawsByKeyword = async (keyword) => {
   });
 
   return payload;
-=======
-      relevance_score DESC,
-      document_title ASC,
-      CASE
-        WHEN LOWER(article_number) LIKE 'article premier%' THEN 1
-        ELSE CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(article_number, ' ', 2), ' ', -1) AS UNSIGNED)
-      END ASC,
-      article_number ASC,
-      title ASC
-  `;
-
-  queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
-
-  const [rows] = await pool.query(query, queryParams);
-  return rows;
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 };
 
 const getLawById = async (id) => {
@@ -278,7 +208,6 @@ const getLawById = async (id) => {
   return rows[0] || null;
 };
 
-<<<<<<< HEAD
 const getSearchSuggestions = async (keyword, limit = SUGGESTION_LIMIT) => {
   const normalizedKeyword = keyword.trim();
 
@@ -404,9 +333,6 @@ const getLawLibraryOverview = async () => {
     return overviewCache.value;
   }
 
-=======
-const getLawLibraryOverview = async () => {
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   const [[totals]] = await pool.query(
     `
       SELECT
@@ -431,11 +357,7 @@ const getLawLibraryOverview = async () => {
     `
   );
 
-<<<<<<< HEAD
   const payload = {
-=======
-  return {
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
     totalArticles: Number(totals.totalArticles || 0),
     totalDocuments: Number(totals.totalDocuments || 0),
     totalCategories: Number(totals.totalCategories || 0),
@@ -445,7 +367,6 @@ const getLawLibraryOverview = async () => {
       documentCount: Number(row.documentCount || 0)
     }))
   };
-<<<<<<< HEAD
 
   overviewCache = {
     value: payload,
@@ -459,12 +380,6 @@ module.exports = {
   SEARCH_RESULT_LIMIT,
   searchLawsByKeyword,
   getSearchSuggestions,
-=======
-};
-
-module.exports = {
-  searchLawsByKeyword,
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   getLawById,
   getLawLibraryOverview
 };

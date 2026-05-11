@@ -7,7 +7,6 @@ const resultsMeta = document.getElementById("results-meta");
 const quickSearchButtons = document.querySelectorAll("[data-suggestion]");
 const overviewStats = document.getElementById("overview-stats");
 const categoryHighlights = document.getElementById("category-highlights");
-<<<<<<< HEAD
 const suggestionsPanel = document.getElementById("suggestions-panel");
 const suggestionsList = document.getElementById("suggestions-list");
 const clearSearchButton = document.getElementById("clear-search");
@@ -18,8 +17,6 @@ let activeSuggestionController = null;
 let suggestionDebounceTimer = null;
 let currentSuggestions = [];
 let highlightedSuggestionIndex = -1;
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 
 const languageLabels = {
   fr: "French",
@@ -63,10 +60,7 @@ const formatCategoryLabel = (category) =>
     .join(" ");
 
 const formatCount = (value) => new Intl.NumberFormat("en-US").format(Number(value || 0));
-<<<<<<< HEAD
 const SEARCH_ICON = "⌕";
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 
 const renderOverview = (overview) => {
   if (!overviewStats || !categoryHighlights) {
@@ -132,16 +126,11 @@ const buildSourceMarkup = (law) => {
 };
 
 const renderResults = (payload) => {
-<<<<<<< HEAD
   const { query, count, results, hasMore, limit } = payload;
-=======
-  const { query, count, results } = payload;
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 
   resultsTitle.textContent = query
     ? `Results for "${query}"`
     : "Search the Moroccan law library";
-<<<<<<< HEAD
   resultsMeta.textContent = hasMore
     ? `Showing top ${limit} results`
     : `${count} result${count === 1 ? "" : "s"}`;
@@ -150,11 +139,6 @@ const renderResults = (payload) => {
     if (resultsToolbar) {
       resultsToolbar.hidden = true;
     }
-=======
-  resultsMeta.textContent = `${count} result${count === 1 ? "" : "s"}`;
-
-  if (!count) {
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
     statusMessage.hidden = false;
     statusMessage.textContent = query
       ? `No laws matched "${query}". Try a broader keyword.`
@@ -164,12 +148,9 @@ const renderResults = (payload) => {
   }
 
   statusMessage.hidden = true;
-<<<<<<< HEAD
   if (resultsToolbar) {
     resultsToolbar.hidden = false;
   }
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   resultsList.innerHTML = results
     .map((law) => {
       const tags = normalizeTags(law.tags);
@@ -203,7 +184,6 @@ const renderResults = (payload) => {
     .join("");
 };
 
-<<<<<<< HEAD
 const hideSuggestions = () => {
   currentSuggestions = [];
   highlightedSuggestionIndex = -1;
@@ -320,8 +300,6 @@ const loadSuggestions = async (query) => {
   }
 };
 
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 const setLoadingState = (isLoading) => {
   statusMessage.hidden = false;
   statusMessage.textContent = isLoading ? "Searching laws..." : statusMessage.textContent;
@@ -330,7 +308,6 @@ const setLoadingState = (isLoading) => {
 const searchLaws = async (query) => {
   setLoadingState(true);
   resultsList.innerHTML = "";
-<<<<<<< HEAD
   hideSuggestions();
 
   if (activeSearchController) {
@@ -343,11 +320,6 @@ const searchLaws = async (query) => {
     const response = await fetch(`/api/laws/search?q=${encodeURIComponent(query)}`, {
       signal: activeSearchController.signal
     });
-=======
-
-  try {
-    const response = await fetch(`/api/laws/search?q=${encodeURIComponent(query)}`);
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 
     if (!response.ok) {
       throw new Error("Search request failed");
@@ -356,22 +328,16 @@ const searchLaws = async (query) => {
     const payload = await response.json();
     renderResults(payload);
   } catch (error) {
-<<<<<<< HEAD
     if (error.name === "AbortError") {
       return;
     }
 
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
     statusMessage.hidden = false;
     statusMessage.textContent = "Search failed. Please try again.";
     resultsTitle.textContent = "Search unavailable";
     resultsMeta.textContent = "";
-<<<<<<< HEAD
   } finally {
     activeSearchController = null;
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
   }
 };
 
@@ -379,7 +345,6 @@ const runSearch = (query) => {
   const normalizedQuery = query.trim();
 
   if (!normalizedQuery) {
-<<<<<<< HEAD
     hideSuggestions();
     renderResults({
       query: "",
@@ -387,25 +352,15 @@ const runSearch = (query) => {
       results: [],
       hasMore: false,
       limit: 0
-=======
-    renderResults({
-      query: "",
-      count: 0,
-      results: []
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
     });
     return;
   }
 
   input.value = normalizedQuery;
-<<<<<<< HEAD
   clearTimeout(searchDebounceTimer);
   searchDebounceTimer = setTimeout(() => {
     searchLaws(normalizedQuery);
   }, 180);
-=======
-  searchLaws(normalizedQuery);
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 };
 
 const getTranslateButtonText = (targetLanguage) =>
@@ -500,7 +455,6 @@ form.addEventListener("submit", (event) => {
   runSearch(input.value);
 });
 
-<<<<<<< HEAD
 input.addEventListener("input", () => {
   const currentValue = input.value.trim();
 
@@ -597,8 +551,6 @@ if (clearSearchButton) {
   });
 }
 
-=======
->>>>>>> b1ae2aafedb997d727fa9e599470ad675d3d192c
 quickSearchButtons.forEach((button) => {
   button.addEventListener("click", () => {
     runSearch(button.dataset.suggestion || "");
