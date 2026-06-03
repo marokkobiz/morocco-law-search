@@ -17,7 +17,7 @@
                 </p>
 
                 <h1 class="mt-6 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                    Coming soon
+                    Coming soon :)
                 </h1>
 
                 <p class="mt-4 text-base leading-7 text-slate-600 sm:text-lg">
