@@ -141,6 +141,25 @@ const parseArticlesFromText = (text) => {
   return articles.filter((article) => article.content.length > 30);
 };
 
+const disambiguateRepeatedArticleNumbers = (articles) => {
+  const seenArticleNumbers = new Map();
+
+  return articles.map((article) => {
+    const seenCount = seenArticleNumbers.get(article.articleNumber) || 0;
+    const nextSeenCount = seenCount + 1;
+    seenArticleNumbers.set(article.articleNumber, nextSeenCount);
+
+    if (seenCount === 0) {
+      return article;
+    }
+
+    return {
+      ...article,
+      articleNumber: `${article.articleNumber} (${nextSeenCount})`
+    };
+  });
+};
+
 const insertArticle = async (source, article) => {
   const sql = `
     INSERT INTO laws (
@@ -193,7 +212,7 @@ const importSource = async (source) => {
 
   const arrayBuffer = await response.arrayBuffer();
   const pdfData = await pdfParse(Buffer.from(arrayBuffer));
-  const articles = parseArticlesFromText(pdfData.text);
+  const articles = disambiguateRepeatedArticleNumbers(parseArticlesFromText(pdfData.text));
 
   await pool.query("DELETE FROM laws WHERE source_url = ?", [source.sourceUrl]);
 
@@ -238,5 +257,6 @@ const importSources = async (sources, label) => {
 module.exports = {
   importSource,
   importSources,
-  parseArticlesFromText
+  parseArticlesFromText,
+  disambiguateRepeatedArticleNumbers
 };

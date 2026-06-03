@@ -1,5 +1,6 @@
 const express = require("express");
 const {
+  chatWithLaws,
   getLibraryOverview,
   getSuggestions,
   searchLaws,
@@ -10,6 +11,7 @@ const router = express.Router();
 
 router.get("/overview", getLibraryOverview);
 router.get("/suggestions", getSuggestions);
+router.post("/chat", chatWithLaws);
 router.get("/search", searchLaws);
 router.get("/:id/translate", translateLawArticle);
 

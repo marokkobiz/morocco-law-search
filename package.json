@@ -6,8 +6,14 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "frontend:dev": "vite --host 0.0.0.0",
+    "frontend:build": "vite build",
+    "build": "vite build",
     "import:real-estate": "node src/scripts/importRealEstateLaws.js",
     "import:other-laws": "node src/scripts/importOtherLaws.js",
+    "import:pending-laws": "node src/scripts/importPendingOtherLaws.js",
+    "update:official-bulletins": "node src/scripts/updateOfficialBulletins.js",
+    "update:laws": "node src/scripts/updateOfficialBulletins.js",
     "translate:real-estate": "node src/scripts/translateRealEstateLaws.js"
   },
   "keywords": [
@@ -23,11 +29,19 @@
     "@vitalets/google-translate-api": "^9.2.1",
     "dotenv": "^17.4.1",
     "express": "^4.22.1",
+    "lucide-react": "^1.16.0",
     "mysql2": "^3.21.0",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "nodemon": "^3.1.10",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14"
   },
   "type": "commonjs"
 }
