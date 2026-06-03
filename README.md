@@ -1,121 +1,135 @@
-# morocco-law-search
+# Morocco Law Search
 
-Moroccan legal search application built with Node.js, Express, MySQL, React, and TypeScript.
+Morocco Law Search is a Laravel 12 application with Vite for frontend assets, SQLite for local development, and database-backed queues.
 
-## Features
+## Requirements
 
-- Article-level search across indexed Moroccan legal texts
-- Official source links for each result
-- Search suggestions powered by the law library
-- English and Arabic translation actions with external fallback links
-- React frontend with a blue and white Marokko Biz interface
-- Chat-only floating legal assistant widget
-- Optional live checks for new SGG Bulletin Officiel PDFs
-- Optional Ollama-powered reasoning over retrieved law articles
+- PHP 8.2 or newer
+- Composer
+- Node.js 18 or newer
+- npm
+- SQLite enabled in PHP
 
-## Tech Stack
+## Project Setup
 
-- Node.js
-- Express
-- MySQL
-- React
-- TypeScript
-- Vite
+1. Install PHP dependencies:
 
-## Setup
+   ```bash
+   composer install
+   ```
 
-1. Install dependencies:
+2. Install frontend dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Create your environment file:
+
+   ```bash
+   # macOS / Linux
+   cp .env.example .env
+
+   # Windows PowerShell
+   Copy-Item .env.example .env
+   ```
+
+4. Update `.env` for your machine.
+
+   Recommended values for local development:
+
+   ```env
+   APP_NAME="Morocco Law Search"
+   APP_ENV=local
+   APP_DEBUG=true
+   APP_URL=http://localhost:8000
+   DB_CONNECTION=sqlite
+   QUEUE_CONNECTION=database
+   SESSION_DRIVER=database
+   CACHE_STORE=database
+   ```
+
+   If you keep spaces in `APP_NAME`, wrap the value in quotes.
+
+5. Create the SQLite database file if it does not exist yet:
+
+   ```bash
+   # macOS / Linux
+   touch database/database.sqlite
+
+   # Windows PowerShell
+   New-Item -ItemType File -Force database\database.sqlite
+   ```
+
+6. Generate the application key:
+
+   ```bash
+   php artisan key:generate
+   ```
+
+7. Run the migrations:
+
+   ```bash
+   php artisan migrate
+   ```
+
+## Running the App
+
+### Full development mode
+
+Run the Laravel server and Vite together with:
 
 ```bash
-npm install
+composer run dev
 ```
 
-2. Create a `.env` file in the project root using `.env.example`.
+This starts:
 
-3. Create a MySQL database named `morocco_law_search`.
+- Laravel server
+- Queue listener
+- Vite dev server
 
-4. Build the frontend:
+### Run each service manually
+
+If you prefer to start them one by one:
+
+```bash
+php artisan serve
+php artisan queue:listen --tries=1 --timeout=0
+npm run dev
+```
+
+### Build assets for production
 
 ```bash
 npm run build
 ```
 
-5. Run the server:
-
-```bash
-node src/server.js
-```
-
-6. Open:
-
-```text
-http://localhost:3000
-```
-
-## Environment Variables
-
-```env
-DB_USER=root
-DB_HOST=localhost
-DB_NAME=morocco_law_search
-DB_PASSWORD=
-DB_PORT=3306
-LAW_UPDATE_INTERVAL_HOURS=0
-LAW_UPDATE_RUN_ON_START=false
-BO_LOOKAHEAD=80
-BO_BACKFILL=24
-BO_REQUEST_TIMEOUT_MS=8000
-BO_DISCOVERY_CONCURRENCY=8
-BO_REIMPORT_EXISTING=false
-BO_REIMPORT_RECENT=0
-AI_PROVIDER=none
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=qwen3:8b
-AI_PLANNER_TIMEOUT_MS=12000
-AI_ANSWER_TIMEOUT_MS=30000
-```
-
-## Import Scripts
-
-```bash
-npm run import:real-estate
-npm run import:other-laws
-npm run import:pending-laws
-npm run update:official-bulletins
-```
-
-`update:official-bulletins` checks official SGG Bulletin Officiel PDF URLs, skips already indexed bulletin numbers, and imports newly discovered bulletins into the local database.
-
-To keep the server checking automatically, set `LAW_UPDATE_INTERVAL_HOURS` to a positive number. Set `LAW_UPDATE_RUN_ON_START=true` to run one check shortly after server startup.
-
-## Local AI Reasoning
-
-The app can use a local Ollama model as the reasoning layer. The flow is:
-
-```text
-user question -> local law search -> retrieved articles -> Ollama reasoning answer with citations
-```
-
-Install Ollama on the machine that runs the backend, pull a model such as `qwen3:8b`, then set:
-
-```env
-AI_PROVIDER=ollama
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=qwen3:8b
-```
-
-If Ollama is not enabled or is unavailable, the chatbot falls back to source-based answers from the database.
-
-## Frontend Development
-
-```bash
-npm run frontend:dev
-```
-
-The Vite dev server proxies API requests to `http://localhost:3000`.
-
 ## Notes
 
-- Do not commit `.env`
-- Do not commit `node_modules`
-- Database dumps should be shared separately unless intentionally versioned
+- The default route currently returns the `welcome` view from `routes/web.php`.
+- `composer run dev` is configured to work on Windows by skipping Laravel Pail, which requires the `pcntl` extension.
+- If you want log tailing on a system that supports `pcntl`, run it separately with:
+
+  ```bash
+  php artisan pail --timeout=0
+  ```
+
+## Testing
+
+Run the test suite with:
+
+```bash
+composer test
+```
+
+## Useful Commands
+
+- `php artisan route:list`
+- `php artisan migrate:fresh`
+- `php artisan config:clear`
+- `php artisan optimize:clear`
+
+## License
+
+This project is open-sourced under the MIT license.
