@@ -1,0 +1,15 @@
+[program:marokko-biz-scheduler]
+process_name=%(program_name)s
+command=/usr/bin/php /absolute/path/to/Marrokobiz\ law\ search/artisan schedule:work
+directory=/absolute/path/to/Marrokobiz law search
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/absolute/path/to/Marrokobiz law search/storage/logs/scheduler-worker.log
+stopwaitsecs=3600
+
+; Preferred for most production servers: cron every minute with schedule:run.
+; Use this Supervisor worker only when the host supports persistent background processes.

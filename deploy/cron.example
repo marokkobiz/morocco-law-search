@@ -1,0 +1,10 @@
+# Production cron runner for Laravel Scheduler.
+# Install this in the server control panel or crontab. It must run every minute.
+# Replace the app path and PHP path with the production server values.
+
+* * * * * cd /absolute/path/to/Marrokobiz\ law\ search && /usr/bin/php artisan schedule:run >> storage/logs/scheduler.log 2>&1
+
+# What this triggers inside Laravel:
+# - corpus:update-official-sources --source=all
+# - daily at 03:00 Africa/Casablanca
+# - without overlapping
