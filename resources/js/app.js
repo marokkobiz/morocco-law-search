@@ -19,3 +19,22 @@ if (document.querySelector('.legal-landing')) {
         setLandingMetric('landing-source-count', corpus?.totalSources || overview?.totalDocuments);
     });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('[data-animate]').forEach((el) => {
+        const type = el.getAttribute('data-animate');
+        if (type === 'fade-up' || type === 'fade-in' || type === 'scale-in') {
+            el.classList.add('animate-' + type);
+        }
+        observer.observe(el);
+    });
+});
