@@ -55,6 +55,7 @@ class OfficialSourceUpdatePipelineTest extends TestCase
             'lookahead' => 1,
             'backfill' => 0,
             'recent' => 0,
+            'curatedCodes' => false,
             'timeoutMs' => 1000,
             'reimportExisting' => false,
         ]);
@@ -82,5 +83,32 @@ class OfficialSourceUpdatePipelineTest extends TestCase
         $this->assertDatabaseCount('legal_document_versions', 1);
         $this->assertDatabaseCount('legal_articles', 1);
         $this->assertDatabaseCount('legal_chunks', 1);
+    }
+
+    public function test_official_source_update_passes_curated_code_option_to_bulletin_updater(): void
+    {
+        $this->mock(OfficialBulletinUpdateService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('update')
+                ->once()
+                ->withArgs(fn (array $options): bool => ($options['curatedCodes'] ?? false) === true)
+                ->andReturn([
+                    'existingBulletinCount' => 0,
+                    'candidateCount' => 0,
+                    'discoveredSourceCount' => 0,
+                    'importedSourceCount' => 0,
+                    'importedArticleCount' => 0,
+                    'sources' => [],
+                    'failures' => [],
+                ]);
+        });
+
+        $summary = app(OfficialSourceUpdateService::class)->update([
+            'source' => 'official-bulletins',
+            'curatedCodes' => true,
+            'timeoutMs' => 1000,
+        ]);
+
+        $this->assertSame(0, $summary['importedArticleCount']);
+        $this->assertSame([], $summary['errors']);
     }
 }

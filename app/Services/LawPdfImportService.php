@@ -200,6 +200,7 @@ class LawPdfImportService
         $text = str_replace(["\r\n", "\r"], "\n", $text);
         $text = preg_replace('/[^\S\n]+/u', ' ', $text) ?? $text;
         $text = preg_replace('/\s+((?:Article|Art\.?)\s+(?:premier|\d+(?:er)?[A-Za-z]*(?:\s*(?:bis|ter|quater))?)\s*[:.\-\x{2013}\x{2014}]?)/iu', "\n$1", $text) ?? $text;
+        $text = preg_replace('/\s+((?:المادة|املادة)\s+(?:الأولى|الاولى|ا?لأولى|\d+|[٠-٩]+)\s*[:.\-\x{2013}\x{2014}]?)/u', "\n$1", $text) ?? $text;
         $text = preg_replace('/\n{3,}/', "\n\n", $text) ?? $text;
 
         return trim($text);
@@ -224,6 +225,12 @@ class LawPdfImportService
             ->trim()
             ->toString();
 
+        if (preg_match('/(?:المادة|املادة)\s+([^\s:.\-\x{2013}\x{2014}]+)/u', $rawArticleNumber, $arabicMatches)) {
+            $value = $this->normalizeArabicArticleNumber($arabicMatches[1] ?? '');
+
+            return 'Article '.$value;
+        }
+
         preg_match('/(?:article|art\.?)\s*(premier|\d+(?:er)?[a-z]*(?:\s*(?:bis|ter|quater))?)/i', $normalized, $matches);
         $value = $matches[1] ?? $normalized;
 
@@ -239,7 +246,29 @@ class LawPdfImportService
 
     private function articleMarkerPattern(): string
     {
-        return '/(?:^|\n)\s*((?:Article|Art\.?)\s+(?:premier|\d+(?:er)?[A-Za-z]*(?:\s*(?:bis|ter|quater))?))\s*(?:[:.\-\x{2013}\x{2014}]\s*)?/iu';
+        return '/(?:^|\n)\s*((?:(?:Article|Art\.?)\s+(?:premier|\d+(?:er)?[A-Za-z]*(?:\s*(?:bis|ter|quater))?))|(?:(?:المادة|املادة)\s+(?:الأولى|الاولى|ا?لأولى|\d+|[٠-٩]+)))\s*(?:[:.\-\x{2013}\x{2014}]\s*)?/iu';
+    }
+
+    private function normalizeArabicArticleNumber(string $value): string
+    {
+        $value = trim($value);
+
+        if (in_array($value, ['الأولى', 'الاولى', 'لأولى', 'االأولى'], true)) {
+            return '1';
+        }
+
+        return strtr($value, [
+            '٠' => '0',
+            '١' => '1',
+            '٢' => '2',
+            '٣' => '3',
+            '٤' => '4',
+            '٥' => '5',
+            '٦' => '6',
+            '٧' => '7',
+            '٨' => '8',
+            '٩' => '9',
+        ]);
     }
 
     private function sourceValue(array $source, string $camelKey, string $snakeKey): ?string

@@ -8,13 +8,15 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 class LawSearchService
 {
     public const SEARCH_RESULT_LIMIT = 40;
 
     private const SUGGESTION_LIMIT = 8;
-    private const CHAT_ONLY_CATEGORIES = ['official-bulletin'];
+    private const CHAT_ONLY_CATEGORIES = ['official-bulletin', 'official_bulletin', 'Official Bulletin', 'Bulletins officiels'];
+    private const CHAT_ONLY_SOURCE_TYPES = ['bo', 'official-bulletin', 'official_bulletin', 'official bulletin'];
     private const CHAT_ONLY_SEARCH_ALIASES = [
         'official bulletin',
         'bulletin officiel',
@@ -27,6 +29,14 @@ class LawSearchService
         'nouveaux textes',
         'dernieres lois',
     ];
+    private const SEARCH_STOP_WORDS = [
+        'a', 'an', 'and', 'are', 'as', 'after', 'before', 'by', 'can', 'does', 'for', 'from', 'has', 'have',
+        'he', 'her', 'him', 'his', 'i', 'if', 'in', 'is', 'it', 'its', 'my', 'of', 'on', 'or', 'she', 'that',
+        'the', 'this', 'to', 'was', 'what', 'when', 'where', 'with',
+        'au', 'aux', 'ce', 'ces', 'de', 'des', 'du', 'elle', 'en', 'est', 'et', 'il', 'la', 'le', 'les', 'leur',
+        'leurs', 'lui', 'ou', 'par', 'pour', 'que', 'qui', 'sur', 'un', 'une',
+        'في', 'من', 'على', 'عن', 'إلى', 'الى', 'هل', 'إذا', 'اذا', 'ما', 'هي', 'هو', 'و', 'أو', 'او', 'بعد', 'قبل',
+    ];
 
     private const DOCUMENT_TITLE_HINTS = [
         ['title' => 'Code penal', 'aliases' => ['code penal', 'penal code']],
@@ -34,13 +44,37 @@ class LawSearchService
         ['title' => 'Code du travail', 'aliases' => ['code du travail', 'labor code', 'labour code']],
         ['title' => 'Code de la famille', 'aliases' => ['code de la famille', 'family code']],
         ['title' => 'Code de procedure civile', 'aliases' => ['code de procedure civile', 'civil procedure code']],
+        ['title' => 'Recouvrement des loyers', 'aliases' => ['recouvrement des loyers', 'recouvrement loyers']],
+        ['title' => 'Immatriculation fonciere', 'aliases' => ['immatriculation fonciere', 'land registration', 'titre foncier']],
+        ['title' => 'Statut de la copropriété des immeubles bâtis', 'aliases' => ['statut de la copropriete des immeubles batis', 'statut de la copropriété des immeubles bâtis', 'copropriete des immeubles batis', 'copropriété des immeubles bâtis']],
+        ['title' => 'Societe en nom collectif et SARL', 'aliases' => ['societe en nom collectif et sarl', 'sarl', 'societe a responsabilite limitee']],
+        ['title' => 'Etablissements de credit et organismes assimiles', 'aliases' => ['etablissements de credit et organismes assimiles', 'etablissements de credit', 'credit institution']],
+        ['title' => 'Code de recouvrement des creances publiques', 'aliases' => ['code de recouvrement des creances publiques', 'recouvrement des creances publiques']],
+        ['title' => 'Application de la taxe sur la valeur ajoutee', 'aliases' => ['application de la taxe sur la valeur ajoutee', 'taxe sur la valeur ajoutee', 'tva']],
+        ['title' => 'Simplification des procedures et des formalites administratives', 'aliases' => ['simplification des procedures et des formalites administratives', 'simplification des procedures', 'formalites administratives', 'acte administratif']],
         [
             'title' => 'Code des Obligations et des Contrats',
             'aliases' => ['code des obligations et des contrats', 'obligations et contrats', 'obligations and contracts'],
         ],
     ];
+    private const PRIMARY_DOCUMENT_TITLES_BY_DOMAIN = [
+        'banking_finance' => ['Bank Al-Maghrib', 'Etablissements de credit'],
+        'civil_obligations_contracts' => ['Code des Obligations et des Contrats'],
+        'civil_procedure' => ['Code de procedure civile'],
+        'commercial_company' => ['Code de commerce'],
+        'criminal' => ['Code penal'],
+        'criminal_procedure' => ['Code de procedure penale'],
+        'family_marriage_divorce' => ['Code de la famille'],
+        'insurance' => ['Code des assurances'],
+        'labor' => ['Code du travail'],
+        'real_estate_rent' => ['Code des droits reels', 'Immatriculation fonciere', 'Recouvrement des loyers'],
+        'tax' => ['Code de recouvrement des creances publiques'],
+    ];
 
-    public function __construct(private readonly LegalDomainClassifier $classifier)
+    public function __construct(
+        private readonly LegalDomainClassifier $classifier,
+        private readonly LegalEmbeddingService $embeddings,
+    )
     {
     }
 
@@ -57,7 +91,11 @@ class LawSearchService
             return ['results' => [], 'hasMore' => false, 'limit' => $limit];
         }
 
-        return Cache::remember(
+        if ($options['disableCache'] ?? false) {
+            return $this->runSearch($keyword, $limit, $options);
+        }
+
+        return $this->remember(
             'laws.search.'.md5($keyword.'|'.$limit.'|'.json_encode($options)),
             60,
             fn () => $this->runSearch($keyword, $limit, $options)
@@ -79,7 +117,7 @@ class LawSearchService
             ->selectRaw($this->bulletinSortSql().' AS bulletin_sort_number')
             ->selectRaw($this->articleSortSql().' AS article_sort_number')
             ->selectRaw('1000 AS relevance_score')
-            ->where('category', self::CHAT_ONLY_CATEGORIES[0])
+            ->whereIn('category', self::CHAT_ONLY_CATEGORIES)
             ->orderByDesc('bulletin_sort_number')
             ->orderByDesc('document_title')
             ->orderBy('article_sort_number')
@@ -105,7 +143,7 @@ class LawSearchService
 
         $limit = max(1, min($limit, 12));
 
-        return Cache::remember('laws.suggestions.'.md5($keyword.'|'.$limit), 60, function () use ($keyword, $limit): array {
+        return $this->remember('laws.suggestions.'.md5($keyword.'|'.$limit), 60, function () use ($keyword, $limit): array {
             $values = collect();
 
             foreach (['document_title' => 'Document', 'title' => 'Article', 'category' => 'Area', 'law_reference' => 'Reference'] as $column => $type) {
@@ -134,7 +172,11 @@ class LawSearchService
 
     public function overview(): array
     {
-        return Cache::remember('laws.overview', 300, function (): array {
+        return $this->remember('laws.overview', 300, function (): array {
+            if ($this->hasActiveCorpus()) {
+                return $this->corpusOverview();
+            }
+
             $base = Law::query();
             $this->excludeChatOnlySources($base);
 
@@ -170,6 +212,61 @@ class LawSearchService
         });
     }
 
+    private function remember(string $key, int $seconds, callable $callback): mixed
+    {
+        try {
+            return Cache::remember($key, $seconds, $callback);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return $callback();
+        }
+    }
+
+    private function keywordTerms(string $keyword): Collection
+    {
+        return collect(preg_split('/\s+/u', $keyword) ?: [])
+            ->map(fn (string $term): string => trim($term, " \t\n\r\0\x0B.,;:!?()[]{}\"'`"))
+            ->map(fn (string $term): string => mb_strtolower($term))
+            ->filter(fn (string $term): bool => mb_strlen($term) >= 3)
+            ->reject(fn (string $term): bool => in_array($term, self::SEARCH_STOP_WORDS, true))
+            ->values();
+    }
+
+    private function corpusOverview(): array
+    {
+        $base = $this->activeCorpusBaseQuery();
+        $this->excludeChatOnlyCorpusSources($base);
+
+        $totals = (clone $base)
+            ->selectRaw('COUNT(DISTINCT legal_articles.id) AS total_articles')
+            ->selectRaw('COUNT(DISTINCT legal_sources.id) AS total_sources')
+            ->selectRaw("COUNT(DISTINCT COALESCE(legal_documents.domain, 'general')) AS total_categories")
+            ->first();
+
+        $categories = (clone $base)
+            ->selectRaw("COALESCE(legal_documents.domain, 'general') AS category")
+            ->selectRaw('COUNT(DISTINCT legal_articles.id) AS article_count')
+            ->selectRaw('COUNT(DISTINCT legal_documents.id) AS document_count')
+            ->groupBy(DB::raw("COALESCE(legal_documents.domain, 'general')"))
+            ->orderByDesc('article_count')
+            ->orderBy('category')
+            ->get()
+            ->map(fn (object $row): array => [
+                'category' => $row->category,
+                'articleCount' => (int) $row->article_count,
+                'documentCount' => (int) $row->document_count,
+            ])
+            ->all();
+
+        return [
+            'totalArticles' => (int) ($totals->total_articles ?? 0),
+            'totalDocuments' => (int) ($totals->total_sources ?? 0),
+            'totalCategories' => (int) ($totals->total_categories ?? 0),
+            'categories' => $categories,
+        ];
+    }
+
     private function runSearch(string $keyword, int $limit, array $options): array
     {
         if (!($options['useCorpus'] ?? false)) {
@@ -190,8 +287,23 @@ class LawSearchService
         $articleNumber = $this->extractArticleNumber($keyword);
         $documentHints = $this->extractDocumentTitleHints($keyword);
         $referencePatterns = $this->extractReferencePatterns($keyword);
-        $terms = collect(preg_split('/\s+/', $keyword) ?: [])->filter()->values();
+        $terms = $this->keywordTerms($keyword);
         $queryTaxonomy = $this->classifier->classifyQuery($keyword);
+
+        if ($this->shouldUseDocumentTitleFastPath($keyword, $documentHints, $articleNumber, $referencePatterns, $options)) {
+            return $this->runDocumentTitleCorpusSearch($documentHints, $limit, $queryTaxonomy, $options);
+        }
+
+        if ($this->shouldUseDocumentConstrainedFastPath($documentHints, $articleNumber, $referencePatterns, $options)) {
+            return $this->runDocumentConstrainedCorpusSearch($keyword, $documentHints, $terms, $limit, $queryTaxonomy, $options);
+        }
+
+        if ($this->shouldUseDomainFastPath($keyword, $queryTaxonomy, $terms, $articleNumber, $documentHints, $referencePatterns, $options)) {
+            return $this->runDomainCorpusSearch($keyword, $limit, $queryTaxonomy, $options);
+        }
+
+        $semanticScores = $this->semanticChunkScores($keyword, $options);
+        $semanticChunkIds = array_keys($semanticScores);
 
         $query = $this->activeCorpusBaseQuery()->select($this->corpusFields());
 
@@ -199,7 +311,7 @@ class LawSearchService
             $this->excludeChatOnlyCorpusSources($query);
         }
 
-        $query->where(function ($where) use ($keyword, $articleNumber, $documentHints, $referencePatterns, $terms): void {
+        $query->where(function ($where) use ($keyword, $articleNumber, $documentHints, $referencePatterns, $terms, $semanticChunkIds): void {
             $like = '%'.$keyword.'%';
 
             foreach ([
@@ -237,6 +349,10 @@ class LawSearchService
                 $where->orWhere('legal_documents.law_reference', 'like', $pattern);
             }
 
+            if ($semanticChunkIds) {
+                $where->orWhereIn('legal_chunks.id', $semanticChunkIds);
+            }
+
             $terms->each(function (string $term) use ($where): void {
                 $termLike = '%'.$term.'%';
 
@@ -265,6 +381,8 @@ class LawSearchService
         $fullTextScoreSql = $this->corpusFullTextScoreSql($keyword, $terms->all());
         $metadataScoreSql = $this->corpusMetadataScoreSql($keyword, $documentHints, $referencePatterns, $queryTaxonomy);
         $articleTitleScoreSql = $this->corpusArticleTitleScoreSql($keyword, $terms->all());
+        $semanticScoreSql = $this->corpusSemanticScoreSql($semanticScores);
+        $authorityScoreSql = $this->corpusSourceAuthorityScoreSql();
         $scoreSql = $this->corpusScoreSql($keyword, $articleNumber, $documentHints, $referencePatterns, $terms->all(), $queryTaxonomy);
         $rows = $query
             ->selectRaw($documentScoreSql['sql'].' AS document_match_score', $documentScoreSql['bindings'])
@@ -272,10 +390,14 @@ class LawSearchService
             ->selectRaw($fullTextScoreSql['sql'].' AS full_text_score', $fullTextScoreSql['bindings'])
             ->selectRaw($metadataScoreSql['sql'].' AS metadata_score', $metadataScoreSql['bindings'])
             ->selectRaw($articleTitleScoreSql['sql'].' AS article_title_score', $articleTitleScoreSql['bindings'])
+            ->selectRaw($semanticScoreSql['sql'].' AS semantic_score', $semanticScoreSql['bindings'])
+            ->selectRaw($authorityScoreSql['sql'].' AS source_authority_score', $authorityScoreSql['bindings'])
             ->selectRaw($this->articleSortSql('legal_articles.article_number').' AS article_sort_number')
             ->selectRaw($scoreSql['sql'].' AS relevance_score', $scoreSql['bindings'])
-            ->orderByDesc('document_match_score')
             ->orderByDesc('article_match_score')
+            ->orderByDesc('document_match_score')
+            ->orderByDesc('semantic_score')
+            ->orderByDesc('source_authority_score')
             ->orderByDesc('relevance_score')
             ->orderBy('legal_documents.document_title')
             ->orderBy('article_sort_number')
@@ -283,6 +405,10 @@ class LawSearchService
             ->orderBy('legal_chunks.chunk_index')
             ->limit(max(21, $limit + 1))
             ->get();
+        $rows = $this->exactCorpusArticleRows($articleNumber, $documentHints, $limit)
+            ->concat($rows)
+            ->unique(fn (object $row): string => (string) ($row->legal_chunk_id ?? '').':'.(string) ($row->legal_article_id ?? ''))
+            ->values();
         $rankedRows = $this->rerankCorpusRows($rows->take(20), $keyword, $queryTaxonomy);
         $selectedRows = $rankedRows->take(min($limit, 5));
 
@@ -290,6 +416,248 @@ class LawSearchService
             'results' => $this->formatCorpusRows($selectedRows),
             'hasMore' => $rows->count() > $selectedRows->count(),
             'limit' => $limit,
+        ];
+    }
+
+    private function shouldUseDomainFastPath(
+        string $keyword,
+        array $queryTaxonomy,
+        Collection $terms,
+        ?string $articleNumber,
+        array $documentHints,
+        array $referencePatterns,
+        array $options
+    ): bool {
+        if (($options['disableDomainFastPath'] ?? false) || empty($queryTaxonomy['domain'])) {
+            return false;
+        }
+
+        if ($articleNumber || $documentHints || $referencePatterns) {
+            return false;
+        }
+
+        $normalized = $this->normalizeSearchText($keyword);
+        $domain = (string) $queryTaxonomy['domain'];
+
+        if ($normalized === $this->normalizeSearchText($domain)) {
+            return true;
+        }
+
+        $domainScore = (int) ($queryTaxonomy['scores'][$domain] ?? 0);
+
+        return $terms->count() <= 5 && $domainScore >= 4;
+    }
+
+    private function shouldUseDocumentTitleFastPath(
+        string $keyword,
+        array $documentHints,
+        ?string $articleNumber,
+        array $referencePatterns,
+        array $options
+    ): bool {
+        if (($options['disableDocumentTitleFastPath'] ?? false) || !$documentHints || $articleNumber || $referencePatterns) {
+            return false;
+        }
+
+        $normalized = $this->normalizeSearchText($keyword);
+
+        return collect($documentHints)
+            ->contains(fn (string $title): bool => $normalized === $this->normalizeSearchText($title));
+    }
+
+    private function shouldUseDocumentConstrainedFastPath(
+        array $documentHints,
+        ?string $articleNumber,
+        array $referencePatterns,
+        array $options
+    ): bool {
+        return !($options['disableDocumentConstrainedFastPath'] ?? false)
+            && $documentHints
+            && !$articleNumber
+            && !$referencePatterns;
+    }
+
+    private function runDocumentTitleCorpusSearch(array $documentHints, int $limit, array $queryTaxonomy, array $options): array
+    {
+        $authorityScoreSql = $this->corpusSourceAuthorityScoreSql();
+        $query = $this->activeCorpusBaseQuery()
+            ->select($this->corpusFields())
+            ->selectRaw('1400 AS document_match_score')
+            ->selectRaw('0 AS article_match_score')
+            ->selectRaw('0 AS full_text_score')
+            ->selectRaw('1200 AS metadata_score')
+            ->selectRaw('0 AS article_title_score')
+            ->selectRaw('0 AS semantic_score')
+            ->selectRaw($authorityScoreSql['sql'].' AS source_authority_score', $authorityScoreSql['bindings'])
+            ->selectRaw($this->articleSortSql('legal_articles.article_number').' AS article_sort_number')
+            ->selectRaw('2200 AS relevance_score')
+            ->whereIn('legal_documents.document_title', $documentHints);
+
+        if (!($options['includeChatOnlySources'] ?? false)) {
+            $this->excludeChatOnlyCorpusSources($query);
+        }
+
+        if ($domain = ($queryTaxonomy['domain'] ?? null)) {
+            $query->orderByRaw(
+                '(CASE WHEN legal_documents.domain = ? THEN 3 WHEN legal_articles.domain = ? THEN 2 WHEN legal_chunks.domain = ? THEN 1 ELSE 0 END) DESC',
+                [$domain, $domain, $domain]
+            );
+        }
+
+        $rows = $query
+            ->orderByDesc('source_authority_score')
+            ->orderBy('legal_documents.document_title')
+            ->orderBy('article_sort_number')
+            ->orderBy('legal_articles.article_number')
+            ->orderBy('legal_chunks.chunk_index')
+            ->limit(max($limit + 1, $limit * 4))
+            ->get()
+            ->unique(fn (object $row): string => (string) ($row->legal_article_id ?? $row->legal_chunk_id))
+            ->values();
+
+        return [
+            'results' => $this->formatCorpusRows($rows->take($limit)),
+            'hasMore' => $rows->count() > $limit,
+            'limit' => $limit,
+        ];
+    }
+
+    private function runDocumentConstrainedCorpusSearch(
+        string $keyword,
+        array $documentHints,
+        Collection $terms,
+        int $limit,
+        array $queryTaxonomy,
+        array $options
+    ): array {
+        $authorityScoreSql = $this->corpusSourceAuthorityScoreSql();
+        $fullTextScoreSql = $this->corpusFullTextScoreSql($keyword, $terms->all());
+        $articleTitleScoreSql = $this->corpusArticleTitleScoreSql($keyword, $terms->all());
+        $metadataScoreSql = $this->corpusMetadataScoreSql($keyword, $documentHints, [], $queryTaxonomy);
+        $query = $this->activeCorpusBaseQuery()
+            ->select($this->corpusFields())
+            ->selectRaw('1200 AS document_match_score')
+            ->selectRaw('0 AS article_match_score')
+            ->selectRaw($fullTextScoreSql['sql'].' AS full_text_score', $fullTextScoreSql['bindings'])
+            ->selectRaw($metadataScoreSql['sql'].' AS metadata_score', $metadataScoreSql['bindings'])
+            ->selectRaw($articleTitleScoreSql['sql'].' AS article_title_score', $articleTitleScoreSql['bindings'])
+            ->selectRaw('0 AS semantic_score')
+            ->selectRaw($authorityScoreSql['sql'].' AS source_authority_score', $authorityScoreSql['bindings'])
+            ->selectRaw($this->articleSortSql('legal_articles.article_number').' AS article_sort_number')
+            ->selectRaw('1800 AS relevance_score')
+            ->whereIn('legal_documents.document_title', $documentHints);
+
+        if (!($options['includeChatOnlySources'] ?? false)) {
+            $this->excludeChatOnlyCorpusSources($query);
+        }
+
+        if ($domain = ($queryTaxonomy['domain'] ?? null)) {
+            $query->orderByRaw(
+                '(CASE WHEN legal_documents.domain = ? THEN 3 WHEN legal_articles.domain = ? THEN 2 WHEN legal_chunks.domain = ? THEN 1 ELSE 0 END) DESC',
+                [$domain, $domain, $domain]
+            );
+        }
+
+        $rows = $query
+            ->orderByDesc('article_title_score')
+            ->orderByDesc('full_text_score')
+            ->orderByDesc('metadata_score')
+            ->orderByDesc('source_authority_score')
+            ->orderBy('legal_documents.document_title')
+            ->orderBy('article_sort_number')
+            ->orderBy('legal_articles.article_number')
+            ->orderBy('legal_chunks.chunk_index')
+            ->limit(max($limit + 1, $limit * 4))
+            ->get()
+            ->unique(fn (object $row): string => (string) ($row->legal_article_id ?? $row->legal_chunk_id))
+            ->values();
+
+        return [
+            'results' => $this->formatCorpusRows($rows->take($limit)),
+            'hasMore' => $rows->count() > $limit,
+            'limit' => $limit,
+        ];
+    }
+
+    private function runDomainCorpusSearch(string $keyword, int $limit, array $queryTaxonomy, array $options): array
+    {
+        $domain = (string) $queryTaxonomy['domain'];
+        $subdomain = $queryTaxonomy['subdomain'] ?? null;
+        $authorityScoreSql = $this->corpusSourceAuthorityScoreSql();
+        $primaryTitleScoreSql = $this->domainPrimaryTitleScoreSql($domain);
+        $query = $this->activeCorpusBaseQuery()
+            ->select($this->corpusFields())
+            ->selectRaw('900 AS document_match_score')
+            ->selectRaw('0 AS article_match_score')
+            ->selectRaw('0 AS full_text_score')
+            ->selectRaw('600 AS metadata_score')
+            ->selectRaw('0 AS article_title_score')
+            ->selectRaw('0 AS semantic_score')
+            ->selectRaw($authorityScoreSql['sql'].' AS source_authority_score', $authorityScoreSql['bindings'])
+            ->selectRaw($primaryTitleScoreSql['sql'].' AS primary_title_score', $primaryTitleScoreSql['bindings'])
+            ->selectRaw($this->articleSortSql('legal_articles.article_number').' AS article_sort_number')
+            ->selectRaw('1200 AS relevance_score');
+
+        if (!($options['includeChatOnlySources'] ?? false)) {
+            $this->excludeChatOnlyCorpusSources($query);
+        }
+
+        $query->where(function ($where) use ($domain): void {
+            $where->where('legal_documents.domain', $domain)
+                ->orWhere('legal_articles.domain', $domain)
+                ->orWhere('legal_chunks.domain', $domain);
+
+            if ($domain === 'official-bulletin') {
+                $where->orWhere('legal_sources.source_type', 'BO')
+                    ->orWhere('legal_documents.document_type', 'BO');
+            }
+        });
+
+        if ($subdomain) {
+            $query->orderByRaw(
+                '(CASE WHEN legal_documents.subdomain = ? THEN 3 WHEN legal_articles.subdomain = ? THEN 2 WHEN legal_chunks.subdomain = ? THEN 1 ELSE 0 END) DESC',
+                [$subdomain, $subdomain, $subdomain]
+            );
+        }
+
+        $rows = $query
+            ->orderByDesc('primary_title_score')
+            ->orderByDesc('source_authority_score')
+            ->orderBy('legal_documents.document_title')
+            ->orderBy('article_sort_number')
+            ->orderBy('legal_articles.article_number')
+            ->orderBy('legal_chunks.chunk_index')
+            ->limit(max($limit + 1, $limit * 4))
+            ->get()
+            ->unique(fn (object $row): string => (string) ($row->legal_article_id ?? $row->legal_chunk_id))
+            ->values();
+
+        return [
+            'results' => $this->formatCorpusRows($rows->take($limit)),
+            'hasMore' => $rows->count() > $limit,
+            'limit' => $limit,
+        ];
+    }
+
+    private function domainPrimaryTitleScoreSql(string $domain): array
+    {
+        $titles = self::PRIMARY_DOCUMENT_TITLES_BY_DOMAIN[$domain] ?? [];
+
+        if (!$titles) {
+            return ['sql' => '0', 'bindings' => []];
+        }
+
+        $clauses = [];
+        $bindings = [];
+
+        foreach ($titles as $index => $title) {
+            $clauses[] = 'WHEN ? THEN '.(1000 - ($index * 20));
+            $bindings[] = $title;
+        }
+
+        return [
+            'sql' => '(CASE legal_documents.document_title '.implode(' ', $clauses).' ELSE 0 END)',
+            'bindings' => $bindings,
         ];
     }
 
@@ -303,7 +671,7 @@ class LawSearchService
             ->selectRaw('1000 AS article_match_score')
             ->selectRaw('1000 AS relevance_score')
             ->where(fn ($query) => $query
-                ->where('legal_documents.domain', self::CHAT_ONLY_CATEGORIES[0])
+                ->whereIn('legal_documents.domain', self::CHAT_ONLY_CATEGORIES)
                 ->orWhere('legal_sources.source_type', 'BO')
                 ->orWhere('legal_documents.document_type', 'BO'))
             ->orderByDesc('bulletin_sort_number')
@@ -322,12 +690,43 @@ class LawSearchService
         ];
     }
 
+    private function exactCorpusArticleRows(?string $articleNumber, array $documentHints, int $limit): Collection
+    {
+        if (!$articleNumber) {
+            return collect();
+        }
+
+        $authorityScoreSql = $this->corpusSourceAuthorityScoreSql();
+        $query = $this->activeCorpusBaseQuery()
+            ->select($this->corpusFields())
+            ->selectRaw('2000 AS document_match_score')
+            ->selectRaw('5000 AS article_match_score')
+            ->selectRaw('0 AS full_text_score')
+            ->selectRaw('0 AS metadata_score')
+            ->selectRaw('0 AS article_title_score')
+            ->selectRaw('0 AS semantic_score')
+            ->selectRaw($authorityScoreSql['sql'].' AS source_authority_score', $authorityScoreSql['bindings'])
+            ->selectRaw($this->articleSortSql('legal_articles.article_number').' AS article_sort_number')
+            ->selectRaw('7000 AS relevance_score')
+            ->where('legal_articles.article_number', $articleNumber);
+
+        if ($documentHints) {
+            $query->whereIn('legal_documents.document_title', $documentHints);
+        }
+
+        return $query
+            ->orderBy('legal_documents.document_title')
+            ->orderBy('legal_chunks.chunk_index')
+            ->limit($limit)
+            ->get();
+    }
+
     private function runLegacySearch(string $keyword, int $limit, array $options): array
     {
         $articleNumber = $this->extractArticleNumber($keyword);
         $documentHints = $this->extractDocumentTitleHints($keyword);
         $referencePatterns = $this->extractReferencePatterns($keyword);
-        $terms = collect(preg_split('/\s+/', $keyword) ?: [])->filter()->values();
+        $terms = $this->keywordTerms($keyword);
 
         $query = Law::query()->select($this->baseFields());
 
@@ -369,8 +768,8 @@ class LawSearchService
             ->selectRaw($articleScoreSql['sql'].' AS article_match_score', $articleScoreSql['bindings'])
             ->selectRaw($this->articleSortSql().' AS article_sort_number')
             ->selectRaw($scoreSql['sql'].' AS relevance_score', $scoreSql['bindings'])
-            ->orderByDesc('document_match_score')
             ->orderByDesc('article_match_score')
+            ->orderByDesc('document_match_score')
             ->orderByDesc('relevance_score')
             ->orderBy('document_title')
             ->orderBy('article_sort_number')
@@ -600,6 +999,27 @@ class LawSearchService
         ];
     }
 
+    private function corpusSourceAuthorityScoreSql(): array
+    {
+        return [
+            'sql' => "(
+                CASE WHEN legal_documents.status = 'active' THEN 120 ELSE 0 END
+                + CASE WHEN legal_document_versions.status = 'active' THEN 120 ELSE 0 END
+                + CASE WHEN legal_articles.status = 'active' THEN 90 ELSE 0 END
+                + CASE WHEN legal_documents.current_version_id = legal_document_versions.id THEN 160 ELSE 0 END
+                + CASE
+                    WHEN lower(COALESCE(legal_sources.source_type, '')) IN ('code', 'dahir', 'loi', 'decret', 'arrete', 'bo') THEN 90
+                    WHEN lower(COALESCE(legal_sources.source_type, '')) IN ('official', 'official-bulletin') THEN 80
+                    WHEN lower(COALESCE(legal_sources.source_type, '')) IN ('legacy', 'imported', 'scraped') THEN -80
+                    ELSE 15
+                  END
+                + CASE WHEN legal_documents.document_type IN ('code', 'dahir', 'loi', 'decret', 'arrete', 'BO') THEN 45 ELSE 0 END
+                + CASE WHEN legal_documents.publication_date IS NOT NULL THEN 10 ELSE 0 END
+            )",
+            'bindings' => [],
+        ];
+    }
+
     private function documentScoreSql(string $keyword, array $documentHints, array $referencePatterns): array
     {
         $like = '%'.$keyword.'%';
@@ -752,8 +1172,8 @@ class LawSearchService
         return collect($rows)->map(function (object $row): array {
             $content = $row->chunk_content ?: $row->article_content;
             $title = $row->article_title ?: trim(($row->document_title ?? '').' '.($row->article_number ?? ''));
-            $domain = $row->chunk_domain ?: ($row->article_domain ?: $row->document_domain);
-            $subdomain = $row->chunk_subdomain ?: ($row->article_subdomain ?: $row->document_subdomain);
+            $domain = $row->document_domain ?: ($row->article_domain ?: $row->chunk_domain);
+            $subdomain = $row->document_subdomain ?: ($row->article_subdomain ?: $row->chunk_subdomain);
             $category = $row->legacy_category ?: $domain;
             $tags = $this->mergeTags($row->legacy_tags ?? null, $row->chunk_tags ?? null, $row->article_tags ?? null, $row->document_tags ?? null);
 
@@ -768,6 +1188,7 @@ class LawSearchService
                 'article_number' => $row->article_number,
                 'content' => Str::limit($content ?? '', 900, ''),
                 'document_title' => $row->document_title,
+                'document_type' => $row->document_type,
                 'law_reference' => $row->law_reference,
                 'category' => $category,
                 'domain' => $domain,
@@ -791,6 +1212,8 @@ class LawSearchService
                 'full_text_score' => isset($row->full_text_score) ? (float) $row->full_text_score : null,
                 'metadata_score' => isset($row->metadata_score) ? (float) $row->metadata_score : null,
                 'article_title_score' => isset($row->article_title_score) ? (float) $row->article_title_score : null,
+                'semantic_score' => isset($row->semantic_score) ? (float) $row->semantic_score : null,
+                'source_authority_score' => isset($row->source_authority_score) ? (float) $row->source_authority_score : null,
                 'rerank_score' => isset($row->rerank_score) ? (float) $row->rerank_score : null,
                 'article_sort_number' => isset($row->article_sort_number) ? (int) $row->article_sort_number : null,
                 'relevance_score' => isset($row->relevance_score) ? (float) $row->relevance_score : null,
@@ -812,6 +1235,7 @@ class LawSearchService
             'content' => Str::limit($law->content, 900, ''),
             'tags' => $law->tags,
             'document_title' => $law->document_title,
+            'document_type' => null,
             'law_reference' => $law->law_reference,
             'category' => $law->category,
             'source_name' => $law->source_name,
@@ -830,6 +1254,7 @@ class LawSearchService
             'document_match_score' => isset($law->document_match_score) ? (float) $law->document_match_score : null,
             'article_match_score' => isset($law->article_match_score) ? (float) $law->article_match_score : null,
             'article_sort_number' => isset($law->article_sort_number) ? (int) $law->article_sort_number : null,
+            'source_authority_score' => -120,
             'relevance_score' => isset($law->relevance_score) ? (float) $law->relevance_score : null,
         ])->values()->all();
     }
@@ -860,9 +1285,12 @@ class LawSearchService
         ])));
         $bodyText = $this->normalizeSearchText(($row->chunk_content ?: $row->article_content) ?? '');
         $score = 0.0;
+        $score += ((float) ($row->article_match_score ?? 0)) / 8;
         $score += ((float) ($row->full_text_score ?? 0)) / 30;
         $score += ((float) ($row->metadata_score ?? 0)) / 35;
         $score += ((float) ($row->article_title_score ?? 0)) / 20;
+        $score += ((float) ($row->semantic_score ?? 0)) / 8;
+        $score += ((float) ($row->source_authority_score ?? 0)) / 80;
 
         if (($queryTaxonomy['domain'] ?? null) && $domain === $queryTaxonomy['domain']) {
             $score += 10;
@@ -888,6 +1316,71 @@ class LawSearchService
         }
 
         return round($score, 4);
+    }
+
+    private function semanticChunkScores(string $keyword, array $options): array
+    {
+        if (($options['disableSemanticSearch'] ?? false) || !$this->embeddings->isEnabled()) {
+            return [];
+        }
+
+        $queryVector = $this->embeddings->embed($keyword);
+
+        if (!$queryVector) {
+            return [];
+        }
+
+        $candidateLimit = max(50, (int) config('legal_ai.semantic_search.candidate_limit', 2000));
+        $resultLimit = max(1, (int) config('legal_ai.semantic_search.result_limit', 12));
+        $minimumScore = (float) config('legal_ai.semantic_search.min_score', 0.55);
+        $query = $this->activeCorpusBaseQuery()
+            ->select([
+                'legal_chunks.id AS legal_chunk_id',
+                'legal_chunks.embedding',
+                'legal_chunks.embedding_model',
+            ])
+            ->whereNotNull('legal_chunks.embedding')
+            ->where('legal_chunks.embedding_model', $this->embeddings->model())
+            ->limit($candidateLimit);
+
+        if (!($options['includeChatOnlySources'] ?? false)) {
+            $this->excludeChatOnlyCorpusSources($query);
+        }
+
+        return $query
+            ->get()
+            ->mapWithKeys(function (object $row) use ($queryVector, $minimumScore): array {
+                $storedVector = $this->embeddings->decodeStoredVector($row->embedding);
+                $score = $storedVector ? $this->embeddings->cosineSimilarity($queryVector, $storedVector) : 0.0;
+
+                return $score >= $minimumScore
+                    ? [(int) $row->legal_chunk_id => $score]
+                    : [];
+            })
+            ->sortDesc()
+            ->take($resultLimit)
+            ->all();
+    }
+
+    private function corpusSemanticScoreSql(array $semanticScores): array
+    {
+        if (!$semanticScores) {
+            return ['sql' => '0', 'bindings' => []];
+        }
+
+        $clauses = [];
+        $bindings = [];
+
+        foreach ($semanticScores as $chunkId => $score) {
+            $clauses[] = 'WHEN ? THEN ?';
+            $bindings[] = (int) $chunkId;
+            $bindings[] = round((float) $score * 1000, 4);
+        }
+
+        return [
+            'sql' => '(CASE legal_chunks.id '.implode(' ', $clauses).' ELSE 0 END)',
+            'bindings' => $bindings,
+        ];
     }
 
     private function rerankTokens(string $keyword): array
@@ -1021,9 +1514,25 @@ class LawSearchService
 
     private function excludeChatOnlyCorpusSources($query)
     {
-        return $query->where(fn ($where) => $where
-            ->whereNull(DB::raw('COALESCE(legacy_laws.category, legal_documents.domain)'))
-            ->orWhereNotIn(DB::raw('COALESCE(legacy_laws.category, legal_documents.domain)'), self::CHAT_ONLY_CATEGORIES));
+        return $query
+            ->where(fn ($where) => $where
+                ->whereNull('legacy_laws.category')
+                ->orWhereNotIn('legacy_laws.category', self::CHAT_ONLY_CATEGORIES))
+            ->where(fn ($where) => $where
+                ->whereNull('legal_documents.domain')
+                ->orWhereNotIn('legal_documents.domain', self::CHAT_ONLY_CATEGORIES))
+            ->where(fn ($where) => $where
+                ->whereNull('legal_articles.domain')
+                ->orWhereNotIn('legal_articles.domain', self::CHAT_ONLY_CATEGORIES))
+            ->where(fn ($where) => $where
+                ->whereNull('legal_chunks.domain')
+                ->orWhereNotIn('legal_chunks.domain', self::CHAT_ONLY_CATEGORIES))
+            ->where(fn ($where) => $where
+                ->whereNull('legal_sources.source_type')
+                ->orWhereNotIn(DB::raw('lower(legal_sources.source_type)'), self::CHAT_ONLY_SOURCE_TYPES))
+            ->where(fn ($where) => $where
+                ->whereNull('legal_documents.document_type')
+                ->orWhereNotIn(DB::raw('lower(legal_documents.document_type)'), self::CHAT_ONLY_SOURCE_TYPES));
     }
 
     private function isChatOnlySearchKeyword(string $keyword): bool

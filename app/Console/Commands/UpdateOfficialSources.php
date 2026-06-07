@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\OfficialSourceUpdateService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Throwable;
 
 class UpdateOfficialSources extends Command
@@ -13,8 +14,11 @@ class UpdateOfficialSources extends Command
         {--lookahead=80 : Number of newer bulletin ids to probe}
         {--backfill=24 : Number of previous bulletin ids to re-check}
         {--recent=0 : Only check this many latest known bulletin ids}
+        {--curated-codes : Also import curated foundational SGG bulletins such as Code du travail and Code de la famille}
+        {--sgg-page-limit=0 : Maximum SGG page PDF links to import; 0 means all discovered new links}
         {--timeout-ms=8000 : HTTP timeout in milliseconds}
-        {--reimport-existing : Reimport discovered sources even if their bulletin id already exists}';
+        {--reimport-existing : Reimport discovered sources even if their bulletin id already exists}
+        {--embed : Refresh semantic embeddings after importing new corpus chunks}';
 
     protected $description = 'Discover official Moroccan legal sources, import them, and sync them into the versioned legal corpus.';
 
@@ -26,6 +30,8 @@ class UpdateOfficialSources extends Command
                 'lookahead' => (int) $this->option('lookahead'),
                 'backfill' => (int) $this->option('backfill'),
                 'recent' => (int) $this->option('recent'),
+                'curatedCodes' => (bool) $this->option('curated-codes'),
+                'sggPageLimit' => (int) $this->option('sgg-page-limit'),
                 'timeoutMs' => (int) $this->option('timeout-ms'),
                 'reimportExisting' => (bool) $this->option('reimport-existing'),
             ]);
@@ -49,8 +55,17 @@ class UpdateOfficialSources extends Command
         $this->line('Corpus chunks created: '.$summary['corpus']['chunksCreated']);
         $this->line('Unchanged corpus versions skipped: '.$summary['corpus']['skippedVersions']);
 
+        if ($this->option('embed') && (int) ($summary['corpus']['chunksCreated'] ?? 0) > 0) {
+            $this->info('Refreshing semantic embeddings for changed corpus chunks.');
+            Artisan::call('corpus:embed-chunks');
+            $this->output->write(Artisan::output());
+        }
+
         foreach ($summary['sources'] as $source) {
-            $this->line("- BO {$source['bulletinId']}: {$source['articleCount']} articles");
+            $label = isset($source['bulletinId'])
+                ? "BO {$source['bulletinId']}"
+                : ($source['documentTitle'] ?? $source['sourceUrl'] ?? 'Official source');
+            $this->line("- {$label}: {$source['articleCount']} articles");
         }
 
         foreach ($summary['errors'] as $error) {

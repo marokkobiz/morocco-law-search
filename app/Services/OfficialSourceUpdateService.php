@@ -11,6 +11,7 @@ class OfficialSourceUpdateService
 {
     public function __construct(
         private readonly OfficialBulletinUpdateService $bulletins,
+        private readonly OfficialSggPageSourceService $sggPages,
         private readonly LegacyLawCorpusImportService $corpusImporter,
     ) {
     }
@@ -23,6 +24,12 @@ class OfficialSourceUpdateService
                 'sourceType' => 'BO',
                 'baseUrl' => OfficialBulletinUpdateService::BASE_URL,
                 'commandSource' => 'official-bulletins',
+            ],
+            'sgg-pages' => [
+                'name' => 'Secretariat General du Gouvernement - Textes officiels',
+                'sourceType' => 'SGG',
+                'baseUrl' => 'https://www.sgg.gov.ma/textesconsolides.aspx',
+                'commandSource' => 'sgg-pages',
             ],
         ];
     }
@@ -102,11 +109,21 @@ class OfficialSourceUpdateService
 
     private function updateSources(string $source, array $options): array
     {
+        $summaries = [];
+
         if ($source === 'all' || $source === 'official-bulletins') {
-            return $this->bulletins->update($options);
+            $summaries[] = $this->bulletins->update($options);
         }
 
-        throw new InvalidArgumentException("Unsupported official source: {$source}");
+        if ($source === 'all' || $source === 'sgg-pages') {
+            $summaries[] = $this->sggPages->update($options);
+        }
+
+        if (!$summaries) {
+            throw new InvalidArgumentException("Unsupported official source: {$source}");
+        }
+
+        return $this->mergeSummaries($summaries);
     }
 
     private function ensureSupportedSource(string $source): void
@@ -122,6 +139,7 @@ class OfficialSourceUpdateService
     {
         return match ($source) {
             'official-bulletins' => OfficialBulletinUpdateService::BASE_URL,
+            'sgg-pages' => 'https://www.sgg.gov.ma/textesconsolides.aspx',
             default => 'official:'.$source,
         };
     }
@@ -131,5 +149,19 @@ class OfficialSourceUpdateService
         return collect($options)
             ->except(['pdfContent', 'text'])
             ->all();
+    }
+
+    private function mergeSummaries(array $summaries): array
+    {
+        return [
+            'existingBulletinCount' => collect($summaries)->sum('existingBulletinCount'),
+            'candidateCount' => collect($summaries)->sum('candidateCount'),
+            'discoveredSourceCount' => collect($summaries)->sum('discoveredSourceCount'),
+            'importedSourceCount' => collect($summaries)->sum('importedSourceCount'),
+            'importedArticleCount' => collect($summaries)->sum('importedArticleCount'),
+            'sources' => collect($summaries)->flatMap(fn (array $summary): array => $summary['sources'] ?? [])->values()->all(),
+            'failures' => collect($summaries)->flatMap(fn (array $summary): array => $summary['failures'] ?? [])->values()->all(),
+            'components' => $summaries,
+        ];
     }
 }

@@ -48,6 +48,30 @@ class TranslationService
             .'&op=translate';
     }
 
+    public function translatePlainText(string $text, string $sourceLanguage, string $targetLanguage): array
+    {
+        $sourceLanguage = strtolower(trim($sourceLanguage)) ?: 'auto';
+        $targetLanguage = strtolower(trim($targetLanguage)) ?: 'fr';
+
+        if ($text === '' || $sourceLanguage === $targetLanguage) {
+            return [
+                'sourceLanguage' => $sourceLanguage,
+                'targetLanguage' => $targetLanguage,
+                'translatedText' => $text,
+                'provider' => 'source',
+            ];
+        }
+
+        $translation = $this->translateText($text, $sourceLanguage, $targetLanguage);
+
+        return [
+            'sourceLanguage' => $sourceLanguage,
+            'targetLanguage' => $targetLanguage,
+            'translatedText' => $translation['text'],
+            'provider' => $translation['provider'],
+        ];
+    }
+
     private function translateText(?string $text, string $sourceLanguage, string $targetLanguage): array
     {
         $text = trim((string) $text);

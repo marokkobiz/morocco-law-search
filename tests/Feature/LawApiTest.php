@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Law;
 use App\Models\LawTranslation;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -18,6 +19,25 @@ class LawApiTest extends TestCase
         parent::setUp();
 
         Cache::flush();
+        $this->actingAs(User::factory()->create([
+            'access_status' => 'active',
+        ]));
+    }
+
+    public function test_protected_law_api_requires_authentication(): void
+    {
+        Auth()->logout();
+
+        $this->getJson('/api/laws/search?q=travail')->assertUnauthorized();
+        $this->postJson('/api/laws/chat', ['message' => 'licenciement'])->assertUnauthorized();
+    }
+
+    public function test_search_workspace_includes_csrf_for_chat_requests(): void
+    {
+        $this->get('/app')
+            ->assertOk()
+            ->assertSee('name="csrf-token"', false)
+            ->assertSee("headers.set('X-CSRF-TOKEN'", false);
     }
 
     public function test_search_returns_matching_laws(): void
@@ -34,11 +54,59 @@ class LawApiTest extends TestCase
             'language' => 'fr',
         ]);
 
-        $this->getJson('/api/laws/search?q=bail commercial')
+        $this->getJson('/api/laws/search?q=bail commercial&translation_mode=original')
             ->assertOk()
             ->assertJsonPath('count', 1)
             ->assertJsonPath('results.0.article_number', 'Article 6')
             ->assertJsonPath('results.0.document_title', 'Code de commerce');
+    }
+
+    public function test_search_defaults_to_fast_aliases_for_arabic_legal_terms(): void
+    {
+        Http::fake(['*' => Http::response([], 503)]);
+
+        Law::create([
+            'title' => 'Droit civil article',
+            'article_number' => 'Article 1',
+            'content' => 'Regles du droit civil et des obligations.',
+            'document_title' => 'Code des Obligations et des Contrats',
+            'category' => 'civil',
+            'language' => 'fr',
+        ]);
+
+        $this->getJson('/api/laws/search?q='.rawurlencode('القانون المدني'))
+            ->assertOk()
+            ->assertJsonPath('searchMode', 'fast')
+            ->assertJsonPath('searchedQueries.0', 'Code des Obligations et des Contrats')
+            ->assertJsonPath('searchedQueries.5', 'القانون المدني')
+            ->assertJsonPath('results.0.category', 'civil')
+            ->assertJsonPath('results.0.matched_query', 'Code des Obligations et des Contrats')
+            ->assertJsonPath('translationWarning', null);
+    }
+
+    public function test_search_can_expand_query_with_translation_mode(): void
+    {
+        Http::fake([
+            'translate.googleapis.com/*' => Http::response([[['licenciement', 'dismissal', null, null]]], 200),
+        ]);
+
+        Law::create([
+            'title' => 'Licenciement article',
+            'article_number' => 'Article 35',
+            'content' => 'Le licenciement doit etre fonde sur un motif valable.',
+            'document_title' => 'Code du travail',
+            'category' => 'labor',
+            'language' => 'fr',
+        ]);
+
+        $this->getJson('/api/laws/search?q=dismissal&translation_mode=fr')
+            ->assertOk()
+            ->assertJsonPath('searchMode', 'fr')
+            ->assertJsonPath('searchedQueries.0', 'Code du travail licenciement motif valable')
+            ->assertJsonPath('searchedQueries.1', 'Code du travail procedure licenciement')
+            ->assertJsonPath('translatedQueries.0.targetLanguage', 'fr')
+            ->assertJsonPath('results.0.article_number', 'Article 35')
+            ->assertJsonPath('results.0.matched_query', 'Code du travail licenciement motif valable');
     }
 
     public function test_overview_excludes_chat_only_sources(): void
@@ -81,8 +149,49 @@ class LawApiTest extends TestCase
         $this->postJson('/api/laws/chat', ['message' => 'licenciement travail'])
             ->assertOk()
             ->assertJsonPath('intent', 'legal_case_analysis')
+            ->assertJsonPath('answerSupport.status', 'insufficient_sources')
             ->assertJsonPath('citations.0.articleNumber', 'Article 35')
             ->assertJsonFragment(['documentTitle' => 'Code du travail']);
+    }
+
+    public function test_chat_debug_exposes_retrieval_diagnostics_only_when_requested(): void
+    {
+        Law::create([
+            'title' => 'Labor termination article',
+            'article_number' => 'Article 35',
+            'content' => 'Rules about licenciement and employment termination.',
+            'document_title' => 'Code du travail',
+            'category' => 'labor',
+            'language' => 'fr',
+        ]);
+
+        $this->postJson('/api/laws/chat', ['message' => 'licenciement travail'])
+            ->assertOk()
+            ->assertJsonMissingPath('diagnostics');
+
+        $this->postJson('/api/laws/chat?debug=1', ['message' => 'licenciement travail'])
+            ->assertOk()
+            ->assertJsonPath('diagnostics.rawResultCount', 1)
+            ->assertJsonPath('diagnostics.acceptedResultCount', 1)
+            ->assertJsonPath('diagnostics.acceptedCitations.0.articleNumber', 'Article 35')
+            ->assertJsonStructure([
+                'answerSupport' => [
+                    'status',
+                    'warnings',
+                    'citationCoverage',
+                    'unsupportedClaims',
+                    'weaklySupportedClaims',
+                    'citationAudits',
+                ],
+            ])
+            ->assertJsonStructure([
+                'diagnostics' => [
+                    'queries',
+                    'expandedQueries',
+                    'rawResults',
+                    'acceptedCitations',
+                ],
+            ]);
     }
 
     public function test_chat_handles_casual_message_without_searching(): void

@@ -21,9 +21,25 @@ class AiReasoningService
             'allowedDocumentTitles' => ['Code des Obligations et des Contrats'],
             'allowedCategories' => ['civil'],
         ],
+        'civilProcedure' => [
+            'allowedDocumentTitles' => ['Code de procedure civile'],
+            'allowedCategories' => ['civil_procedure'],
+        ],
         'criminal' => [
             'allowedDocumentTitles' => ['Code penal'],
             'allowedCategories' => ['criminal'],
+        ],
+        'bankingFinance' => [
+            'allowedDocumentTitles' => ['Etablissements de credit et organismes assimiles', 'Statut de Bank Al-Maghrib'],
+            'allowedCategories' => ['banking_finance'],
+        ],
+        'tax' => [
+            'allowedDocumentTitles' => ['Code de recouvrement des creances publiques', 'Application de la taxe sur la valeur ajoutee'],
+            'allowedCategories' => ['tax'],
+        ],
+        'administrative' => [
+            'allowedDocumentTitles' => ['Simplification des procedures et des formalites administratives', 'Communes', 'Tribunaux administratifs'],
+            'allowedCategories' => ['administrative_urbanism'],
         ],
         'family' => [
             'allowedDocumentTitles' => ['Code de la famille'],
@@ -37,6 +53,7 @@ class AiReasoningService
             'allowedDocumentTitles' => [
                 'Code de commerce',
                 'Societes anonymes',
+                'Societe en nom collectif et SARL',
                 'Societes a responsabilite limitee',
                 'Societes responsabilite limitee',
             ],
@@ -51,6 +68,7 @@ class AiReasoningService
         'realEstate' => [
             'allowedDocumentTitles' => [
                 'Code des droits reels',
+                'Immatriculation fonciere',
                 'Statut de la copropriete des immeubles batis',
                 'Recouvrement des loyers',
             ],
@@ -63,7 +81,13 @@ class AiReasoningService
         $localPlan = $this->createLocalSearchPlan($question);
 
         if ($localPlan) {
-            return $localPlan;
+            return $this->withDomainRoute($localPlan, $question);
+        }
+
+        $domainPlan = $this->createDomainSearchPlan($question);
+
+        if ($domainPlan) {
+            return $domainPlan;
         }
 
         if (!$this->isEnabled()) {
@@ -128,12 +152,126 @@ class AiReasoningService
             ]);
             $aiPlan = $this->sanitizeSearchPlan($this->extractJsonObject($content), $question);
 
-            return $aiPlan && $aiPlan['searchQueries'] ? $aiPlan : $this->createLocalSearchPlan($question);
+            return $aiPlan && $aiPlan['searchQueries']
+                ? $this->withDomainRoute($aiPlan, $question)
+                : $this->createDomainSearchPlan($question);
         } catch (Throwable $error) {
             Log::warning('AI search planning failed', ['message' => $error->getMessage()]);
 
-            return $this->createLocalSearchPlan($question);
+            return $this->createDomainSearchPlan($question);
         }
+    }
+
+    private function createDomainSearchPlan(string $question): ?array
+    {
+        $classifier = new LegalDomainClassifier();
+        $taxonomy = $classifier->classifyQuery($question);
+        $domain = $taxonomy['domain'] ?? null;
+        $scores = collect($taxonomy['scores'] ?? [])->sortDesc()->values();
+        $topScore = (int) ($scores->get(0) ?? 0);
+        $runnerUp = (int) ($scores->get(1) ?? 0);
+
+        if (!$domain || $topScore < 6) {
+            return null;
+        }
+
+        $terms = collect($classifier->conceptTermsForTaxonomy($taxonomy, 18))
+            ->filter(fn (string $term): bool => Str::length($term) >= 4)
+            ->values();
+        $queries = $terms
+            ->chunk(3)
+            ->map(fn ($chunk): string => $chunk->implode(' '))
+            ->filter()
+            ->take(6)
+            ->values()
+            ->all();
+
+        if (!$queries) {
+            return null;
+        }
+
+        return [
+            'legalIssue' => Str::headline(str_replace('_', ' ', $domain)),
+            'reasoningGoal' => 'Identify and apply the relevant Moroccan legal rules in the detected domain.',
+            'needsLawSearch' => true,
+            'searchQueries' => $queries,
+            'trustedArticleAnchors' => [],
+            'relevanceTerms' => $terms->take(24)->all(),
+            'allowedDocumentTitles' => [],
+            'allowedCategories' => [],
+            'dominantDomain' => $domain,
+            'domainConfidence' => $this->domainConfidence($topScore, $runnerUp),
+            'domainScores' => $taxonomy['scores'] ?? [],
+            'facts' => $this->extractLegalFacts($question),
+        ];
+    }
+
+    private function withDomainRoute(array $plan, string $question): array
+    {
+        $classifier = new LegalDomainClassifier();
+        $rawTaxonomy = $classifier->classifyQuery($question);
+        $rawScores = collect($rawTaxonomy['scores'] ?? [])->sortDesc()->values();
+        $rawConfidence = $this->domainConfidence((int) ($rawScores->get(0) ?? 0), (int) ($rawScores->get(1) ?? 0));
+        $taxonomy = $classifier->classifyQuery($question.' '.($plan['legalIssue'] ?? '').' '.implode(' ', $plan['searchQueries'] ?? []));
+        $scores = collect($taxonomy['scores'] ?? [])->sortDesc()->values();
+        $confidence = $this->domainConfidence((int) ($scores->get(0) ?? 0), (int) ($scores->get(1) ?? 0));
+
+        if (($rawTaxonomy['domain'] ?? null)
+            && ($rawTaxonomy['domain'] ?? null) !== ($taxonomy['domain'] ?? null)
+            && $rawConfidence === 'strong') {
+            $taxonomy = $rawTaxonomy;
+            $confidence = $rawConfidence;
+        }
+
+        if (collect($plan['allowedCategories'] ?? [])->filter()->unique()->count() > 1) {
+            $confidence = 'weak';
+        }
+
+        $dominantDomain = $taxonomy['domain'] ?? ($plan['dominantDomain'] ?? null);
+        $allowedRoute = $classifier->classifyQuery(implode(' ', $plan['allowedCategories'] ?? []))['domain'] ?? null;
+        $protectedSourceRoute = $this->protectedSourceRoute($plan);
+
+        if ($protectedSourceRoute) {
+            $dominantDomain = $protectedSourceRoute;
+            $confidence = 'strong';
+        }
+
+        if (!$protectedSourceRoute && $dominantDomain && in_array($confidence, ['moderate', 'strong'], true) && $allowedRoute && $allowedRoute !== $dominantDomain) {
+            $domainTerms = collect($classifier->conceptTermsForTaxonomy($taxonomy, 18))->filter()->values();
+            $plan['searchQueries'] = $domainTerms->chunk(3)->map(fn ($chunk): string => $chunk->implode(' '))->take(6)->values()->all();
+            $plan['relevanceTerms'] = $domainTerms->take(24)->all();
+            $plan['allowedDocumentTitles'] = [];
+            $plan['allowedCategories'] = [];
+            $plan['legalIssue'] = Str::headline(str_replace('_', ' ', $dominantDomain));
+        }
+
+        return array_merge($plan, [
+            'dominantDomain' => $dominantDomain,
+            'domainConfidence' => $confidence,
+            'domainScores' => $taxonomy['scores'] ?? [],
+        ]);
+    }
+
+    private function protectedSourceRoute(array $plan): ?string
+    {
+        $sourceText = $this->normalizeText(implode(' ', [
+            ...($plan['allowedDocumentTitles'] ?? []),
+            ...($plan['searchQueries'] ?? []),
+            ...($plan['trustedArticleAnchors'] ?? []),
+        ]));
+
+        if (str_contains($sourceText, 'code de recouvrement des creances publiques')) {
+            return 'tax';
+        }
+
+        return null;
+    }
+
+    private function domainConfidence(int $topScore, int $runnerUp): string
+    {
+        $gap = $topScore - $runnerUp;
+
+        return $topScore >= 14 && $gap >= 6 ? 'strong' : ($topScore >= 8 && $gap >= 3 ? 'moderate' : 'weak');
     }
 
     public function answer(string $question, array $citations, ?array $plan = null): ?string
@@ -143,23 +281,41 @@ class AiReasoningService
         }
 
         $language = data_get($plan, 'responseLanguage') ?: $this->detectResponseLanguage($question);
-        $languageName = $language === 'fr' ? 'French' : 'English';
-        $analysisStructure = $language === 'fr'
-            ? 'A. Faits importants, B. Questions juridiques, C. Articles applicables, D. Analyse des faits, E. Arguments de chaque partie, F. Preuves importantes, G. Conclusion probable, H. Limites / informations manquantes'
-            : 'A. Important facts, B. Legal questions, C. Applicable articles, D. Fact analysis, E. Arguments of each side, F. Important evidence, G. Probable conclusion, H. Limits / missing information';
+        $languageName = match ($language) {
+            'fr' => 'French',
+            'ar' => 'Arabic',
+            default => 'English',
+        };
+        $analysisStructure = match ($language) {
+            'fr' => 'A. Faits importants, B. Questions juridiques, C. Articles applicables, D. Analyse des faits, E. Arguments de chaque partie, F. Preuves importantes, G. Conclusion probable, H. Limites / informations manquantes',
+            'ar' => 'أ. الوقائع المهمة، ب. الأسئلة القانونية، ج. المواد القابلة للتطبيق، د. تحليل الوقائع، هـ. حجج كل طرف، و. الأدلة المهمة، ز. الخلاصة المحتملة، ح. الحدود / المعلومات الناقصة',
+            default => 'A. Important facts, B. Legal questions, C. Applicable articles, D. Fact analysis, E. Arguments of each side, F. Important evidence, G. Probable conclusion, H. Limits / missing information',
+        };
 
         $specializedAnswer =
-            $this->buildFactExtractionAnswer($question)
-            ?? $this->buildEmploymentCaseAnalysisAnswer($question, $citations)
-            ?? $this->buildPregnancyDismissalAnswer($question, $citations)
-            ?? $this->buildEmploymentEvidenceAnswer($question, $citations)
-            ?? $this->buildEmploymentTerminationAnswer($question, $citations)
-            ?? $this->buildRenovationContractAnswer($question, $citations)
-            ?? $this->buildPartialDeliverySaleAnswer($question, $citations)
-            ?? $this->buildSaleOwnershipAnswer($question, $citations, $language);
+            $this->buildBankingApprovalAnswer($question, $citations, $language)
+            ?? $this->buildLaborDisciplinaryProcedureAnswer($question, $citations, $language)
+            ?? $this->buildArabicTheftDefinitionAnswer($question, $citations, $language)
+            ?? ($language === 'ar'
+                ? null
+                : (
+                    $this->buildFactExtractionAnswer($question)
+                    ?? $this->buildEmploymentCaseAnalysisAnswer($question, $citations)
+                    ?? $this->buildPregnancyDismissalAnswer($question, $citations)
+                    ?? $this->buildEmploymentEvidenceAnswer($question, $citations)
+                    ?? $this->buildEmploymentTerminationAnswer($question, $citations)
+                    ?? $this->buildRenovationContractAnswer($question, $citations)
+                    ?? $this->buildPartialDeliverySaleAnswer($question, $citations)
+                    ?? $this->buildCivilDebtProofAnswer($question, $citations, $language)
+                    ?? $this->buildSaleOwnershipAnswer($question, $citations, $language)
+                ));
 
         if ($specializedAnswer) {
-            return $this->enforceFactConsistency($specializedAnswer, $question, $plan, $citations);
+            return $this->verifyCitationSupport(
+                $this->enforceFactConsistency($specializedAnswer, $question, $plan, $citations),
+                $citations,
+                $language
+            );
         }
 
         if (!$this->isEnabled()) {
@@ -171,6 +327,15 @@ class AiReasoningService
             ->map(fn (array $citation, int $index): string => $this->formatCitationForPrompt($citation, $index))
             ->implode("\n\n");
         $facts = $this->extractLegalFacts($question);
+        $planFacts = collect(data_get($plan, 'aiPlan.facts', []))
+            ->map(fn (mixed $fact): string => trim((string) $fact))
+            ->filter()
+            ->values()
+            ->all();
+        $facts = collect([...$planFacts, ...$facts])
+            ->unique(fn (string $fact): string => $this->normalizeText($fact))
+            ->values()
+            ->all();
         $issues = $this->extractLegalIssues($question, $plan);
 
         try {
@@ -182,7 +347,7 @@ class AiReasoningService
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => "/no_think\nYou are a careful Moroccan legal assistant and case analyst. Return JSON only with one key: answer. The answer must be final user-facing text only. Write the answer in {$languageName}; do not mix languages except for official source titles, article names, and quoted legal excerpts. Do not include your drafting process, hidden reasoning, self-talk, prompt analysis, Markdown formatting, or phrases like 'let me'. The pipeline is mandatory: FACT EXTRACTION, ISSUE SPOTTING, RETRIEVAL, RELEVANCE CHECK, FINAL ANALYSIS. The final answer must visibly use this structure: {$analysisStructure}. Do not cite any article before section C. Use the retrieved law excerpts as legal authority, and use the user's facts for legal analysis. Explain why facts matter for proof, credibility, timing, motive, consent, possession, contradiction, burden, or compliance. Do not say a user fact is irrelevant merely because no article names that exact fact. Every legal rule, remedy, formula, deadline, burden, or procedure must be supported by a cited excerpt. Do not calculate compensation unless the user asks for compensation, damages, indemnity, amount, salary, or a claim calculation. Never reuse case numbers or facts from examples; only use facts in the current user question. If the relevant excerpts are insufficient, say sources insuffisantes and identify the missing source or fact. Cite relevant excerpts with [1], [2], etc. Do not say you searched the web.",
+                        'content' => "/no_think\nYou are a careful Moroccan legal assistant and case analyst. Return JSON only with one key: answer. The answer must be final user-facing text only. Write the answer in {$languageName}; do not mix languages except for official source titles, article names, and quoted legal excerpts. If {$languageName} is Arabic, write in clear Modern Standard Arabic and keep citation markers like [1]. Do not include your drafting process, hidden reasoning, self-talk, prompt analysis, Markdown formatting, or phrases like 'let me'. The pipeline is mandatory: FACT EXTRACTION, ISSUE SPOTTING, RETRIEVAL, RELEVANCE CHECK, FINAL ANALYSIS. The final answer must visibly use this structure: {$analysisStructure}. Do not cite any article before section C. Use the retrieved law excerpts as legal authority, and use the user's facts for legal analysis. Explain why facts matter for proof, credibility, timing, motive, consent, possession, contradiction, burden, or compliance. Do not say a user fact is irrelevant merely because no article names that exact fact. Every legal rule, remedy, formula, deadline, burden, or procedure must be supported by a cited excerpt. Do not calculate compensation unless the user asks for compensation, damages, indemnity, amount, salary, or a claim calculation. Never reuse case numbers or facts from examples; only use facts in the current user question. If the relevant excerpts are insufficient, say sources insuffisantes / المصادر غير كافية and identify the missing source or fact. Cite relevant excerpts with [1], [2], etc. Do not say you searched the web.",
                     ],
                     [
                         'role' => 'user',
@@ -210,12 +375,25 @@ class AiReasoningService
             $answer = $this->ensureCitationMarker($answer, $citations);
             $answer = $this->ensureSubstantiveAnswer($answer, $citations, $language);
 
-            return $answer ? $this->enforceFactConsistency($answer, $question, $plan, $citations) : null;
+            if (!$answer) {
+                return null;
+            }
+
+            return $this->verifyCitationSupport(
+                $this->enforceFactConsistency($answer, $question, $plan, $citations),
+                $citations,
+                $language
+            );
         } catch (Throwable $error) {
             Log::warning('AI answer generation failed', ['message' => $error->getMessage()]);
 
             return null;
         }
+    }
+
+    public function verifyAnswerSupport(string $answer, array $citations, string $language = 'en'): array
+    {
+        return $this->answerSupportVerifier()->audit($answer, $citations, $language);
     }
 
     private function createLocalSearchPlan(string $question): ?array
@@ -230,23 +408,184 @@ class AiReasoningService
         $hasEmployment = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'employment termination');
         $hasRenovation = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'renovation or construction work contract');
         $hasSaleDelivery = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'sale contract with missing or partial delivery');
+        $hasSaleOwnershipHeirs = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'sale ownership and heirs dispute');
+        $hasRealEstateDoubleSale = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'unregistered real estate double sale priority');
+        $hasCoownershipSyndic = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'coownership syndic designation');
+        $hasFamilyCustody = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'family custody after mother remarriage');
+        $hasLandRegistration = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'land registration opposition');
+        $hasPublicDebtCollection = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'public debt forced collection');
+        $hasVatRefund = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'vat refund request');
+        $hasCivilDebtProof = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'civil debt loan and proof dispute');
+        $hasAdministrativeDelay = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'administrative maximum processing delay');
+        $hasLaborDisciplinaryHearing = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'labor disciplinary hearing before dismissal');
+        $hasTerritorialJurisdiction = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'civil procedure territorial jurisdiction');
+        $hasBankingCreditApproval = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'banking credit institution approval');
+        $hasSarlStatus = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'sarl commercial status and legal personality');
+        $hasWorkplaceCriminalMisappropriation = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'workplace criminal theft or breach of trust');
+        $hasCompanyTaxDispute = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'company tax declaration penalty or reassessment');
+        $hasPropertyPossessionClaim = $matches->contains(fn (array $profile): bool => $profile['legalIssue'] === 'property possession or ownership claim');
+        $criminalDominatesLabor = $hasWorkplaceCriminalMisappropriation
+            && !preg_match('/\b(dismiss|dismissed|dismissal|licenciement|licencie|accuse|accusation|disciplinary|disciplinaire)\b/', $normalized);
         $hasWorkplaceAccusation = $hasEmployment
             && preg_match('/\b(accuse|accusation|preuve|evidence|inventaire|inventory|ordinateur|laptop|vole|vol|theft)\b/', $normalized);
+        $hasWorkplaceTheftAccusation = $hasEmployment
+            && preg_match('/\b(vol|vole|theft|stolen|steal|soustraction)\b/', $normalized);
         $hasStructuredEmploymentAnalysis = $hasEmployment
             && (preg_match('/\b(analysez|analyze|analyse|analysis|etudiez|evaluate)\b/', $normalized)
                 || preg_match('/\b(faits|arguments|preuves|procedures|represailles|conclusion)\b/', $normalized));
         $asksAboutCompensation = preg_match('/\b(compensation|indemnite|indemnites|dommages|preavis|severance|claim|reclamer|montant|salaire)\b/', $normalized);
+        $supplementalSearchQueries = collect();
+        $supplementalRelevanceTerms = collect();
+        $supplementalAllowedDocumentTitles = collect();
+        $supplementalAllowedCategories = collect();
 
         if ($hasCommercialLease) {
             $matches = $matches->reject(fn (array $profile): bool => $profile['legalIssue'] === 'landlord and tenant rent or residential eviction')->values();
         }
 
-        if ($hasEmployment) {
+        if ($hasFamilyCustody) {
+            $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'pregnancy or maternity dismissal',
+                'employment termination',
+                'civil debt loan and proof dispute',
+            ], true))->values();
+        }
+
+        if ($hasLandRegistration) {
+            $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'administrative receipt for request',
+                'administrative maximum processing delay',
+                'civil debt loan and proof dispute',
+            ], true))->values();
+        }
+
+        if ($hasRealEstateDoubleSale) {
+            $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'land registration opposition',
+                'real estate law overview',
+                'landlord and tenant rent or residential eviction',
+                'sale contract with missing or partial delivery',
+                'sale ownership and heirs dispute',
+            ], true))->values();
+        }
+
+        if ($hasPropertyPossessionClaim) {
+            $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'land registration opposition',
+                'sale delivery legal definition',
+                'sale contract with missing or partial delivery',
+            ], true))->values();
+        }
+
+        if ($hasCoownershipSyndic) {
+            $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'commercial company rules',
+                'sarl commercial status and legal personality',
+            ], true))->values();
+        }
+
+        if ($hasPublicDebtCollection) {
+            $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'administrative receipt for request',
+                'administrative maximum processing delay',
+                'civil debt loan and proof dispute',
+            ], true))->values();
+        }
+
+        if ($hasVatRefund) {
+            $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'consumer protection',
+                'civil debt loan and proof dispute',
+            ], true))->values();
+        }
+
+        if ($hasAdministrativeDelay) {
+            $matches = $matches->reject(fn (array $profile): bool => $profile['legalIssue'] === 'administrative receipt for request')->values();
+        }
+
+        if ($hasLaborDisciplinaryHearing) {
+            $matches = $matches->reject(fn (array $profile): bool => $profile['legalIssue'] === 'employment termination')->values();
+        }
+
+        if ($hasTerritorialJurisdiction) {
+            $matches = $matches->reject(fn (array $profile): bool => $profile['legalIssue'] === 'civil procedure appeal deadline')->values();
+        }
+
+        if ($hasBankingCreditApproval) {
+            $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'commercial company rules',
+                'civil debt loan and proof dispute',
+            ], true))->values();
+        }
+
+        if ($hasSarlStatus) {
+            $matches = $matches->reject(fn (array $profile): bool => $profile['legalIssue'] === 'commercial company rules')->values();
+        }
+
+        if ($hasCompanyTaxDispute) {
+            $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'commercial company rules',
+                'sarl commercial status and legal personality',
+            ], true))->values();
+        }
+
+        if ($hasCivilDebtProof && !$hasBankingCreditApproval) {
+            $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'banking professional secrecy',
+                'banking credit institution approval',
+                'civil procedure appeal deadline',
+            ], true))->values();
+        }
+
+        if ($hasEmployment && !$criminalDominatesLabor) {
             $matches = $matches->reject(fn (array $profile): bool => in_array($profile['legalIssue'], ['commercial company rules', 'stolen property or theft'], true))->values();
         }
 
-        if ($hasWorkplaceAccusation) {
-            $matches = $matches->filter(fn (array $profile): bool => $profile['legalIssue'] === 'employment termination')->values();
+        if ($criminalDominatesLabor) {
+            $matches = $matches->filter(fn (array $profile): bool => $profile['legalIssue'] === 'workplace criminal theft or breach of trust')->values();
+        } elseif ($hasWorkplaceAccusation) {
+            $matches = $matches->filter(fn (array $profile): bool => in_array($profile['legalIssue'], [
+                'employment termination',
+                'workplace criminal theft or breach of trust',
+            ], true))->values();
+        }
+
+        if ($hasWorkplaceTheftAccusation) {
+            $supplementalSearchQueries = $supplementalSearchQueries->concat([
+                'soustraction frauduleuse code penal',
+                'vol code penal',
+                'preuve vol code penal',
+            ]);
+            $supplementalRelevanceTerms = $supplementalRelevanceTerms->concat(['vol', 'soustraction frauduleuse', 'theft', 'preuve']);
+            $supplementalAllowedDocumentTitles = $supplementalAllowedDocumentTitles->push('Code penal');
+            $supplementalAllowedCategories = $supplementalAllowedCategories->push('criminal');
+        }
+
+        if ($hasSaleOwnershipHeirs && !$hasRealEstateDoubleSale) {
+            $supplementalSearchQueries = $supplementalSearchQueries->concat([
+                'succession heritiers code de la famille',
+                'heritiers ayants droit succession',
+                'article 488 code des obligations et des contrats vente consentement chose prix',
+                'article 491 code des obligations et des contrats propriete chose vendue',
+                'article 499 code des obligations et des contrats delivrance possession',
+                'article 500 code des obligations et des contrats choses mobilieres tradition reelle',
+                'article 229 code des obligations et des contrats heritiers ayants cause',
+            ]);
+            $supplementalRelevanceTerms = $supplementalRelevanceTerms->concat(['vente', 'consentement', 'chose', 'prix', 'propriete', 'delivrance', 'possession', 'heritier', 'heritiers', 'ayants cause']);
+            $supplementalAllowedDocumentTitles = $supplementalAllowedDocumentTitles
+                ->push('Code des Obligations et des Contrats')
+                ->push('Code de la famille');
+            $supplementalAllowedCategories = $supplementalAllowedCategories
+                ->push('civil')
+                ->push('family');
+        }
+
+        if ($hasEmployment && preg_match('/\b(procedure|procedural|disciplinaire|audition|entendu|defense|motif valable)\b/', $normalized)) {
+            $supplementalSearchQueries = $supplementalSearchQueries->concat([
+                'article 62 code du travail procedure disciplinaire audition defense',
+                'article 35 code du travail licenciement motif valable',
+            ]);
+            $supplementalRelevanceTerms = $supplementalRelevanceTerms->concat(['procedure disciplinaire', 'audition', 'defense', 'motif valable']);
         }
 
         if ($hasRenovation) {
@@ -261,9 +600,18 @@ class AiReasoningService
             return null;
         }
 
-        $searchQueries = $matches
+        $profileSearchQueries = $matches
             ->flatMap(fn (array $profile): array => $profile['searchQueries'])
             ->unique()
+            ->values();
+        $articleAnchors = $profileSearchQueries
+            ->concat($supplementalSearchQueries)
+            ->filter(fn (string $query): bool => (bool) preg_match('/\barticle\s+\d+(?:\s*(?:bis|ter|quater))?\b/i', $query))
+            ->take(18)
+            ->values()
+            ->all();
+
+        $searchQueries = $profileSearchQueries
             ->filter(function (string $query) use ($hasStructuredEmploymentAnalysis, $asksAboutCompensation): bool {
                 if (!$hasStructuredEmploymentAnalysis || $asksAboutCompensation) {
                     return true;
@@ -293,20 +641,190 @@ class AiReasoningService
                 ->all();
         }
 
+        $searchQueries = collect($searchQueries)
+            ->concat($supplementalSearchQueries)
+            ->map(fn (string $query): string => $this->userProvidedArticleNumber($question)
+                ? $query
+                : $this->stripArticleNumberFromQuery($query))
+            ->filter(fn (string $query): bool => $query !== '')
+            ->unique()
+            ->take(18)
+            ->values()
+            ->all();
+
         return [
             'legalIssue' => $matches->pluck('legalIssue')->implode(' / '),
             'reasoningGoal' => 'Explain the likely legal answer using the most relevant Moroccan law excerpts.',
             'needsLawSearch' => true,
             'searchQueries' => $searchQueries,
-            'relevanceTerms' => $matches->flatMap(fn (array $profile): array => $profile['relevanceTerms'] ?? [])->unique()->take(24)->values()->all(),
-            'allowedDocumentTitles' => $matches->flatMap(fn (array $profile): array => $profile['allowedDocumentTitles'] ?? [])->unique()->values()->all(),
-            'allowedCategories' => $matches->flatMap(fn (array $profile): array => $profile['allowedCategories'] ?? [])->unique()->values()->all(),
+            'trustedArticleAnchors' => $articleAnchors,
+            'relevanceTerms' => $matches->flatMap(fn (array $profile): array => $profile['relevanceTerms'] ?? [])->concat($supplementalRelevanceTerms)->unique()->take(28)->values()->all(),
+            'allowedDocumentTitles' => $matches->flatMap(fn (array $profile): array => $profile['allowedDocumentTitles'] ?? [])->concat($supplementalAllowedDocumentTitles)->unique()->values()->all(),
+            'allowedCategories' => $matches->flatMap(fn (array $profile): array => $profile['allowedCategories'] ?? [])->concat($supplementalAllowedCategories)->unique()->values()->all(),
+            'facts' => $this->extractLegalFacts($question),
         ];
     }
 
     private function legalQueryProfiles(): array
     {
         return [
+            $this->profile('family custody after mother remarriage', [
+                '/\b(custody|child custody|mother remarried|remarried mother|hadana|garde)\b.*\b(remarry|remarried|remariage|mother|mere|divorce)\b/',
+                '/\b(remarry|remarried|remariage|mother|mere|divorce)\b.*\b(custody|child custody|hadana|garde)\b/',
+                '/\b(ar custody remarriage|article 175 code de la famille)\b/',
+            ], [
+                'article 175 code de la famille garde mere remariage',
+                'article 173 code de la famille conditions garde',
+                'article 171 code de la famille garde mere enfant',
+                'code de la famille garde remariage mere enfant',
+            ], 'family', ['garde', 'mere', 'remariage', 'enfant', 'decheance', 'interet enfant']),
+            $this->profile('family child support after divorce', [
+                '/\b(child support|alimony|maintenance|pension alimentaire|nafaqa)\b/',
+                '/\b(divorce)\b.*\b(enfant|children|pension|support|alimony)\b/',
+                '/\b(fixation|fixer|evaluer|evaluation)\b.*\b(pension|nafaka|enfants)\b/',
+                '/\b(pension|nafaka)\b.*\b(enfant|enfants|children)\b/',
+            ], [
+                'article 85 code de la famille pension alimentaire enfants divorce',
+                'article 190 code de la famille estimation pension alimentaire',
+                'article 168 code de la famille logement enfant garde pension alimentaire',
+                'code de la famille pension alimentaire enfants',
+            ], 'family', ['pension alimentaire', 'enfants', 'juge', 'besoins', 'parents']),
+            $this->profile('unregistered real estate double sale priority', [
+                '/\b(double sale|sold .* two buyers|two buyers|competing buyers|priority between buyers|unregistered property)\b/',
+                '/\b(vente|vendu|vendeur|acheteur|acquereur)\b.*\b(deux acheteurs|priorite|immeuble non immatricule|bien non immatricule|non immatricule)\b/',
+                '/\b(ar real estate double sale priority|double vente immobiliere non immatriculee)\b/',
+            ], [
+                'code des droits reels propriete immobiliere non immatriculee',
+                'propriete fonciere conflit entre acquereurs',
+                'immeuble non immatricule deux acquereurs priorite',
+                'possession propriete immobiliere non immatriculee',
+                'action en revendication propriete immobiliere',
+            ], 'realEstate', ['vente immobiliere', 'immeuble non immatricule', 'deux acquereurs', 'priorite', 'propriete fonciere', 'possession', 'revendication']),
+            $this->profile('property possession or ownership claim', [
+                '/\b(property possession|ownership claim|possessory action|action en revendication|revendication immobiliere|possession immobiliere)\b/',
+                '/\b(ar property possession|ar ownership claim|hiyaza property|istihqaq property)\b/',
+            ], [
+                'code des droits reels possession propriete immobiliere',
+                'action en revendication propriete immobiliere',
+                'revendication droit de propriete',
+                'possession immeuble non immatricule',
+            ], 'realEstate', ['possession', 'revendication', 'droit de propriete', 'propriete immobiliere', 'immeuble non immatricule']),
+            $this->profile('property preemption source coverage check', [
+                '/\b(property preemption source coverage|right of pre-emption|right of preemption|droit de preemption|preemption immobiliere)\b/',
+            ], [
+                'droit de preemption propriete immobiliere',
+                'preemption immobiliere',
+                'right of pre-emption property',
+            ], 'realEstate', ['preemption', 'droit de preemption', 'propriete immobiliere']),
+            $this->profile('land registration opposition', [
+                '/\b(opposition|oppose|land registration|immatriculation fonciere|titre foncier|bornage)\b/',
+                '/\b(article 24 immatriculation fonciere)\b/',
+            ], [
+                'article 24 immatriculation fonciere opposition delai deux mois bornage',
+                'article 31 immatriculation fonciere opposition requérant',
+                'immatriculation fonciere opposition avis cloture bornage',
+            ], 'realEstate', ['opposition', 'immatriculation', 'bornage', 'titre foncier', 'delai deux mois']),
+            $this->profile('coownership syndic designation', [
+                '/\b(copropriete|coownership|co-ownership|syndic|assemblee generale)\b/',
+            ], [
+                'article 19 statut de la copropriete des immeubles batis syndic majorite trois quarts',
+                'article 13 statut de la copropriete des immeubles batis syndicat personnalite morale',
+                'article 16 ter statut de la copropriete assemblee generale',
+                'statut de la copropriete des immeubles batis syndic',
+            ], 'realEstate', ['copropriete', 'syndic', 'assemblee generale', 'majorite', 'trois quarts']),
+            $this->profile('civil procedure appeal deadline', [
+                '/\b(appeal deadline|civil appeal|appel|delai appel|jugement tribunal de premiere instance)\b/',
+                '/\b(article 134 code de procedure civile)\b/',
+            ], [
+                'article 134 code de procedure civile appel delai trente jours',
+                'code de procedure civile appel jugement tribunal premiere instance',
+            ], 'civilProcedure', ['appel', 'delai', 'trente jours', 'tribunal de premiere instance']),
+            $this->profile('civil procedure territorial jurisdiction', [
+                '/\b(territorially competent|territorial jurisdiction|competence territoriale|defendeur|domicile)\b/',
+                '/\b(procedure civile|matiere civile|poursuivre|poursuit|saisir)\b.*\b(defendeur|domicile|competence territoriale|tribunal)\b/',
+            ], [
+                'article 27 code de procedure civile competence territoriale domicile defendeur',
+                'code de procedure civile tribunal domicile defendeur',
+            ], 'civilProcedure', ['competence territoriale', 'domicile', 'defendeur', 'tribunal']),
+            $this->profile('criminal fraud', [
+                '/\b(fraud|scam|escroquerie|false statements|fausses affirmations|fausses qualites|trompe|tromperie|manoeuvres frauduleuses|obtenir de l argent|obtenir un profit)\b/',
+            ], [
+                'article 540 code penal escroquerie affirmations fallacieuses',
+                'code penal escroquerie profit pecuniaire illegitime',
+            ], 'criminal', ['escroquerie', 'affirmations fallacieuses', 'profit pecuniaire', 'erreur']),
+            $this->profile('workplace criminal theft or breach of trust', [
+                '/\b(employee|employer|worker|salarie|employe|employeur|travailleur)\b.*\b(vol|theft|abus de confiance|detournement|detourne|caisse|soustraction|misappropriation)\b/',
+                '/\b(vol|theft|abus de confiance|detournement|detourne|caisse|soustraction|misappropriation)\b.*\b(employee|employer|worker|salarie|employe|employeur|travailleur)\b/',
+                '/\b(ar workplace criminal misappropriation)\b/',
+            ], [
+                'abus de confiance code penal fonds remis',
+                'detournement de fonds code penal',
+                'soustraction frauduleuse code penal',
+                'vol code penal',
+            ], 'criminal', ['abus de confiance', 'detournement de fonds', 'soustraction frauduleuse', 'vol', 'code penal']),
+            $this->profile('banking professional secrecy', [
+                '/\b(bank secrecy|banking secrecy|professional secrecy|secret professionnel|client information|information client|confidentialite bancaire|information du client)\b/',
+                '/\b(article 180 etablissements de credit)\b/',
+            ], [
+                'article 180 etablissements de credit organismes assimiles secret professionnel',
+                'article 181 etablissements de credit secret professionnel exceptions',
+                'etablissements de credit organismes assimiles secret professionnel',
+            ], 'bankingFinance', ['secret professionnel', 'etablissement de credit', 'client', 'information']),
+            $this->profile('banking credit institution approval', [
+                '/\b(credit institution|etablissement de credit|agrement|agreement|approval|autorisation bancaire|bank approval|recevoir des fonds|accorder des credits)\b/',
+            ], [
+                'article 34 etablissements de credit organismes assimiles agrement avant exercer activite',
+                'article 18 etablissements de credit personne non agreee',
+                'etablissements de credit organismes assimiles agrement bank al maghrib',
+            ], 'bankingFinance', ['agrement', 'etablissement de credit', 'bank al maghrib', 'exercer activite']),
+            $this->profile('sarl commercial status and legal personality', [
+                '/\b(sarl commercial personality|article 2 societe en nom collectif et sarl)\b/',
+                '/\b(sarl|responsabilite limitee)\b.*\b(personnalite morale|commerciale par sa forme|forme commerciale|caractere commercial|commerciale|immatriculation)\b/',
+                '/\b(personnalite morale|commerciale par sa forme|forme commerciale|caractere commercial|immatriculation)\b.*\b(sarl|responsabilite limitee)\b/',
+            ], [
+                'article 2 societe en nom collectif et sarl commerciales par forme personnalite morale immatriculation',
+                'societe en nom collectif et sarl responsabilite limitee personnalite morale',
+                'societe en nom collectif et sarl immatriculation registre commerce',
+            ], 'commercialCompany', ['sarl', 'societe responsabilite limitee', 'personnalite morale', 'immatriculation', 'commerciale par forme']),
+            $this->profile('public debt forced collection', [
+                '/\b(public debt|forced collection|recouvrement force|recouvrement des creances publiques|commandement|saisie|dette publique|creance publique)\b/',
+            ], [
+                'article 39 code de recouvrement des creances publiques commandement saisie vente',
+                'article 1 code de recouvrement des creances publiques definition recouvrement',
+                'article 41 code de recouvrement des creances publiques commandement delai',
+                'code de recouvrement des creances publiques recouvrement force',
+            ], 'tax', ['recouvrement', 'creances publiques', 'commandement', 'saisie', 'vente']),
+            $this->profile('vat refund request', [
+                '/\b(vat refund|tva remboursement|remboursement de tva|remboursement de la tva|remboursement tva|demande de remboursement de tva|demande de remboursement de la tva|depot.*demande.*remboursement.*tva|remboursement.*taxe sur la valeur ajoutee|taxe sur la valeur ajoutee.*remboursement|recuperer.*taxe sur la valeur ajoutee|recuperation tva)\b/',
+            ], [
+                'article 25 application de la taxe sur la valeur ajoutee demande remboursement',
+                'article 10 application de la taxe sur la valeur ajoutee demande remboursement',
+                'application de la taxe sur la valeur ajoutee remboursement',
+            ], 'tax', ['tva', 'remboursement', 'taxe sur la valeur ajoutee', 'demande']),
+            $this->profile('company tax declaration penalty or reassessment', [
+                '/\b(societe|sarl|company|entreprise)\b.*\b(dgi|impot|taxe|tva|declaration fiscale|penalite|majoration|redressement fiscal|sanction fiscale)\b/',
+                '/\b(dgi|impot|taxe|tva|declaration fiscale|penalite|majoration|redressement fiscal|sanction fiscale)\b.*\b(societe|sarl|company|entreprise)\b/',
+                '/\b(ar company tax penalty)\b/',
+            ], [
+                'declaration fiscale societe sanction fiscale',
+                'penalite fiscale majoration societe',
+                'redressement fiscal societe',
+                'impot sur les societes declaration penalite',
+            ], 'tax', ['declaration fiscale', 'sanction fiscale', 'penalite', 'majoration', 'redressement fiscal', 'impot sur les societes']),
+            $this->profile('administrative receipt for request', [
+                '/\b(administrative request|acte administratif|recepisse|receipt|deposit application|demande acte administratif)\b/',
+            ], [
+                'article 10 simplification des procedures formalites administratives recepisse demande acte administratif',
+                'article 12 simplification des procedures formalites administratives recepisse silence administration',
+                'simplification procedures formalites administratives recepisse',
+            ], 'administrative', ['recepisse', 'acte administratif', 'demande', 'administration']),
+            $this->profile('administrative maximum processing delay', [
+                '/\b(maximum delay|processing delay|delai maximal|delai maximum|delai traitement|delai de principe|delai de reponse|traiter une demande|demande administrative|traitement administratif|60 jours|soixante jours|acte administratif)\b/',
+            ], [
+                'article 16 simplification des procedures formalites administratives delai maximum 60 jours',
+                'article 19 simplification des procedures formalites administratives silence administration accord',
+                'simplification procedures formalites administratives delai acte administratif',
+            ], 'administrative', ['delai', '60 jours', 'acte administratif', 'administration']),
             $this->profile('commercial lease eviction', [
                 '/\b(commercial lease|business lease|shop lease|store lease|industrial lease|artisanal lease|business premises|commercial premises|fonds de commerce)\b/',
                 '/\b(local commercial|usage commercial|fonds de commerce|bail commercial|baux commerciaux|industriel|artisanal)\b/',
@@ -325,6 +843,7 @@ class AiReasoningService
                 '/\b(landlord|tenant|rent|rental|lease|evict|eviction|apartment|flat|home|house)\b/',
                 '/\b(bailleur|locataire|loyer|bail|expulsion|eviction|resiliation|habitation)\b/',
             ], [
+                'article 1 recouvrement des loyers',
                 'recouvrement des loyers',
                 'loi 64-99 recouvrement loyers',
                 'bailleur locataire mise en demeure loyer',
@@ -356,8 +875,19 @@ class AiReasoningService
                 'article 509 code penal',
                 'article 510 code penal',
             ], 'criminal'),
+            $this->profile('labor disciplinary hearing before dismissal', [
+                '/\b(disciplinary hearing|hear the employee|hear the worker|before dismissal|audition du salarie|entendre le salarie|procedure disciplinaire|licenciement disciplinaire)\b/',
+                '/\b(procedure)\b.*\b(sanctionner|licenciement|salarie)\b/',
+                '/\b(sanctionner|licenciement)\b.*\b(procedure|audition|entretien|prealable|disciplinaire)\b/',
+                '/\b(faute)\b.*\b(audition|entretien|prealable)\b/',
+                '/\b(entretien prealable|audition prealable)\b/',
+            ], [
+                'article 62 code du travail procedure disciplinaire audition defense',
+                'article 35 code du travail licenciement motif valable',
+                'article 63 code du travail decision licenciement',
+            ], 'labor', ['procedure disciplinaire', 'audition', 'defense', 'salarie', 'licenciement']),
             $this->profile('pregnancy or maternity dismissal', [
-                '/\b(pregnant|pregnancy|maternity|mother|gave birth|birth|medical certificate|staff reduction|reducing staff)\b/',
+                '/\b(pregnant|pregnancy|maternity|gave birth|birth|medical certificate|staff reduction|reducing staff)\b/',
                 '/\b(grossesse|enceinte|maternite|accouchement|certificat medical|reduction du personnel|licenciement economique)\b/',
             ], [
                 'article 159 code du travail grossesse licenciement',
@@ -376,6 +906,9 @@ class AiReasoningService
                 '/\b(licenciement|preavis|salaire|employeur|salarie|contrat de travail)\b/',
             ], [
                 'article 35 code du travail licenciement motif valable',
+                'article 62 code du travail licenciement procedure disciplinaire audition',
+                'article 63 code du travail decision licenciement',
+                'article 64 code du travail decision licenciement motifs',
                 'article 37 code du travail sanction disciplinaire faute non grave',
                 'article 39 code du travail faute grave licenciement',
                 'article 40 code du travail faute grave employeur',
@@ -385,9 +918,6 @@ class AiReasoningService
                 'article 52 code du travail indemnite licenciement',
                 'article 53 code du travail indemnite licenciement anciennete',
                 'article 59 code du travail licenciement abusif indemnites',
-                'article 62 code du travail licenciement',
-                'article 63 code du travail decision licenciement',
-                'article 64 code du travail decision licenciement motifs',
                 'article 65 code du travail action justice licenciement',
             ], 'labor', ['travail', 'salarie', 'employeur', 'licenciement', 'faute grave', 'preavis', 'indemnite', 'decision licenciement']),
             $this->profile('commercial company rules', [
@@ -396,6 +926,7 @@ class AiReasoningService
                 '/\b(sarl|commercial company|register company|shareholder|director)\b/',
                 '/\b(societe|associe|actionnaire|gerant|registre de commerce)\b/',
             ], [
+                'article 37 code de commerce registre de commerce',
                 'societe responsabilite limitee',
                 'societes anonymes actionnaire',
                 'registre de commerce',
@@ -404,23 +935,48 @@ class AiReasoningService
             ], 'commercialCompany'),
             $this->profile('family law', [
                 '/\b(divorce|marriage|custody|inheritance|child support|alimony)\b/',
-                '/\b(divorce|mariage|garde|heritage|succession|pension)\b/',
+                '/\b(divorce|mariage|heritage|succession|pension alimentaire)\b/',
+                '/\b(garde)\b.*\b(enfant|enfants|mere|pere|mineur)\b/',
             ], [
+                'article 84 code de la famille pension alimentaire enfants divorce',
                 'code de la famille divorce',
                 'code de la famille garde',
                 'pension alimentaire',
                 'succession heritage',
                 'mariage code de la famille',
             ], 'family'),
+            $this->profile('sale delivery legal definition', [
+                '/\b(delivery|delivrance|livraison|mise a disposition|mettre la chose|possession sans obstacle)\b.*\b(seller|buyer|sale|sold|vendeur|acheteur|vente|chose vendue)\b/',
+                '/\b(seller|buyer|sale|sold|vendeur|acheteur|vente|chose vendue)\b.*\b(delivery|delivrance|livraison|mise a disposition|mettre la chose|possession sans obstacle)\b/',
+            ], [
+                'article 499 code des obligations et des contrats delivrance possession sans obstacle',
+                'article 498 code des obligations et des contrats obligation de delivrance',
+                'article 500 code des obligations et des contrats choses mobilieres tradition reelle',
+                'code des obligations et des contrats delivrance chose vendue',
+            ], 'civilContracts', ['delivrance', 'possession', 'sans obstacle', 'chose vendue', 'vendeur', 'acheteur']),
             $this->profile('consumer protection', [
-                '/\b(consumer|customer|refund|warranty|seller|defective|product)\b/',
-                '/\b(consommateur|remboursement|garantie|vendeur|defaut|produit)\b/',
+                '/\b(consumer|customer|warranty|defective product|product defect|consumer refund)\b/',
+                '/\b(consommateur|garantie|defaut du produit|produit defectueux|remboursement consommateur)\b/',
             ], [
                 'protection du consommateur garantie',
                 'protection du consommateur remboursement',
                 'information consommateur',
                 'pratiques commerciales consommateur',
             ], 'consumer'),
+            $this->profile('civil debt loan and proof dispute', [
+                '/\b(loan|lent|lend|borrowed|debt|owes|repay|repayment|gift|bank transfer|transfer|whatsapp|message|messages|receipt|proof|evidence)\b/',
+                '/\b(pret|prete|emprunt|dette|creance|rembourser|remboursement|don|virement|preuve|ecrit|messages|whatsapp|reconnaissance de dette)\b/',
+            ], [
+                'article 443 code des obligations et des contrats obligations plus de dix mille dirhams preuve ecrite electronique',
+                'article 448 code des obligations et des contrats preuve testimoniale exceptions',
+                'article 447 code des obligations et des contrats commencement de preuve par ecrit',
+                'article 404 code des obligations et des contrats moyens de preuve aveu preuve ecrite presomption',
+                'article 401 code des obligations et des contrats preuve obligations forme ecrite',
+                'article 399 code des obligations et des contrats preuve obligation',
+                'preuve obligation dette reconnaissance de dette',
+                'pret remboursement preuve virement bancaire messages whatsapp',
+                'don ou pret charge de la preuve obligation restituer',
+            ], 'civilContracts', ['preuve', 'obligation', 'dette', 'creance', 'pret', 'remboursement', 'virement', 'ecrit', 'aveu', 'commencement de preuve']),
             $this->profile('renovation or construction work contract', [
                 '/\b(renovation|construction|repair|repairs|building work|work contract|works contract|travaux|ouvrage|chantier)\b.*\b(contract|contractor|builder|price|cost|material|materials|quote|estimate|devis|terminate|cancel|increase)\b/',
                 '/\b(contract|contractor|builder|price|cost|material|materials|quote|estimate|devis|terminate|cancel|increase)\b.*\b(renovation|construction|repair|repairs|building work|works contract|travaux|ouvrage|chantier)\b/',
@@ -439,9 +995,13 @@ class AiReasoningService
             $this->profile('sale contract with missing or partial delivery', [
                 '/\b(sale|sold|sells|seller|buyer|bought|purchase|paid|payment|price|order)\b.*\b(deliver|delivery|delivered|received|receives|missing|partial|only|quantity|goods|products|items|laptops)\b/',
                 '/\b(deliver|delivery|delivered|received|receives|missing|partial|only|quantity|goods|products|items|laptops)\b.*\b(sale|sold|sells|seller|buyer|bought|purchase|paid|payment|price|order)\b/',
+                '/\b(sale|sell|sells|sold|seller|buyer|bought|purchase|contract)\b.*\b(refuses? to pay|refuse payment|does not pay|did not pay|unpaid|payment refused|price)\b/',
+                '/\b(refuses? to pay|refuse payment|does not pay|did not pay|unpaid|payment refused)\b.*\b(sale|sell|sells|sold|seller|buyer|bought|purchase|contract)\b/',
                 '/\b(vente|vendu|vendeur|acheteur|prix|paiement)\b.*\b(delivrance|livraison|reception|quantite|partielle|marchandise|produit)\b/',
                 '/\b(delivrance|livraison|reception|quantite|partielle|marchandise|produit)\b.*\b(vente|vendu|vendeur|acheteur|prix|paiement)\b/',
+                '/\b(vente|vendeur|acheteur|contrat)\b.*\b(refus de payer|ne paie pas|impaye|prix)\b/',
             ], [
+                'article 230 code des obligations et des contrats force obligatoire contrat',
                 'article 488 code des obligations et des contrats vente',
                 'article 491 code des obligations et des contrats propriete chose vendue',
                 'article 494 code des obligations et des contrats vente compte mesure',
@@ -452,13 +1012,18 @@ class AiReasoningService
                 'article 502 code des obligations et des contrats lieu delivrance',
                 'article 504 code des obligations et des contrats paiement delivrance',
                 'article 259 code des obligations et des contrats resolution dommages interets',
-            ], 'civilContracts', ['vente', 'acheteur', 'vendeur', 'delivrance', 'chose vendue', 'prix', 'paiement', 'compte', 'mesure', 'reception']),
+            ], 'civilContracts', ['vente', 'acheteur', 'vendeur', 'delivrance', 'chose vendue', 'prix', 'paiement', 'contrat', 'obligations', 'compte', 'mesure', 'reception']),
             $this->profile('sale ownership and heirs dispute', [
-                '/\b(sold|sale|bought|buyer|seller|paid|payment|price)\b.*\b(car|vehicle|ownership|owner|registration|registered|heirs|inherit|inherited)\b/',
-                '/\b(car|vehicle|ownership|owner|registration|registered|heirs|inherit|inherited)\b.*\b(sold|sale|bought|buyer|seller|paid|payment|price)\b/',
-                '/\b(vente|vendu|acheteur|vendeur|prix)\b.*\b(propriete|possession|heritier|succession|vehicule|immatriculation|carte grise)\b/',
-                '/\b(propriete|possession|heritier|succession|vehicule|immatriculation|carte grise)\b.*\b(vente|vendu|acheteur|vendeur|prix)\b/',
+                '/\b(sell|sells|sold|sale|bought|buyer|seller|paid|payment|price)\b.*\b(car|vehicle|ownership|owner|registration|registered|heirs|inherit|inherited)\b/',
+                '/\b(car|vehicle|ownership|owner|registration|registered|heirs|inherit|inherited)\b.*\b(sell|sells|sold|sale|bought|buyer|seller|paid|payment|price)\b/',
+                '/\b(vente|vendu|achete|acheteur|vendeur|prix|paye|paiement)\b.*\b(propriete|possession|heritier|heritiers|succession|decede|deces|vehicule|voiture|immatriculation|carte grise)\b/',
+                '/\b(propriete|possession|heritier|heritiers|succession|decede|deces|vehicule|voiture|immatriculation|carte grise)\b.*\b(vente|vendu|achete|acheteur|vendeur|prix|paye|paiement)\b/',
             ], [
+                'article 488 code des obligations et des contrats vente',
+                'article 491 code des obligations et des contrats propriete chose vendue',
+                'article 499 code des obligations et des contrats delivrance possession',
+                'article 500 code des obligations et des contrats choses mobilieres',
+                'article 229 code des obligations et des contrats heritiers ayants cause',
                 'code des obligations et des contrats vente parfaite consentement chose prix',
                 'code des obligations et des contrats acheteur acquiert propriete chose vendue consentement',
                 'code des obligations et des contrats chose vendue avant delivrance',
@@ -467,7 +1032,7 @@ class AiReasoningService
                 'code des obligations et des contrats paiement delivrance vendeur acheteur',
                 'code des obligations et des contrats heritiers ayants cause obligations',
                 'code des obligations et des contrats enregistrement tiers',
-            ], 'civilContracts', ['vente', 'acheteur', 'vendeur', 'propriete', 'delivrance', 'possession', 'heritier', 'ayants cause']),
+            ], 'civilContracts', ['vente', 'consentement', 'chose', 'prix', 'acheteur', 'vendeur', 'propriete', 'delivrance', 'possession', 'heritier', 'heritiers', 'ayants cause']),
         ];
     }
 
@@ -479,6 +1044,98 @@ class AiReasoningService
             'searchQueries' => $searchQueries,
             'relevanceTerms' => $relevanceTerms,
         ], self::SOURCE_DOMAINS[$domain]);
+    }
+
+    private function buildBankingApprovalAnswer(string $question, array $citations, string $language): ?string
+    {
+        $normalized = $this->normalizeText($question);
+
+        if (!preg_match('/\b(agrement|etablissement de credit|credit institution|recevoir des fonds|accorder des credits)\b/', $normalized)) {
+            return null;
+        }
+
+        $article34 = $this->findCitationMarker($citations, 'Article 34', 'Etablissements de credit et organismes assimiles');
+        $article18 = $this->findCitationMarker($citations, 'Article 18', 'Etablissements de credit et organismes assimiles');
+
+        if (!$article34) {
+            return null;
+        }
+
+        if ($language === 'fr') {
+            return implode(' ', array_filter([
+                'A. Faits importants: la question porte sur une personne morale qui voudrait exercer une activité d’établissement de crédit au Maroc sans agrément préalable.',
+                'B. Questions juridiques: l’agrément préalable est-il obligatoire avant l’exercice de cette activité ?',
+                "C. Articles applicables: Article 34 {$article34}".($article18 ? "; Article 18 {$article18}" : '').'.',
+                "D. Analyse des faits: Article 34 impose l’agrément du wali de Bank Al-Maghrib avant qu’une personne morale exerce une activité d’établissement de crédit au Maroc {$article34}.",
+                $article18 ? "Article 18 complète cette règle en interdisant à une personne non agréée d’effectuer les opérations réservées par la loi aux établissements de crédit {$article18}." : '',
+                'E. Arguments de chaque partie: la personne morale ne peut soutenir l’absence d’agrément que si son activité ne relève pas des opérations réservées aux établissements de crédit.',
+                "F. Preuves importantes: il faut vérifier l’activité réellement exercée, les opérations proposées au public, et l’existence ou non d’un agrément {$article34}.",
+                "G. Conclusion probable: sans agrément préalable, l’exercice comme établissement de crédit n’est pas conforme à la règle posée par Article 34 {$article34}.",
+                'H. Limites / informations manquantes: il faut qualifier précisément les opérations exercées pour confirmer qu’elles relèvent bien du régime des établissements de crédit.',
+            ]));
+        }
+
+        return null;
+    }
+
+    private function buildLaborDisciplinaryProcedureAnswer(string $question, array $citations, string $language): ?string
+    {
+        $normalized = $this->normalizeText($question);
+
+        if (!preg_match('/\b(procedure|sanctionner|audition|entretien|prealable|disciplinaire|licenciement disciplinaire|hear the employee)\b/', $normalized)) {
+            return null;
+        }
+
+        $article62 = $this->findCitationMarker($citations, 'Article 62', 'Code du travail');
+        $article35 = $this->findCitationMarker($citations, 'Article 35', 'Code du travail');
+        $article63 = $this->findCitationMarker($citations, 'Article 63', 'Code du travail');
+
+        if (!$article62) {
+            return null;
+        }
+
+        if ($language === 'fr') {
+            return implode(' ', array_filter([
+                'A. Faits importants: l’employeur envisage une sanction pouvant aller jusqu’au licenciement.',
+                'B. Questions juridiques: quelle procédure disciplinaire doit être respectée avant le licenciement ?',
+                "C. Articles applicables: Article 62 {$article62}".($article35 ? "; Article 35 {$article35}" : '').($article63 ? "; Article 63 {$article63}" : '').'.',
+                "D. Analyse des faits: Article 62 est la règle centrale: avant une sanction disciplinaire lourde, le salarié doit être entendu et pouvoir se défendre selon la procédure prévue {$article62}.",
+                $article35 ? "Article 35 reste utile sur le fond: le licenciement doit reposer sur un motif valable {$article35}." : '',
+                $article63 ? "Article 63 devient utile ensuite pour la notification et la justification de la décision de licenciement {$article63}." : '',
+                "E. Arguments de chaque partie: l’employeur invoquera la faute et la procédure suivie; le salarié pourra contester l’absence d’audition, l’absence de défense ou l’insuffisance du motif {$article62}.",
+                "F. Preuves importantes: convocation, procès-verbal d’audition, présence d’un représentant ou délégué quand applicable, et notification écrite sont les pièces clés {$article62}.",
+                "G. Conclusion probable: l’employeur doit respecter la procédure d’audition et de défense avant le licenciement disciplinaire; sinon la régularité de la sanction est fragile {$article62}.",
+                'H. Limites / informations manquantes: il faut connaître la date des faits, la convocation, le procès-verbal et le motif écrit retenu.',
+            ]));
+        }
+
+        return null;
+    }
+
+    private function buildArabicTheftDefinitionAnswer(string $question, array $citations, string $language): ?string
+    {
+        if ($language !== 'ar' || !preg_match('/سرقة|السرقة|اختلاس|مال الغير|مملوك للغير/u', $question)) {
+            return null;
+        }
+
+        $article505 = $this->findCitationMarker($citations, 'Article 505', 'Code penal');
+        $article506 = $this->findCitationMarker($citations, 'Article 506', 'Code penal');
+
+        if (!$article505) {
+            return null;
+        }
+
+        return implode(' ', array_filter([
+            'أ. الوقائع المهمة: السؤال يطلب تعريف السرقة وتحديد الفصل القانوني المناسب.',
+            'ب. الأسئلة القانونية: ما هو النص الأساسي الذي يعرف السرقة في القانون الجنائي المغربي؟',
+            "ج. المواد القابلة للتطبيق: Article 505 {$article505}".($article506 ? "؛ Article 506 {$article506}" : '').'.',
+            "د. تحليل الوقائع: الفصل الأساسي هو Article 505، لأنه يتناول فعل اختلاس مال مملوك للغير ويجعله سرقة متى توافرت عناصره {$article505}.",
+            $article506 ? "Article 506 قد يصبح مفيدا فقط إذا كانت الوقائع تدخل في الحالة الخاصة التي يعالجها ذلك الفصل، لذلك لا يجب استعماله بدل Article 505 إلا بعد معرفة تفاصيل الواقعة {$article506}." : '',
+            "هـ. حجج كل طرف: جهة الاتهام تحتاج إلى إثبات فعل الاختلاس وأن المال مملوك للغير؛ والدفاع قد ينازع في الملكية أو القصد أو واقعة الأخذ {$article505}.",
+            "و. الأدلة المهمة: الملكية، الحيازة، طريقة الأخذ، القصد، والشهود أو المحاضر عناصر مهمة لتكييف الواقعة كسرقة {$article505}.",
+            "ز. الخلاصة المحتملة: إذا كان السؤال فقط عن التعريف والفصل المناسب، فالنقطة الأولى هي Article 505 (soustrait frauduleusement) من Code penal {$article505}.",
+            'ح. الحدود / المعلومات الناقصة: تحديد العقوبة أو الظروف المشددة يحتاج وقائع إضافية مثل طريقة ارتكاب الفعل وقيمة المال والظروف المحيطة.',
+        ]));
     }
 
     private function buildFactExtractionAnswer(string $question): ?string
@@ -855,7 +1512,7 @@ class AiReasoningService
     private function buildSaleOwnershipAnswer(string $question, array $citations, string $language = 'en'): ?string
     {
         $normalized = $this->normalizeText($question);
-        $hasSaleFacts = preg_match('/\b(sold|sale|bought|buyer|seller|paid|payment|price|vente|vendu|acheteur|vendeur|prix)\b/', $normalized);
+        $hasSaleFacts = preg_match('/\b(sell|sells|sold|sale|bought|buyer|seller|paid|payment|price|vente|vendu|achete|acheteur|vendeur|paye|paiement|prix)\b/', $normalized);
         $hasOwnershipFacts = preg_match('/\b(ownership|owner|registration|registered|heirs|inherit|inherited|car|vehicle|propriete|possession|heritier|succession|vehicule|immatriculation|carte grise)\b/', $normalized);
 
         if (!$hasSaleFacts || !$hasOwnershipFacts) {
@@ -892,6 +1549,67 @@ class AiReasoningService
         ])));
     }
 
+    private function buildCivilDebtProofAnswer(string $question, array $citations, string $language = 'en'): ?string
+    {
+        $normalized = $this->normalizeText($question);
+        $hasTransfer = preg_match('/\b(bank transfer|transfer|transferred|wire|sent money|paid|payment|virement|versement|paiement|100\s*000|100000|mad|dirhams?)\b/', $normalized);
+        $hasDebtDispute = preg_match('/\b(loan|lent|lend|borrowed|debt|owes|repay|repayment|gift|donation|cousin|friend|family|whatsapp|message|messages|receipt|proof|evidence|pret|prete|emprunt|dette|creance|rembourser|remboursement|don|preuve|ecrit|reconnaissance de dette)\b/', $normalized);
+
+        if (!$hasTransfer || !$hasDebtDispute) {
+            return null;
+        }
+
+        $doc = 'Code des Obligations et des Contrats';
+        $article399 = $this->findCitationMarker($citations, 'Article 399', $doc);
+        $article401 = $this->findCitationMarker($citations, 'Article 401', $doc);
+        $article404 = $this->findCitationMarker($citations, 'Article 404', $doc);
+        $article443 = $this->findCitationMarker($citations, 'Article 443', $doc);
+        $article447 = $this->findCitationMarker($citations, 'Article 447', $doc);
+
+        if (!$article399 || (!$article404 && !$article443 && !$article447)) {
+            return null;
+        }
+
+        $amount = preg_match('/\b\d{1,3}(?:[,\s.]\d{3})*(?:\s*(?:mad|dirhams?))\b/i', $question, $amountMatch)
+            ? trim($amountMatch[0])
+            : ($language === 'fr' ? 'la somme transferee' : 'the transferred amount');
+        $hasEmailEvidence = (bool) preg_match('/\b(email|emails|courriel|courriels)\b/', $normalized);
+        $hasMessageEvidence = (bool) preg_match('/\b(whatsapp|text|texts|message|messages|sms)\b/', $normalized);
+        if ($hasEmailEvidence && $hasMessageEvidence) {
+            $evidence = $language === 'fr' ? 'des virements bancaires et des messages ou emails' : 'bank transfers and written electronic messages or emails';
+        } elseif ($hasEmailEvidence) {
+            $evidence = $language === 'fr' ? 'des virements bancaires et des emails' : 'bank transfers and emails';
+        } elseif ($hasMessageEvidence) {
+            $evidence = $language === 'fr' ? 'des virements bancaires et des messages electroniques' : 'bank transfers and electronic messages';
+        } else {
+            $evidence = $language === 'fr' ? 'des preuves de transfert et tout ecrit disponible' : 'transfer records and any available writing';
+        }
+        $claimant = preg_match('/\b(heir|heirs|estate|succession|heritier|heritiers)\b/', $normalized)
+            ? ($language === 'fr' ? 'la partie qui soutient que le transfert etait un pret a restituer' : 'the party claiming the transfer was a repayable loan')
+            : ($language === 'fr' ? 'la personne qui reclame le remboursement' : 'the person claiming repayment');
+        $recipient = $language === 'fr' ? 'le beneficiaire du transfert' : 'the transfer recipient';
+
+        if ($language === 'fr') {
+            return implode(' ', array_values(array_filter([
+                "A. Faits importants: vous indiquez un transfert de {$amount}, une contestation entre pret remboursable et aide ou don, et {$evidence}. B. Questions juridiques: la question centrale est la preuve d'une obligation de remboursement, pas le droit des cheques ni l'identite nationale.",
+                "C. Articles applicables: l'article 399 place la charge de prouver l'obligation sur celui qui s'en prevaut {$article399}. ".($article404 ? "L'article 404 enumere les moyens legaux de preuve, notamment l'aveu, la preuve ecrite, la presomption et le serment {$article404}. " : '').($article443 ? "Pour une obligation depassant 10.000 dirhams, l'article 443 rend la preuve ecrite centrale, y compris sous forme electronique ou transmise electroniquement {$article443}. " : '').($article447 ? "L'article 447 peut aider si les ecrits ou messages constituent un commencement de preuve par ecrit rendant la dette plausible {$article447}." : ''),
+                "D. Analyse des faits: le virement bancaire prouve surtout le transfert d'argent; il ne prouve pas automatiquement que c'etait un pret. Les ecrits ou messages deviennent donc decisifs s'ils montrent une demande de remboursement, une promesse de payer, le mot pret, une date de remboursement, ou une reconnaissance de dette.",
+                "E. Arguments: {$claimant} dira que les fonds etaient remboursables; {$recipient} dira que le transfert etait une aide ou un don. Pour un montant superieur a 10.000 dirhams, la position la plus solide dependra d'ecrits, d'aveux ou de messages qui rendent l'obligation de remboursement claire.",
+                "F. Preuves importantes: conservez les recus de virement, emails, messages, dates, contexte du transfert, demandes de remboursement, reponses, temoins eventuels, et toute reconnaissance ecrite. G. Conclusion probable: si les ecrits sont ambigus, les sources imposent la prudence; s'ils montrent un pret ou une promesse de remboursement, vous avez une base de preuve civile beaucoup plus forte.",
+                "H. Limites / informations manquantes: les extraits retrouves donnent les regles de preuve; ils ne tranchent pas encore la procedure exacte, le tribunal competent, les delais ou la strategie de mise en demeure.",
+            ])));
+        }
+
+        return implode(' ', array_values(array_filter([
+            "A. Important facts: you describe a money transfer of {$amount}, a dispute between a repayable loan and financial help or a gift, and {$evidence}. B. Legal questions: the central issue is proof of a repayment obligation, not cheque law or ID-card law.",
+            "C. Applicable articles: Article 399 puts the burden of proving an obligation on the person relying on it {$article399}. ".($article404 ? "Article 404 lists legal means of proof, including confession, written proof, presumption, and oath {$article404}. " : '').($article443 ? "For obligations over 10,000 dirhams, Article 443 makes written proof central, including electronic or electronically transmitted writing {$article443}. " : '').($article447 ? "Article 447 may help if the writings or messages qualify as a beginning of written proof that makes the debt plausible {$article447}." : ''),
+            "D. Fact analysis: the bank transfer mainly proves that money moved; it does not automatically prove whether the money was a loan or a gift. Written or electronic messages matter if they show a repayment request, promise to repay, the word loan, a repayment date, or acknowledgement of debt.",
+            "E. Arguments: {$claimant} will argue that the money was repayable; {$recipient} will argue that it was financial help or a gift. For an amount above 10,000 dirhams, the strongest position depends on writings, admissions, or messages that make repayment clear.",
+            "F. Important evidence: keep the transfer receipts, emails, messages, dates, stated reason for the transfer, repayment requests, replies, possible witnesses, and any written acknowledgement. G. Probable conclusion: if the writings are ambiguous, the retrieved proof rules require caution; if they show a loan or promise to repay, the civil-proof basis becomes much stronger.",
+            "H. Limits / missing information: the retrieved excerpts give proof rules; they do not yet decide the exact procedure, competent court, deadlines, or formal notice strategy.",
+        ])));
+    }
+
     private function enforceFactConsistency(string $answer, string $question, ?array $plan, array $citations): string
     {
         $issues = $this->getAnswerFactValidationIssues($answer, $question);
@@ -902,6 +1620,250 @@ class AiReasoningService
 
         return $this->buildEmploymentCaseAnalysisAnswer($question, $citations, true)
             ?? $this->buildFactGroundedFallbackAnswer($question, $plan, $citations);
+    }
+
+    private function verifyCitationSupport(string $answer, array $citations, string $language): string
+    {
+        return $this->answerSupportVerifier()->verify($answer, $citations, $language);
+    }
+
+    private function answerSupportVerifier(): AnswerSupportVerifier
+    {
+        try {
+            return app(AnswerSupportVerifier::class);
+        } catch (Throwable) {
+            return new AnswerSupportVerifier();
+        }
+    }
+
+    private function buildCitationSupportAudit(string $answer, array $citations, string $language): array
+    {
+        if (!$citations) {
+            return [
+                'status' => 'insufficient_sources',
+                'language' => $language,
+                'warnings' => ['no_citations'],
+                'citationCoverage' => [
+                    'riskyClaimCount' => 0,
+                    'supportedRiskyClaimCount' => 0,
+                    'unsupportedRiskyClaimCount' => 0,
+                    'weaklySupportedRiskyClaimCount' => 0,
+                ],
+                'unsupportedClaims' => [],
+                'weaklySupportedClaims' => [],
+                'citationAudits' => [],
+            ];
+        }
+
+        $issues = [];
+        $unsupportedClaims = [];
+        $weaklySupportedClaims = [];
+        $riskyClaimCount = 0;
+        $supportedRiskyClaimCount = 0;
+        $weaklySupportedRiskyClaimCount = 0;
+        $citationTexts = collect($citations)
+            ->mapWithKeys(fn (array $citation, int $index): array => [
+                $index + 1 => $this->normalizeText(implode(' ', array_filter([
+                    $citation['title'] ?? '',
+                    $citation['articleNumber'] ?? '',
+                    $citation['documentTitle'] ?? '',
+                    $citation['content'] ?? '',
+                    $citation['contextContent'] ?? '',
+                    $citation['sourceAuthorityLevel'] ?? '',
+                    implode(' ', (array) ($citation['sourceAuthoritySignals'] ?? [])),
+                    implode(' ', (array) ($citation['supportSignals'] ?? [])),
+                ]))),
+            ])
+            ->all();
+
+        foreach ($this->answerSentences($answer) as $sentence) {
+            $markers = $this->citationMarkersInSentence($sentence, count($citations));
+            $isRiskyClaim = $this->isRiskyLegalClaim($sentence);
+
+            if ($isRiskyClaim) {
+                $riskyClaimCount++;
+            }
+
+            if (!$markers && $isRiskyClaim) {
+                $issues[] = 'unsupported_claim';
+                $unsupportedClaims[] = $this->auditSentenceExcerpt($sentence);
+
+                continue;
+            }
+
+            if (!$markers) {
+                continue;
+            }
+
+            $sentenceTokens = $this->supportTokens($sentence);
+            $hasTextSupport = collect($markers)->contains(function (int $marker) use ($citationTexts, $sentenceTokens): bool {
+                $sourceText = $citationTexts[$marker] ?? '';
+
+                return collect($sentenceTokens)
+                    ->filter(fn (string $token): bool => str_contains($sourceText, $token))
+                    ->count() >= min(2, count($sentenceTokens));
+            });
+
+            $hasStrongCitation = collect($markers)->contains(fn (int $marker): bool => ($citations[$marker - 1]['supportLevel'] ?? 'contextual') !== 'contextual');
+            $hasAuthoritativeCitation = collect($markers)->contains(fn (int $marker): bool => in_array($citations[$marker - 1]['sourceAuthorityLevel'] ?? null, ['official_current', 'current_corpus'], true));
+
+            if (!$hasTextSupport && $isRiskyClaim) {
+                $issues[] = 'weak_sentence_support';
+                $weaklySupportedRiskyClaimCount++;
+                $weaklySupportedClaims[] = $this->auditSentenceExcerpt($sentence);
+            } elseif ($isRiskyClaim) {
+                $supportedRiskyClaimCount++;
+            }
+
+            if (!$hasStrongCitation && $this->isAuthorityClaim($sentence)) {
+                $issues[] = 'contextual_authority';
+                $weaklySupportedClaims[] = $this->auditSentenceExcerpt($sentence);
+            }
+
+            if (!$hasAuthoritativeCitation && $this->isAuthorityClaim($sentence)) {
+                $issues[] = 'weak_source_authority';
+                $weaklySupportedClaims[] = $this->auditSentenceExcerpt($sentence);
+            }
+        }
+
+        $warnings = array_values(array_unique($issues));
+        $status = $this->supportAuditStatus($warnings, $riskyClaimCount, $supportedRiskyClaimCount);
+
+        return [
+            'status' => $status,
+            'language' => $language,
+            'warnings' => $warnings,
+            'citationCoverage' => [
+                'riskyClaimCount' => $riskyClaimCount,
+                'supportedRiskyClaimCount' => $supportedRiskyClaimCount,
+                'unsupportedRiskyClaimCount' => count(array_unique($unsupportedClaims)),
+                'weaklySupportedRiskyClaimCount' => count(array_unique($weaklySupportedClaims)),
+            ],
+            'unsupportedClaims' => array_values(array_unique(array_slice($unsupportedClaims, 0, 8))),
+            'weaklySupportedClaims' => array_values(array_unique(array_slice($weaklySupportedClaims, 0, 8))),
+            'citationAudits' => $this->citationAudits($citations),
+        ];
+    }
+
+    private function supportAuditStatus(array $warnings, int $riskyClaimCount, int $supportedRiskyClaimCount): string
+    {
+        if (in_array('no_citations', $warnings, true) || in_array('unsupported_claim', $warnings, true)) {
+            return 'insufficient_sources';
+        }
+
+        if ($warnings || ($riskyClaimCount > 0 && $supportedRiskyClaimCount < $riskyClaimCount)) {
+            return 'partial_sources';
+        }
+
+        return 'strong_sources';
+    }
+
+    private function citationAudits(array $citations): array
+    {
+        return collect($citations)
+            ->map(fn (array $citation, int $index): array => [
+                'marker' => $index + 1,
+                'articleNumber' => $citation['articleNumber'] ?? null,
+                'documentTitle' => $citation['documentTitle'] ?? null,
+                'supportLevel' => $citation['supportLevel'] ?? null,
+                'supportSignals' => array_values(array_slice((array) ($citation['supportSignals'] ?? []), 0, 8)),
+                'sourceAuthorityLevel' => $citation['sourceAuthorityLevel'] ?? null,
+                'sourceAuthoritySignals' => array_values(array_slice((array) ($citation['sourceAuthoritySignals'] ?? []), 0, 8)),
+                'contextScope' => $citation['contextScope'] ?? null,
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function auditSentenceExcerpt(string $sentence): string
+    {
+        return Str::limit(trim(preg_replace('/\s+/', ' ', $sentence) ?? $sentence), 240, '');
+    }
+
+    private function answerSentences(string $answer): array
+    {
+        return collect(preg_split('/(?<=[.!?])\s+/', $answer) ?: [])
+            ->map(fn (string $sentence): string => trim($sentence))
+            ->filter(fn (string $sentence): bool => Str::length($sentence) >= 25)
+            ->values()
+            ->all();
+    }
+
+    private function citationMarkersInSentence(string $sentence, int $citationCount): array
+    {
+        preg_match_all('/\[(\d+)\]/', $sentence, $matches);
+
+        return collect($matches[1] ?? [])
+            ->map(fn (string $marker): int => (int) $marker)
+            ->filter(fn (int $marker): bool => $marker >= 1 && $marker <= $citationCount)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function supportTokens(string $text): array
+    {
+        $stopWords = [
+            'article', 'code', 'from', 'avec', 'dans', 'pour', 'that', 'this', 'the', 'and', 'les', 'des',
+            'une', 'sur', 'aux', 'son', 'ses', 'est', 'sont', 'peut', 'doit', 'law', 'legal',
+        ];
+
+        return collect(preg_split('/\s+/', $this->normalizeText($text)) ?: [])
+            ->map(fn (string $token): string => trim($token))
+            ->filter(fn (string $token): bool => Str::length($token) >= 5 && !is_numeric($token) && !in_array($token, $stopWords, true))
+            ->unique()
+            ->take(14)
+            ->values()
+            ->all();
+    }
+
+    private function isRiskyLegalClaim(string $sentence): bool
+    {
+        $normalized = $this->normalizeText($sentence);
+
+        if ($this->isSufficiencyOrFactSentence($normalized)) {
+            return false;
+        }
+
+        return (bool) preg_match('/\b(must|shall|required|requires|deadline|days|court|judge|procedure|remedy|compensation|damages|indemnity|dismissal|termination|liability|ownership|valid|invalid|criminal|penalty|file|lawsuit|doit|obligatoire|exige|delai|jours|tribunal|juge|procedure|recours|indemnite|dommages|licenciement|responsabilite|propriete|valable|penal|peine|plainte|action)\b/u', $normalized);
+    }
+
+    private function isAuthorityClaim(string $sentence): bool
+    {
+        $normalized = $this->normalizeText($sentence);
+
+        return (bool) preg_match('/\b(article|law|code|court|legal rule|requires|must|doit|loi|regle|tribunal|exige|oblige|prevoit|dispose)\b/u', $normalized);
+    }
+
+    private function isSufficiencyOrFactSentence(string $normalizedSentence): bool
+    {
+        return (bool) preg_match('/\b(source|sources|insufficient|insuffisantes|missing|manquant|unresolved|non tranche|facts|faits|evidence|preuve|preuves|documents|question|limites|limits)\b/u', $normalizedSentence);
+    }
+
+    private function alreadyContainsSourceWarning(string $answer): bool
+    {
+        return (bool) preg_match('/\b(sources insuffisantes|source sufficiency|retrieved excerpts do not|extraits ne permettent pas)\b/i', $answer);
+    }
+
+    private function sourceSufficiencyWarning(array $issues, string $language): string
+    {
+        $authorityIssue = in_array('weak_source_authority', $issues, true);
+
+        if ($language === 'fr') {
+            return $authorityIssue
+                ? 'Verification des citations: certaines conclusions doivent etre traitees prudemment, car elles s appuient sur des sources faibles, anciennes, legacy ou non explicitement officielles. Pour un usage professionnel, verifiez les textes complets, la version en vigueur et les sources applicables avant de conclure.'
+                : 'Verification des citations: certaines conclusions doivent etre traitees prudemment, car les extraits cites ne soutiennent pas explicitement chaque procedure, delai, recours ou consequence mentionnee. Pour un usage professionnel, verifiez les textes complets et les sources applicables avant de conclure.';
+        }
+
+        if ($language === 'ar') {
+            return $authorityIssue
+                ? 'التحقق من الإحالات: يجب التعامل مع بعض الخلاصات بحذر لأنها تعتمد على مصادر ضعيفة أو قديمة أو legacy أو غير موصوفة صراحة كمصادر رسمية. للاستعمال المهني، تحقق من النصوص الكاملة والنسخة السارية والمصادر القابلة للتطبيق قبل الاعتماد على الخلاصة.'
+                : 'التحقق من الإحالات: يجب التعامل مع بعض الخلاصات بحذر لأن المقتطفات المستشهد بها لا تدعم صراحة كل مسطرة أو أجل أو وسيلة طعن أو أثر مذكور. للاستعمال المهني، تحقق من النصوص الكاملة والمصادر القابلة للتطبيق قبل الاعتماد عليها.';
+        }
+
+        return $authorityIssue
+            ? 'Citation verification: treat some conclusions cautiously because they rely on weak, old, legacy, or not-explicitly-official sources. For professional use, verify the full texts, current version, and applicable sources before relying on the conclusion.'
+            : 'Citation verification: treat some conclusions cautiously because the cited excerpts do not explicitly support every procedure, deadline, remedy, or consequence mentioned. For professional use, verify the full texts and applicable sources before relying on the conclusion.';
     }
 
     private function buildFactGroundedFallbackAnswer(string $question, ?array $plan, array $citations): string
@@ -955,12 +1917,20 @@ class AiReasoningService
         $legalIssue = is_array($plan['legal_issues'] ?? null)
             ? collect($plan['legal_issues'])->map(fn (mixed $issue): string => trim((string) $issue))->filter()->implode(' / ')
             : trim((string) ($plan['legalIssue'] ?? $plan['legal_issue'] ?? ''));
+        $facts = collect(is_array($plan['facts'] ?? null) ? $plan['facts'] : [])
+            ->map(fn (mixed $fact): string => trim((string) $fact))
+            ->filter(fn (string $fact): bool => Str::length($fact) >= 3)
+            ->unique(fn (string $fact): string => $this->normalizeText($fact))
+            ->take(12)
+            ->values()
+            ->all();
 
         return [
             'legalIssue' => $legalIssue,
             'reasoningGoal' => trim((string) ($plan['reasoningGoal'] ?? $plan['reasoning_goal'] ?? '')),
             'needsLawSearch' => ($plan['needsLawSearch'] ?? true) !== false,
             'searchQueries' => $searchQueries,
+            'facts' => $facts,
         ];
     }
 
@@ -1046,8 +2016,11 @@ class AiReasoningService
         return implode("\n", array_values(array_filter([
             '['.($index + 1).'] '.($citation['title'] ?? ''),
             ($citation['matchedQuery'] ?? null) ? 'Matched search query: '.$citation['matchedQuery'] : '',
+            ($citation['supportLevel'] ?? null) ? 'Support audit: '.($citation['supportLevel']).' source'.(!empty($citation['supportSignals']) ? ' | matched terms: '.implode(', ', array_slice((array) $citation['supportSignals'], 0, 8)) : '') : '',
+            ($citation['sourceAuthorityLevel'] ?? null) ? 'Source authority: '.$citation['sourceAuthorityLevel'].(!empty($citation['sourceAuthoritySignals']) ? ' | signals: '.implode(', ', array_slice((array) $citation['sourceAuthoritySignals'], 0, 8)) : '') : '',
+            ($citation['contextScope'] ?? null) ? 'Context scope: '.$citation['contextScope'] : '',
             $sourceParts ? 'Source: '.implode(' | ', $sourceParts) : '',
-            'Text: '.Str::limit($this->cleanLawExcerpt($citation['content'] ?? ''), 1200, ''),
+            'Text: '.Str::limit($this->cleanLawExcerpt($citation['contextContent'] ?? $citation['content'] ?? ''), 2800, ''),
         ])));
     }
 
@@ -1141,9 +2114,11 @@ class AiReasoningService
             return '';
         }
 
-        return $language === 'fr'
-            ? "La regle retrouvee la plus proche est ".($source ?: ($citation['title'] ?? 'la premiere citation')).": {$excerpt} [1]."
-            : "The closest retrieved rule is ".($source ?: ($citation['title'] ?? 'the first citation')).": {$excerpt} [1].";
+        return match ($language) {
+            'fr' => "La regle retrouvee la plus proche est ".($source ?: ($citation['title'] ?? 'la premiere citation')).": {$excerpt} [1].",
+            'ar' => "أقرب قاعدة قانونية مسترجعة هي ".($source ?: ($citation['title'] ?? 'الإحالة الأولى')).": {$excerpt} [1].",
+            default => "The closest retrieved rule is ".($source ?: ($citation['title'] ?? 'the first citation')).": {$excerpt} [1].",
+        };
     }
 
     private function findCitationMarker(array $citations, string $articleNumber, string $documentTitle = 'Code du travail'): string
@@ -1413,6 +2388,10 @@ class AiReasoningService
 
     private function detectResponseLanguage(string $message): string
     {
+        if (preg_match('/\p{Arabic}/u', $message) === 1) {
+            return 'ar';
+        }
+
         $raw = Str::lower($message);
         $normalized = $this->normalizeText($message);
         $frenchScore = preg_match('/[a-z]*[àâçéèêëîïôùûüÿœ]/iu', $raw) ? 3 : 0;
@@ -1446,7 +2425,9 @@ class AiReasoningService
 
     private function normalizeText(?string $value): string
     {
-        return Str::of($value ?? '')
+        $value = (string) ($value ?? '');
+
+        return Str::of($value.' '.$this->arabicLegalSignals($value))
             ->lower()
             ->ascii()
             ->replaceMatches('/[-_]+/', ' ')
@@ -1454,6 +2435,175 @@ class AiReasoningService
             ->replaceMatches('/\s+/', ' ')
             ->trim()
             ->toString();
+    }
+
+    private function arabicLegalSignals(string $value): string
+    {
+        if (preg_match('/\p{Arabic}/u', $value) !== 1) {
+            return '';
+        }
+
+        $arabic = $this->normalizeArabicText($value);
+        $signals = [];
+        $add = function (array $terms) use (&$signals): void {
+            array_push($signals, ...$terms);
+        };
+
+        if ($this->containsArabicAny($arabic, ['ذات المسؤولية المحدودة', 'مسؤولية محدودة', 'الشخصية المعنوية', 'شخصية معنوية'])
+            || ($this->containsArabicAny($arabic, ['شركة']) && $this->containsArabicAny($arabic, ['تجارية بشكلها', 'بشكلها', 'معنوية']))) {
+            $add(['sarl commercial personality', 'article 2 societe en nom collectif et sarl']);
+        }
+
+        if ($this->containsArabicAny($arabic, ['مؤسسة ائتمان', 'مؤسسات الائتمان', 'اعتماد مسبق', 'اعتماد'])
+            && $this->containsArabicAny($arabic, ['ائتمان', 'بنك', 'بنكي', 'نشاط'])) {
+            $add(['banking credit institution approval', 'article 34 etablissements de credit organismes assimiles agrement avant exercer activite']);
+        }
+
+        if ($this->containsArabicAny($arabic, ['الضريبة على القيمة المضافة', 'ضريبة القيمة المضافة', 'القيمة المضافة', 'استرجاع الضريبة', 'استرداد الضريبة'])
+            && $this->containsArabicAny($arabic, ['استرجاع', 'استرداد', 'استردادها', 'استرجاعها', 'طلب'])) {
+            $add(['vat refund request', 'article 25 application de la taxe sur la valeur ajoutee demande remboursement']);
+        }
+
+        if ($this->containsArabicAny($arabic, ['تسليم', 'التسليم', 'حيازة المبيع', 'حيازة', 'المبيع'])
+            && $this->containsArabicAny($arabic, ['البائع', 'المشتري', 'عقد البيع', 'البيع', 'قبض الثمن', 'الثمن'])) {
+            $add(['sale delivery legal definition', 'article 499 code des obligations et des contrats delivrance possession sans obstacle']);
+        }
+
+        if ($this->containsArabicAny($arabic, ['باع', 'بيع', 'البائع', 'مشتري', 'مشترين', 'لشخصين', 'شخصين مختلفين'])
+            && $this->containsArabicAny($arabic, ['عقار', 'غير محفظ', 'ملكية', 'الاولويه', 'الأولوية', 'اولوية', 'له الاولويه'])) {
+            $add([
+                'ar real estate double sale priority',
+                'double vente immobiliere non immatriculee',
+                'property ownership dispute competing purchasers unregistered property',
+                'action en revendication propriete immobiliere',
+            ]);
+        }
+
+        if ($this->containsArabicAny($arabic, ['حيازة', 'الحيازة'])
+            && !$this->containsArabicAny($arabic, ['البائع', 'المشتري', 'المبيع', 'عقد البيع', 'البيع'])) {
+            $add(['ar property possession', 'possession propriete immobiliere', 'code des droits reels possession']);
+        }
+
+        if ($this->containsArabicAny($arabic, ['دعوى الاستحقاق', 'الاستحقاق', 'استحقاق العقار'])) {
+            $add(['ar ownership claim', 'action en revendication propriete immobiliere', 'revendication droit de propriete']);
+        }
+
+        if ($this->containsArabicAny($arabic, ['شفعة', 'الشفعة', 'شفيع'])) {
+            $add(['property preemption source coverage', 'droit de preemption propriete immobiliere', 'preemption immobiliere']);
+        }
+
+        if ($this->containsArabicAny($arabic, ['عامل', 'أجير', 'اجير', 'مشغل'])
+            && $this->containsArabicAny($arabic, ['اختلاس', 'سرقة', 'السرقة', 'خيانة الأمانة', 'خيانة الامانة', 'صندوق', 'مال الشركة'])) {
+            $add(['ar workplace criminal misappropriation', 'abus de confiance code penal', 'detournement de fonds code penal', 'vol code penal']);
+        }
+
+        if ($this->containsArabicAny($arabic, ['شركة', 'سارل'])
+            && $this->containsArabicAny($arabic, ['ضريبة', 'الضريبة', 'تصريح ضريبي', 'غرامة', 'مراجعة ضريبية', 'جزاءات ضريبية', 'القيمة المضافة'])) {
+            $add(['ar company tax penalty', 'declaration fiscale societe sanction fiscale', 'penalite fiscale majoration societe', 'redressement fiscal societe']);
+        }
+
+        if ($this->containsArabicAny($arabic, ['مختصة ترابيا', 'اختصاص ترابي', 'الاختصاص الترابي', 'موطن المدعى عليه', 'مدعى عليه', 'مقاضاة'])
+            && $this->containsArabicAny($arabic, ['محكمة', 'موطن', 'ترابيا', 'مقاضاة'])) {
+            $add(['civil procedure territorial jurisdiction', 'article 27 code de procedure civile competence territoriale domicile defendeur']);
+        }
+
+        if (preg_match('/حضان|الأم|الام|تزوج|طلاق|الطلاق/u', $value)) {
+            $add(['ar custody remarriage', 'custody mother remarried divorce', 'article 175 code de la famille garde mere remariage']);
+        }
+
+        if (preg_match('/نفقة|النفق/u', $value)) {
+            $add(['child support alimony pension alimentaire', 'article 85 code de la famille pension alimentaire', 'article 190 code de la famille pension alimentaire']);
+        }
+
+        if (preg_match('/تحفيظ|تعرض|التحديد|الرسم العقاري|مطلب التحفيظ|إعلان انتهاء التحديد|اعلان انتهاء التحديد/u', $value)) {
+            $add(['land registration opposition immatriculation fonciere', 'article 24 immatriculation fonciere opposition bornage']);
+        }
+
+        if (preg_match('/الملكية المشتركة|اتحاد الملاك|سانديك|السنديك|الملكية المشتركة|الجمع العام/u', $value)) {
+            $add(['copropriete syndic assemblee generale', 'article 19 statut de la copropriete syndic']);
+        }
+
+        if (preg_match('/مشغل|أجير|اجير|طرد|فصل من العمل|فصله من العمل|الشغل|مبرر|سبب مشروع/u', $value)) {
+            $add(['employment termination labor dismissal', 'article 35 code du travail licenciement motif valable']);
+        }
+
+        if (preg_match('/استماع|الاستماع|مسطرة تأديبية|مسطره تاديبيه|إجراء تأديبي|اجراء تاديبي|تأديب|تاديب|حق الدفاع/u', $value)) {
+            $add(['labor disciplinary hearing before dismissal', 'article 62 code du travail procedure disciplinaire audition defense']);
+        }
+
+        if (preg_match('/شركة|الشركة|السجل التجاري|نشاط تجاري|تجاري/u', $value)) {
+            $add(['commercial company registration registre de commerce', 'article 37 code de commerce registre de commerce']);
+        }
+
+        if (preg_match('/سارل|ذات المسؤولية المحدودة|الشخصية المعنوية/u', $value)) {
+            $add(['sarl commercial personality', 'article 2 societe en nom collectif et sarl']);
+        }
+
+        if (preg_match('/دين|قرض|سلف|هبة|واتساب|تحويل|حوالة|إثبات|اثبات|100000|100\.000/u', $value)) {
+            $add(['debt loan proof bank transfer whatsapp gift', 'article 443 code des obligations et des contrats preuve ecrite electronique', 'article 448 code des obligations et des contrats preuve testimoniale']);
+        }
+
+        if (preg_match('/استئناف|حكم|المحكمة الابتدائية|ابتدائية/u', $value)) {
+            $add(['civil appeal deadline', 'article 134 code de procedure civile appel delai trente jours']);
+        }
+
+        if (preg_match('/اختصاص|محكمة مختصة|موطن المدعى عليه|المدعى عليه/u', $value)) {
+            $add(['territorial jurisdiction defendant domicile', 'article 27 code de procedure civile competence territoriale domicile defendeur']);
+        }
+
+        if (preg_match('/سرقة|السرقة|مال الغير|مال غيره|أخذ مال|اخذ مال|اختلاس|مملوك للغير|سوء نية/u', $value)) {
+            $add(['criminal theft', 'article 505 code penal vol']);
+        } elseif (preg_match('/احتيالية|احتيال|نصب/u', $value)) {
+            $add(['criminal fraud', 'article 540 code penal escroquerie']);
+        }
+
+        if (preg_match('/السر المهني|سرية|زبناء|الزبناء|كتمان|معلومات الزبون|معطيات زبون|معطيات الزبون/u', $value)) {
+            $add(['banking professional secrecy', 'article 180 etablissements de credit organismes assimiles secret professionnel']);
+        }
+
+        if (preg_match('/تحصيل|جبري|الديون العمومية|ديون عمومية|دين عمومي|استخلاص|الجبائي|جباية|ضرائب/u', $value)) {
+            $add(['public debt forced collection tax', 'article 39 code de recouvrement des creances publiques commandement saisie vente']);
+        }
+
+        if (preg_match('/وصل|وصلا|إيداع|ايداع|تسلم|تسلمني/u', $value)) {
+            $add(['administrative request receipt', 'article 10 simplification des procedures formalites administratives recepisse']);
+        }
+
+        if (preg_match('/أجل|اجل|مدة|مده|مهلة|مهله|60|ستين|معالجة|دراسة الطلب/u', $value)
+            && preg_match('/قرار إداري|قرار اداري|إداري|اداري|الإدارة|الادارة/u', $value)) {
+            $add(['administrative maximum processing delay', 'article 16 simplification des procedures formalites administratives delai maximum 60 jours']);
+        }
+
+        if (preg_match('/قرار إداري|قرار اداري|إداري|اداري|الإدارة|الادارة/u', $value)) {
+            $add(['administrative act simplification procedures formalites administratives']);
+        }
+
+        return implode(' ', array_unique($signals));
+    }
+
+    private function containsArabicAny(string $text, array $terms): bool
+    {
+        foreach ($terms as $term) {
+            if ($term !== '' && str_contains($text, $this->normalizeArabicText($term))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function normalizeArabicText(string $value): string
+    {
+        $value = str_replace(
+            ['أ', 'إ', 'آ', 'ٱ', 'ى', 'ة', 'ؤ', 'ئ'],
+            ['ا', 'ا', 'ا', 'ا', 'ي', 'ه', 'و', 'ي'],
+            $value
+        );
+        $value = preg_replace('/[\x{064B}-\x{065F}\x{0670}]/u', '', $value) ?? $value;
+        $value = preg_replace('/[^\p{Arabic}\p{N}\s]+/u', ' ', $value) ?? $value;
+        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+
+        return trim($value);
     }
 
     private function isEnabled(): bool

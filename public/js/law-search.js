@@ -71,7 +71,11 @@ const renderResults = (payload) => {
   state.results = results;
 
   elements.resultsTitle.textContent = payload.query ? `Results for "${payload.query}"` : "Ready to search";
+  const translatedCount = (payload.searchedQueries || []).length;
   elements.resultCount.textContent = payload.hasMore ? `Top ${payload.limit}` : `${formatNumber(payload.count)} results`;
+  if (translatedCount > 1) {
+    elements.resultCount.textContent += ` | ${translatedCount} searches`;
+  }
   elements.resultsList.innerHTML = "";
 
   if (!results.length) {
@@ -119,12 +123,17 @@ const search = async (query) => {
   setSearchState("Searching...");
   elements.resultsList.innerHTML = "";
 
-  const response = await fetch(`/api/laws/search?q=${encodeURIComponent(normalizedQuery)}`);
+  const mode = "fr";
+  const response = await fetch(`/api/laws/search?q=${encodeURIComponent(normalizedQuery)}&translation_mode=${encodeURIComponent(mode)}`);
   if (!response.ok) {
     throw new Error("Search failed");
   }
 
-  renderResults(await response.json());
+  const payload = await response.json();
+  renderResults(payload);
+  if (payload.translationWarning) {
+    setSearchState(payload.translationWarning);
+  }
 };
 
 const translate = async (lawId, targetLanguage) => {

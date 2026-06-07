@@ -31,6 +31,10 @@ class OfficialBulletinUpdateService
             (bool) ($options['reimportExisting'] ?? false)
         );
         $sources = $this->discoverSources($candidateIds, (int) ($options['timeoutMs'] ?? 8000));
+        $sources = [
+            ...$sources,
+            ...$this->curatedSources($existingIds, (int) ($options['timeoutMs'] ?? 8000), (bool) ($options['reimportExisting'] ?? false), (bool) ($options['curatedCodes'] ?? false)),
+        ];
         $importedSources = [];
         $failures = [];
         $articleCount = 0;
@@ -127,6 +131,8 @@ class OfficialBulletinUpdateService
         foreach ($years as $year) {
             foreach ($fileNames as $fileName) {
                 $urls[] = rtrim(self::BASE_URL, '/')."/{$year}/{$fileName}";
+                $urls[] = "https://www.sgg.gov.ma/BO/fr/{$year}/".strtolower($fileName);
+                $urls[] = "https://www.sgg.gov.ma/Portals/0/Bo/bulletin/Fr/{$year}/{$fileName}";
             }
         }
 
@@ -173,6 +179,44 @@ class OfficialBulletinUpdateService
             'tags' => array_filter(['official-bulletin', 'public-law', 'administration', $year ? (string) $year : null]),
             'timeoutMs' => $timeoutMs,
         ];
+    }
+
+    private function curatedSources(array $existingIds, int $timeoutMs, bool $reimportExisting, bool $enabled): array
+    {
+        if (!$enabled) {
+            return [];
+        }
+
+        $existingSet = array_flip(array_map('intval', $existingIds));
+        $sources = [];
+
+        foreach (config('legal_sources.official_sources.official-bulletins.curated_bulletins', []) as $bulletin) {
+            $bulletinId = (int) ($bulletin['bulletin_id'] ?? 0);
+
+            if ($bulletinId <= 0 || (!$reimportExisting && isset($existingSet[$bulletinId]))) {
+                continue;
+            }
+
+            foreach ((array) ($bulletin['urls'] ?? []) as $url) {
+                if ($this->isReachablePdf((string) $url, $timeoutMs)) {
+                    $sources[] = [
+                        'bulletinId' => $bulletinId,
+                        'documentTitle' => $bulletin['document_title'] ?? "Bulletin officiel n {$bulletinId} - Textes generaux",
+                        'lawReference' => $bulletin['law_reference'] ?? "BO n {$bulletinId}",
+                        'category' => self::CATEGORY,
+                        'sourceName' => self::SOURCE_NAME,
+                        'sourceUrl' => (string) $url,
+                        'language' => 'fr',
+                        'tags' => array_values(array_filter((array) ($bulletin['tags'] ?? ['official-bulletin']))),
+                        'timeoutMs' => $timeoutMs,
+                    ];
+
+                    break;
+                }
+            }
+        }
+
+        return $sources;
     }
 
     private function extractBulletinId(string $value): ?int

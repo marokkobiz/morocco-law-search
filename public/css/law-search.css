@@ -246,7 +246,7 @@ h2 {
 
 .search-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, auto) auto;
   gap: 10px;
   margin-top: 28px;
   padding: 10px;
@@ -256,6 +256,7 @@ h2 {
 }
 
 .search-form input,
+.search-language-select,
 .chat-form textarea {
   width: 100%;
   min-width: 0;
@@ -269,6 +270,16 @@ h2 {
 .search-form input {
   min-height: 52px;
   padding: 0 12px;
+}
+
+.search-language-select {
+  min-height: 52px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--blue);
+  background: var(--blue-soft);
+  font-weight: 900;
 }
 
 .search-form button,
@@ -551,6 +562,7 @@ h2 {
   }
 
   .search-form button,
+  .search-language-select,
   .chat-form button {
     width: 100%;
   }

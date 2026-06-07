@@ -44,4 +44,34 @@ class LawPdfImportServiceTest extends TestCase
         $this->assertContains('2026', $law->tags);
         $this->assertContains('official_bulletin', $law->tags);
     }
+
+    public function test_it_imports_arabic_article_markers(): void
+    {
+        $count = app(LawPdfImportService::class)->importSource([
+            'documentTitle' => 'القانون رقم 31.08 المتعلق بحماية المستهلك',
+            'lawReference' => 'قانون رقم 31.08',
+            'category' => 'official-sgg-consolidated',
+            'sourceName' => 'Secretariat General du Gouvernement - Textes officiels',
+            'sourceUrl' => 'https://www.sgg.gov.ma/Portals/1/textesconsolides/31_08.pdf',
+            'language' => 'ar',
+            'tags' => ['official-sgg', 'ar'],
+            'text' => <<<TEXT
+            المادة الأولى
+            يهدف هذا القانون إلى حماية المستهلك وإعلامه بشكل واضح ومناسب قبل التعاقد.
+            المادة 2
+            يقصد بالمستهلك كل شخص يقتني أو يستعمل منتوجات أو سلعا أو خدمات لحاجياته غير المهنية.
+            TEXT,
+        ]);
+
+        $this->assertSame(2, $count);
+        $this->assertDatabaseHas('laws', [
+            'article_number' => 'Article 1',
+            'language' => 'ar',
+            'source_url' => 'https://www.sgg.gov.ma/Portals/1/textesconsolides/31_08.pdf',
+        ]);
+        $this->assertDatabaseHas('laws', [
+            'article_number' => 'Article 2',
+            'language' => 'ar',
+        ]);
+    }
 }

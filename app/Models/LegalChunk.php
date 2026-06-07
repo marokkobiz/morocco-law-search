@@ -18,6 +18,10 @@ class LegalChunk extends Model
         'tags',
         'checksum',
         'metadata',
+        'embedding',
+        'embedding_model',
+        'embedding_checksum',
+        'embedded_at',
     ];
 
     protected function casts(): array
@@ -25,6 +29,8 @@ class LegalChunk extends Model
         return [
             'tags' => 'array',
             'metadata' => 'array',
+            'embedding' => 'array',
+            'embedded_at' => 'datetime',
         ];
     }
 

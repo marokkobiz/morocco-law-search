@@ -8,10 +8,12 @@ use App\Models\LegalChunk;
 use App\Models\LegalDocument;
 use App\Models\LegalDocumentVersion;
 use App\Models\LegalSource;
+use App\Models\User;
 use App\Services\LawSearchService;
 use App\Services\LegalDomainClassifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class CorpusSearchRetrievalTest extends TestCase
@@ -23,6 +25,14 @@ class CorpusSearchRetrievalTest extends TestCase
         parent::setUp();
 
         Cache::flush();
+        config([
+            'legal_ai.semantic_search.enabled' => true,
+            'legal_ai.semantic_search.min_score' => 0.55,
+            'legal_ai.embeddings.model' => env('OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text'),
+        ]);
+        $this->actingAs(User::factory()->create([
+            'access_status' => 'active',
+        ]));
     }
 
     public function test_search_returns_corpus_chunks_with_source_metadata(): void
@@ -58,7 +68,7 @@ class CorpusSearchRetrievalTest extends TestCase
         $this->assertArrayHasKey('legal_document_version_id', $result);
     }
 
-    public function test_normal_search_keeps_legacy_behavior_and_visible_detailed_categories(): void
+    public function test_normal_search_uses_active_corpus_when_available(): void
     {
         Law::create([
             'title' => 'Financial market rule',
@@ -81,14 +91,244 @@ class CorpusSearchRetrievalTest extends TestCase
 
         $this->getJson('/api/laws/search?q=market visible phrase')
             ->assertOk()
-            ->assertJsonPath('results.0.source_table', 'legacy_laws')
-            ->assertJsonPath('results.0.category', 'financial-market')
-            ->assertJsonMissing(['source_table' => 'corpus']);
+            ->assertJsonPath('results.0.source_table', 'corpus')
+            ->assertJsonPath('results.0.category', 'tax');
 
         $this->getJson('/api/laws/overview')
             ->assertOk()
             ->assertJsonPath('totalCategories', 1)
-            ->assertJsonPath('categories.0.category', 'financial-market');
+            ->assertJsonPath('categories.0.category', 'tax');
+    }
+
+    public function test_normal_search_excludes_official_bulletin_noise(): void
+    {
+        $this->createCorpusArticle([
+            'source_name' => 'Bulletin Officiel',
+            'source_type' => 'BO',
+            'document_title' => 'Bulletin officiel n 7000',
+            'document_type' => 'BO',
+            'domain' => 'official_bulletin',
+            'article_number' => 'Article 1',
+            'article_title' => 'Bulletin commerce notice',
+            'article_content' => 'commerce priority phrase from a bulletin notice.',
+            'chunk_content' => 'commerce priority phrase from a bulletin notice.',
+        ]);
+
+        $this->createCorpusArticle([
+            'source_name' => 'Official code source',
+            'source_type' => 'code',
+            'document_title' => 'Code de commerce',
+            'document_type' => 'code',
+            'domain' => 'commercial_company',
+            'article_number' => 'Article 2',
+            'article_title' => 'Commerce rule',
+            'article_content' => 'commerce priority phrase from commercial law.',
+            'chunk_content' => 'commerce priority phrase from commercial law.',
+        ]);
+
+        $response = $this->getJson('/api/laws/search?q=commerce%20priority%20phrase')
+            ->assertOk()
+            ->assertJsonPath('results.0.document_title', 'Code de commerce');
+
+        $titles = collect($response->json('results'))->pluck('document_title')->implode(' | ');
+        $categories = collect($response->json('results'))->pluck('category')->implode(' | ');
+
+        $this->assertStringNotContainsString('Bulletin officiel', $titles);
+        $this->assertStringNotContainsString('official_bulletin', $categories);
+    }
+
+    public function test_commercial_shortcut_prefers_code_de_commerce_over_side_domains(): void
+    {
+        $this->createCorpusArticle([
+            'source_name' => 'Adala',
+            'source_type' => 'code',
+            'document_title' => 'Code de commerce',
+            'document_type' => 'code',
+            'domain' => 'commercial_company',
+            'article_number' => 'Article 1',
+            'article_title' => 'Commercial code rule',
+            'article_content' => 'Code de commerce commercial rule for traders.',
+            'chunk_content' => 'Code de commerce commercial rule for traders.',
+        ]);
+
+        $this->createCorpusArticle([
+            'source_name' => 'Adala',
+            'source_type' => 'code',
+            'document_title' => "Agence nationale de gestion strategique des participations de l'Etat",
+            'document_type' => 'loi',
+            'domain' => 'public_enterprises',
+            'tags' => ['public_enterprises', 'state_participations', 'commercial_company'],
+            'article_number' => 'Article 1',
+            'article_title' => 'Public enterprises',
+            'article_content' => 'Entreprises publiques et participations de l Etat.',
+            'chunk_content' => 'Entreprises publiques et participations de l Etat.',
+        ]);
+
+        $this->getJson('/api/laws/search?q='.rawurlencode('Droit commercial Code de commerce'))
+            ->assertOk()
+            ->assertJsonPath('searchedQueries.0', 'Code de commerce')
+            ->assertJsonPath('results.0.document_title', 'Code de commerce')
+            ->assertJsonPath('results.0.matched_query', 'Code de commerce');
+    }
+
+    public function test_penal_shortcut_prefers_code_penal_over_articles_that_only_mention_penal(): void
+    {
+        $this->createCorpusArticle([
+            'source_name' => 'Adala',
+            'source_type' => 'code',
+            'document_title' => 'Code de commerce',
+            'document_type' => 'code',
+            'domain' => 'commercial_company',
+            'article_number' => 'Article 67',
+            'article_title' => 'Recidive commerciale',
+            'article_content' => 'Independamment des regles posees par le code penal, cette disposition commerciale prevoit une recidive.',
+            'chunk_content' => 'Independamment des regles posees par le code penal, cette disposition commerciale prevoit une recidive.',
+        ]);
+
+        $this->createCorpusArticle([
+            'source_name' => 'Adala',
+            'source_type' => 'code',
+            'document_title' => 'Code penal',
+            'document_type' => 'code',
+            'domain' => 'criminal',
+            'article_number' => 'Article 1',
+            'article_title' => 'Loi penale',
+            'article_content' => 'La loi penale determine les infractions et les peines.',
+            'chunk_content' => 'La loi penale determine les infractions et les peines.',
+        ]);
+
+        $this->getJson('/api/laws/search?q='.rawurlencode('Droit penal'))
+            ->assertOk()
+            ->assertJsonPath('searchedQueries.0', 'Code penal')
+            ->assertJsonPath('results.0.document_title', 'Code penal')
+            ->assertJsonPath('results.0.matched_query', 'Code penal');
+    }
+
+    public function test_overview_radar_excludes_official_bulletins_as_normal_domains(): void
+    {
+        $this->createCorpusArticle([
+            'source_name' => 'Bulletin Officiel',
+            'source_type' => 'BO',
+            'document_title' => 'Bulletin officiel n 7000',
+            'document_type' => 'BO',
+            'domain' => 'official_bulletin',
+            'article_number' => 'Article 1',
+            'article_content' => 'Bulletin entry.',
+            'chunk_content' => 'Bulletin entry.',
+        ]);
+
+        $this->createCorpusArticle([
+            'document_title' => 'Code de commerce',
+            'domain' => 'commercial_company',
+            'article_number' => 'Article 2',
+            'article_content' => 'Commercial rule.',
+            'chunk_content' => 'Commercial rule.',
+        ]);
+
+        $response = $this->getJson('/api/laws/overview')
+            ->assertOk()
+            ->assertJsonPath('totalCategories', 1)
+            ->assertJsonPath('categories.0.category', 'commercial_company');
+
+        $domains = collect($response->json('categories'))->pluck('category')->implode(' | ');
+
+        $this->assertStringNotContainsString('official_bulletin', $domains);
+    }
+
+    public function test_explicit_official_bulletin_search_still_works(): void
+    {
+        $this->createCorpusArticle([
+            'source_name' => 'Bulletin Officiel',
+            'source_type' => 'BO',
+            'document_title' => 'Bulletin officiel n 7000',
+            'document_type' => 'BO',
+            'domain' => 'official_bulletin',
+            'article_number' => 'Article 1',
+            'article_title' => 'Published notice',
+            'article_content' => 'Official bulletin published notice.',
+            'chunk_content' => 'Official bulletin published notice.',
+        ]);
+
+        $this->getJson('/api/laws/search?q=bulletin%20officiel')
+            ->assertOk()
+            ->assertJsonPath('results.0.document_title', 'Bulletin officiel n 7000')
+            ->assertJsonPath('results.0.source_type', 'BO');
+    }
+
+    public function test_arabic_custody_question_routes_to_family_code_search(): void
+    {
+        $this->createCorpusArticle([
+            'document_title' => 'Code de la famille',
+            'document_type' => 'code',
+            'domain' => 'family_marriage_divorce',
+            'subdomain' => 'custody_support',
+            'article_number' => 'Article 175',
+            'article_title' => 'Garde et remariage de la mere',
+            'article_content' => 'La garde de l enfant et le remariage de la mere gardienne sont apprecies selon l interet de l enfant.',
+            'chunk_content' => 'garde enfant mere gardienne remariage divorce interet de l enfant.',
+        ]);
+        $this->createCorpusArticle([
+            'document_title' => 'Code des Obligations et des Contrats',
+            'document_type' => 'code',
+            'domain' => 'civil_obligations_contracts',
+            'article_number' => 'Article 444',
+            'article_title' => 'Preuve civile',
+            'article_content' => 'Preuve entre les parties par temoins contre le contenu des actes.',
+            'chunk_content' => 'preuve civile temoins actes obligations contrats.',
+        ]);
+
+        $response = $this->getJson('/api/laws/search?q='.rawurlencode('هل تسقط الحضانة عن الأم إذا تزوجت بعد الطلاق'))
+            ->assertOk()
+            ->assertJsonPath('results.0.document_title', 'Code de la famille')
+            ->assertJsonPath('results.0.article_number', 'Article 175');
+
+        $this->assertContains('Code de la famille garde remariage mere', $response->json('searchedQueries'));
+    }
+
+    public function test_english_debt_proof_question_routes_to_obligations_code(): void
+    {
+        $this->createCorpusArticle([
+            'document_title' => 'Code des Obligations et des Contrats',
+            'document_type' => 'code',
+            'domain' => 'civil_obligations_contracts',
+            'subdomain' => 'proof_debt',
+            'article_number' => 'Article 443',
+            'article_title' => 'Preuve des obligations',
+            'article_content' => 'La preuve de la dette, du pret et du remboursement peut resulter d un commencement de preuve par ecrit.',
+            'chunk_content' => 'preuve dette pret virement reconnaissance remboursement commencement de preuve par ecrit.',
+        ]);
+        $this->createCorpusArticle([
+            'document_title' => 'Code de commerce',
+            'document_type' => 'code',
+            'domain' => 'commercial_company',
+            'article_number' => 'Article 320',
+            'article_title' => 'Cheque',
+            'article_content' => 'Regles relatives au cheque et au tire.',
+            'chunk_content' => 'cheque tire paiement provision banque.',
+        ]);
+
+        $this->getJson('/api/laws/search?q='.rawurlencode('I transferred money by bank transfer and WhatsApp messages, he says it was a gift'))
+            ->assertOk()
+            ->assertJsonPath('results.0.document_title', 'Code des Obligations et des Contrats')
+            ->assertJsonPath('results.0.article_number', 'Article 443');
+    }
+
+    public function test_arabizi_commercial_query_routes_to_code_de_commerce(): void
+    {
+        $this->createCorpusArticle([
+            'document_title' => 'Code de commerce',
+            'document_type' => 'code',
+            'domain' => 'commercial_company',
+            'article_number' => 'Article 1',
+            'article_title' => 'Commercants',
+            'article_content' => 'Le code de commerce organise les commercants et les actes de commerce.',
+            'chunk_content' => 'code de commerce commercants actes de commerce.',
+        ]);
+
+        $this->getJson('/api/laws/search?q='.rawurlencode('9anon tijari'))
+            ->assertOk()
+            ->assertJsonPath('searchedQueries.0', 'Code de commerce')
+            ->assertJsonPath('results.0.document_title', 'Code de commerce');
     }
 
     public function test_ai_corpus_retrieval_uses_corpus_before_legacy_laws(): void
@@ -180,6 +420,65 @@ class CorpusSearchRetrievalTest extends TestCase
         $this->assertContains('delivrance', $terms);
         $this->assertContains('transfert de propriete', $terms);
         $this->assertContains('heritiers', $terms);
+    }
+
+    public function test_english_labor_question_expands_to_french_corpus_terms(): void
+    {
+        $terms = app(LegalDomainClassifier::class)->conceptTermsForQuery(
+            'wrongful dismissal without written reasons by employer',
+            40
+        );
+
+        $this->assertContains('licenciement abusif', $terms);
+        $this->assertContains('motif valable', $terms);
+        $this->assertContains('decision licenciement', $terms);
+    }
+
+    public function test_semantic_search_finds_french_chunk_when_english_query_has_no_keyword_overlap(): void
+    {
+        config([
+            'legal_ai.semantic_search.enabled' => true,
+            'legal_ai.semantic_search.min_score' => 0.7,
+            'legal_ai.embeddings.model' => 'test-embed',
+        ]);
+        Http::fake([
+            '*/api/embed' => Http::response([
+                'embeddings' => [[1.0, 0.0, 0.0]],
+            ]),
+        ]);
+
+        $this->createCorpusArticle([
+            'document_title' => 'Code du travail',
+            'domain' => 'labor',
+            'subdomain' => 'dismissal',
+            'tags' => ['labor', 'dismissal', 'licenciement'],
+            'article_number' => 'Article 35',
+            'article_title' => 'Licenciement',
+            'article_content' => 'Le licenciement du salarie doit etre fonde sur un motif valable.',
+            'chunk_content' => 'rupture disciplinaire du contrat de travail fondee sur motif valable',
+            'embedding' => [1.0, 0.0, 0.0],
+            'embedding_model' => 'test-embed',
+        ]);
+        $this->createCorpusArticle([
+            'document_title' => 'Code penal',
+            'domain' => 'criminal',
+            'article_number' => 'Article 505',
+            'article_title' => 'Vol',
+            'article_content' => 'La soustraction frauduleuse de la chose d autrui constitue un vol.',
+            'chunk_content' => 'soustraction frauduleuse chose autrui',
+            'embedding' => [0.0, 1.0, 0.0],
+            'embedding_model' => 'test-embed',
+        ]);
+
+        $payload = app(LawSearchService::class)->search(
+            'Can my boss fire me after I complained?',
+            40,
+            ['useCorpus' => true]
+        );
+
+        $this->assertSame('Code du travail', $payload['results'][0]['document_title'] ?? null);
+        $this->assertSame('Article 35', $payload['results'][0]['article_number'] ?? null);
+        $this->assertGreaterThan(900, $payload['results'][0]['semantic_score'] ?? 0);
     }
 
     public function test_search_falls_back_to_legacy_laws_when_corpus_has_no_match(): void
@@ -289,6 +588,37 @@ class CorpusSearchRetrievalTest extends TestCase
         $this->assertStringNotContainsString('old replaced content', json_encode($payload['results']));
     }
 
+    public function test_search_prefers_official_current_sources_over_weaker_corpus_sources(): void
+    {
+        $this->createCorpusArticle([
+            'source_name' => 'Imported mirror',
+            'source_type' => 'scraped',
+            'document_title' => 'Code du travail mirror',
+            'document_type' => 'guide',
+            'domain' => 'labor',
+            'article_number' => 'Article 35',
+            'article_title' => 'Licenciement mirror',
+            'article_content' => 'authority priority phrase licenciement motif valable.',
+            'chunk_content' => 'authority priority phrase licenciement motif valable.',
+        ]);
+        $this->createCorpusArticle([
+            'source_name' => 'Official code source',
+            'source_type' => 'code',
+            'document_title' => 'Code du travail',
+            'document_type' => 'code',
+            'domain' => 'labor',
+            'article_number' => 'Article 35',
+            'article_title' => 'Licenciement officiel',
+            'article_content' => 'authority priority phrase licenciement motif valable.',
+            'chunk_content' => 'authority priority phrase licenciement motif valable.',
+        ]);
+
+        $payload = app(LawSearchService::class)->search('authority priority phrase', 40, ['useCorpus' => true]);
+
+        $this->assertSame('Official code source', $payload['results'][0]['source_name'] ?? null);
+        $this->assertGreaterThan($payload['results'][1]['source_authority_score'] ?? 0, $payload['results'][0]['source_authority_score'] ?? 0);
+    }
+
     public function test_chat_citations_use_corpus_chunks_as_context(): void
     {
         $this->createCorpusArticle([
@@ -309,6 +639,8 @@ class CorpusSearchRetrievalTest extends TestCase
             ->assertJsonPath('citations.0.versionStatus', 'active')
             ->assertJsonPath('citations.0.isLegacy', false)
             ->assertJsonPath('citations.0.content', 'corpus labor chunk says licenciement requires a motif valable.')
+            ->assertJsonPath('citations.0.sourceAuthorityLevel', 'official_current')
+            ->assertJsonPath('citations.0.supportLevel', 'strong')
             ->assertJsonStructure([
                 'citations' => [
                     [
@@ -316,9 +648,109 @@ class CorpusSearchRetrievalTest extends TestCase
                         'legalArticleId',
                         'legalDocumentId',
                         'legalDocumentVersionId',
+                        'sourceAuthorityScore',
+                        'sourceAuthoritySignals',
+                        'supportSignals',
                     ],
                 ],
             ]);
+    }
+
+    public function test_chat_citations_include_neighboring_corpus_context_without_replacing_excerpt(): void
+    {
+        $seed = $this->createCorpusArticle([
+            'document_title' => 'Code du travail',
+            'law_reference' => 'Loi 65-99',
+            'domain' => 'labor',
+            'article_number' => 'Article 35',
+            'article_title' => 'Licenciement',
+            'article_content' => 'Regles de licenciement et contrat de travail avec plusieurs morceaux.',
+            'chunk_content' => 'first chunk explains the employment relationship.',
+            'sort_order' => 1,
+        ]);
+
+        $this->createCorpusArticleInDocument($seed['document'], $seed['version'], [
+            'article_number' => 'Article 34',
+            'article_title' => 'Contexte precedent',
+            'article_content' => 'Article precedent sur la relation de travail et les garanties generales.',
+            'chunk_content' => 'previous article chunk.',
+            'domain' => 'labor',
+            'subdomain' => 'dismissal',
+            'sort_order' => 0,
+        ]);
+        $this->createCorpusArticleInDocument($seed['document'], $seed['version'], [
+            'article_number' => 'Article 36',
+            'article_title' => 'Contexte suivant',
+            'article_content' => 'Article suivant sur les suites de la decision de licenciement.',
+            'chunk_content' => 'next article chunk.',
+            'domain' => 'labor',
+            'subdomain' => 'dismissal',
+            'sort_order' => 2,
+        ]);
+
+        LegalChunk::create([
+            'legal_article_id' => $seed['article']->id,
+            'legal_document_version_id' => $seed['version']->id,
+            'chunk_index' => 1,
+            'content' => 'matched chunk says licenciement requires a motif valable.',
+            'token_count' => 8,
+            'domain' => 'labor',
+            'subdomain' => 'dismissal',
+            'tags' => ['labor', 'dismissal'],
+            'checksum' => hash('sha256', 'matched chunk says licenciement requires a motif valable.'),
+        ]);
+        LegalChunk::create([
+            'legal_article_id' => $seed['article']->id,
+            'legal_document_version_id' => $seed['version']->id,
+            'chunk_index' => 2,
+            'content' => 'following chunk explains procedure and proof.',
+            'token_count' => 6,
+            'domain' => 'labor',
+            'subdomain' => 'dismissal',
+            'tags' => ['labor', 'dismissal'],
+            'checksum' => hash('sha256', 'following chunk explains procedure and proof.'),
+        ]);
+
+        $response = $this->postJson('/api/laws/chat', ['message' => 'licenciement motif valable travail'])
+            ->assertOk();
+
+        $citation = collect($response->json('citations'))
+            ->firstWhere('content', 'matched chunk says licenciement requires a motif valable.');
+
+        $this->assertNotNull($citation);
+        $this->assertSame('matched chunk says licenciement requires a motif valable.', $citation['content']);
+        $this->assertStringContainsString('first chunk explains the employment relationship.', $citation['contextContent']);
+        $this->assertStringContainsString('matched chunk says licenciement requires a motif valable.', $citation['contextContent']);
+        $this->assertStringContainsString('following chunk explains procedure and proof.', $citation['contextContent']);
+        $this->assertStringContainsString('Full cited article:', $citation['contextContent']);
+        $this->assertStringContainsString('Regles de licenciement et contrat de travail avec plusieurs morceaux.', $citation['contextContent']);
+        $this->assertStringContainsString('Article 34 Contexte precedent', $citation['contextContent']);
+        $this->assertStringContainsString('Article 36 Contexte suivant', $citation['contextContent']);
+        $this->assertSame('matched_chunk_full_article_neighboring_articles', $citation['contextScope']);
+    }
+
+    public function test_english_question_retrieves_french_labor_corpus(): void
+    {
+        $this->createCorpusArticle([
+            'document_title' => 'Code du travail',
+            'law_reference' => 'Loi 65-99',
+            'domain' => 'labor',
+            'subdomain' => 'dismissal',
+            'tags' => ['labor', 'dismissal', 'licenciement', 'motif_valable'],
+            'article_number' => 'Article 35',
+            'article_title' => 'Licenciement pour motif valable',
+            'article_content' => 'Le licenciement du salarie doit etre fonde sur un motif valable.',
+            'chunk_content' => 'licenciement salarie employeur motif valable decision licenciement.',
+        ]);
+
+        $this->postJson('/api/laws/chat', [
+            'message' => 'Can my employer terminate me without a valid written reason?',
+        ])
+            ->assertOk()
+            ->assertJsonPath('intent', 'legal_case_analysis')
+            ->assertJsonPath('citations.0.documentTitle', 'Code du travail')
+            ->assertJsonPath('citations.0.articleNumber', 'Article 35')
+            ->assertJsonPath('citations.0.domain', 'labor');
     }
 
     public function test_french_greeting_gets_french_reply(): void
@@ -588,6 +1020,10 @@ class CorpusSearchRetrievalTest extends TestCase
             'subdomain' => $overrides['chunk_subdomain'] ?? $overrides['subdomain'] ?? null,
             'tags' => $overrides['chunk_tags'] ?? $overrides['tags'] ?? null,
             'checksum' => hash('sha256', $chunkContent),
+            'embedding' => $overrides['embedding'] ?? null,
+            'embedding_model' => $overrides['embedding_model'] ?? null,
+            'embedding_checksum' => $overrides['embedding_checksum'] ?? null,
+            'embedded_at' => ($overrides['embedding'] ?? null) ? now() : null,
         ]);
 
         return compact('source', 'document', 'version', 'article', 'chunk');
@@ -624,6 +1060,10 @@ class CorpusSearchRetrievalTest extends TestCase
             'subdomain' => $overrides['chunk_subdomain'] ?? $overrides['subdomain'] ?? $article->subdomain,
             'tags' => $overrides['chunk_tags'] ?? $overrides['tags'] ?? $article->tags,
             'checksum' => hash('sha256', $chunkContent),
+            'embedding' => $overrides['embedding'] ?? null,
+            'embedding_model' => $overrides['embedding_model'] ?? null,
+            'embedding_checksum' => $overrides['embedding_checksum'] ?? null,
+            'embedded_at' => ($overrides['embedding'] ?? null) ? now() : null,
         ]);
 
         return compact('document', 'version', 'article', 'chunk');
