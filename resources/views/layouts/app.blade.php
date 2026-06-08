@@ -14,7 +14,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Moroccan Legal Research | Marokko Biz')</title>
-    <link rel="icon" href="/marokko-biz-icon.png">
+    <link rel="icon" href="/icons/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -28,7 +28,7 @@
       <div class="container-page">
         <div class="flex items-center justify-between h-16 md:h-20">
             <a href="/?lang={{ $interfaceLanguage }}" class="flex items-center gap-3 font-bold text-gray-900 no-underline">
-            <img src="/marokko-biz-icon.png" alt="Marokko Biz" class="w-9 h-9 rounded-xl shadow-md shadow-blue-500/20">
+            <img src="/icons/a.png" alt="Marokko Biz" class="w-9 h-9 rounded-xl shadow-md shadow-blue-500/20">
             <span class="text-sm md:text-base">Marokko<span class="text-blue-600">Biz</span></span>
           </a>
 
@@ -63,7 +63,7 @@
       <div class="container-page">
         <div class="flex flex-col md:flex-row items-center justify-between gap-4">
           <div class="flex items-center gap-3">
-            <img src="/marokko-biz-icon.png" alt="Marokko Biz" class="w-8 h-8 rounded-lg opacity-80">
+            <img src="/icons/a.png" alt="Marokko Biz" class="w-8 h-8 rounded-lg opacity-80">
             <span class="text-sm font-semibold text-gray-400">Marokko<span class="text-gray-300">Biz</span></span>
           </div>
           <p class="text-sm text-gray-500 text-center">{{ $layoutCopy['footer'] }}</p>

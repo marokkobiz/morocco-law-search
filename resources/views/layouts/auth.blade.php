@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title') | Marokko Biz Law OS</title>
-    <link rel="icon" href="/marokko-biz-icon.png">
+    <link rel="icon" href="/icons/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -19,7 +19,7 @@
   <body class="font-sans antialiased">
     <main class="auth-page">
       <a href="/" class="auth-brand">
-        <img src="/marokko-biz-icon.png" alt="Marokko Biz">
+        <img src="/icons/a.png" alt="Marokko Biz">
         <span>Marokko Biz Law OS</span>
       </a>
       @yield('content')
