@@ -26,6 +26,9 @@
         'passwordPlaceholder' => 'Enter your password',
         'bar' => 'Bar / court',
         'barPlaceholder' => 'Select the bar or court',
+        'otherBar' => 'Other bar or court',
+        'customBar' => 'Enter bar / court',
+        'customBarPlaceholder' => 'Write the bar or court name',
         'note' => 'Payment hookup can be connected after the account intake and pricing are confirmed.',
         'submitCreate' => 'Create account',
         'submitLogin' => 'Login',
@@ -49,6 +52,9 @@
         'passwordPlaceholder' => 'Entrez votre mot de passe',
         'bar' => 'Barreau / tribunal',
         'barPlaceholder' => 'Selectionnez le barreau ou tribunal',
+        'otherBar' => 'Autre barreau ou tribunal',
+        'customBar' => 'Saisir le barreau / tribunal',
+        'customBarPlaceholder' => 'Ecrivez le nom du barreau ou tribunal',
         'note' => 'Le paiement pourra etre connecte apres validation de l inscription et des prix.',
         'submitCreate' => 'Creer le compte',
         'submitLogin' => 'Connexion',
@@ -72,6 +78,9 @@
         'passwordPlaceholder' => 'أدخل كلمة المرور',
         'bar' => 'هيئة المحامين / المحكمة',
         'barPlaceholder' => 'اختر الهيئة أو المحكمة',
+        'otherBar' => 'هيئة أو محكمة أخرى',
+        'customBar' => 'أدخل الهيئة / المحكمة',
+        'customBarPlaceholder' => 'اكتب اسم الهيئة أو المحكمة',
         'note' => 'يمكن ربط الأداء بعد تأكيد بيانات الحساب والأسعار.',
         'submitCreate' => 'إنشاء الحساب',
         'submitLogin' => 'تسجيل الدخول',
@@ -79,9 +88,13 @@
         'toRegister' => 'تحتاج إلى ولوج؟ إنشاء حساب',
       ],
     ][$lang];
-    $courts = $lang === 'ar'
-      ? ['هيئة القنيطرة / محكمة القنيطرة', 'هيئة الدار البيضاء', 'هيئة الرباط', 'هيئة مراكش', 'هيئة فاس', 'هيئة طنجة', 'هيئة أكادير', 'هيئة أو محكمة أخرى']
-      : ['Kenitra Bar / Kenitra Court', 'Casablanca Bar', 'Rabat Bar', 'Marrakech Bar', 'Fes Bar', 'Tangier Bar', 'Agadir Bar', 'Other bar or court'];
+    $customBarValue = $customBarValue ?? '__custom_bar__';
+    $courts = $courts ?? ($lang === 'ar'
+      ? ['هيئة القنيطرة / محكمة القنيطرة', 'هيئة الدار البيضاء', 'هيئة الرباط', 'هيئة مراكش', 'هيئة فاس', 'هيئة طنجة', 'هيئة أكادير']
+      : ['Kenitra Bar / Kenitra Court', 'Casablanca Bar', 'Rabat Bar', 'Marrakech Bar', 'Fes Bar', 'Tangier Bar', 'Agadir Bar']);
+    $selectedBar = old('bar');
+    $customBar = old('custom_bar');
+    $showCustomBar = $selectedBar === $customBarValue;
   @endphp
 
   <section class="auth-card {{ $mode === 'register' ? 'auth-card-register' : '' }}">
@@ -129,12 +142,17 @@
           </label>
           <label class="auth-field-full">
             {{ $copy['bar'] }}
-            <select name="bar" required>
+            <select name="bar" required data-other-bar-select data-other-bar-value="{{ $customBarValue }}">
               <option value="">{{ $copy['barPlaceholder'] }}</option>
               @foreach ($courts as $court)
-                <option value="{{ $court }}" @selected(old('bar') === $court)>{{ $court }}</option>
+                <option value="{{ $court }}" @selected($selectedBar === $court)>{{ $court }}</option>
               @endforeach
+              <option value="{{ $customBarValue }}" @selected($showCustomBar)>{{ $copy['otherBar'] }}</option>
             </select>
+          </label>
+          <label class="auth-field-full {{ $showCustomBar ? '' : 'hidden' }}" data-other-bar-field>
+            {{ $copy['customBar'] }}
+            <input type="text" name="custom_bar" value="{{ $customBar }}" placeholder="{{ $copy['customBarPlaceholder'] }}" autocomplete="organization-title" data-other-bar-input @required($showCustomBar)>
           </label>
         </div>
       @else
@@ -160,4 +178,31 @@
       {{ $mode === 'register' ? $copy['toLogin'] : $copy['toRegister'] }}
     </a>
   </section>
+
+  @if ($mode === 'register')
+    <script>
+      (() => {
+        const select = document.querySelector('[data-other-bar-select]');
+        const field = document.querySelector('[data-other-bar-field]');
+        const input = document.querySelector('[data-other-bar-input]');
+
+        if (!select || !field || !input) {
+          return;
+        }
+
+        const toggleCustomBar = () => {
+          const isCustom = select.value === select.dataset.otherBarValue;
+          field.classList.toggle('hidden', !isCustom);
+          input.required = isCustom;
+
+          if (!isCustom) {
+            input.value = '';
+          }
+        };
+
+        select.addEventListener('change', toggleCustomBar);
+        toggleCustomBar();
+      })();
+    </script>
+  @endif
 @endsection

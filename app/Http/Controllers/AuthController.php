@@ -8,9 +8,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
+use Throwable;
 
 class AuthController extends Controller
 {
+    private const CUSTOM_BAR_VALUE = '__custom_bar__';
+
     public function loginForm(Request $request): View
     {
         return view('auth-page', [
@@ -21,9 +24,13 @@ class AuthController extends Controller
 
     public function registerForm(Request $request): View
     {
+        $lang = $this->language($request);
+
         return view('auth-page', [
             'mode' => 'register',
-            'lang' => $this->language($request),
+            'lang' => $lang,
+            'courts' => $this->courts($lang),
+            'customBarValue' => self::CUSTOM_BAR_VALUE,
         ]);
     }
 
@@ -53,8 +60,14 @@ class AuthController extends Controller
             'phone' => ['required', 'string', 'max:40'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'bar' => ['required', 'string', 'max:255'],
+            'custom_bar' => ['nullable', 'required_if:bar,'.self::CUSTOM_BAR_VALUE, 'string', 'max:255'],
             'password' => ['required', Password::min(8)],
         ]);
+
+        $validated['bar'] = trim($validated['bar'] === self::CUSTOM_BAR_VALUE
+            ? (string) $validated['custom_bar']
+            : (string) $validated['bar']);
+        unset($validated['custom_bar']);
 
         $user = User::query()->create($validated + [
             'access_status' => config('billing.require_payment') ? 'pending_payment' : 'active',
@@ -88,5 +101,67 @@ class AuthController extends Controller
         $lang = (string) $request->input('lang', $request->query('lang', 'en'));
 
         return in_array($lang, ['en', 'fr', 'ar'], true) ? $lang : 'en';
+    }
+
+    /**
+     * Default bars stay visible, and saved custom bars become available to the next users.
+     *
+     * @return list<string>
+     */
+    private function courts(string $lang): array
+    {
+        $defaults = $this->defaultCourts($lang);
+
+        try {
+            $savedBars = User::query()
+                ->whereNotNull('bar')
+                ->where('bar', '!=', '')
+                ->distinct()
+                ->orderBy('bar')
+                ->pluck('bar')
+                ->map(fn ($bar) => trim((string) $bar))
+                ->filter(fn (string $bar) => $bar !== '' && $bar !== self::CUSTOM_BAR_VALUE)
+                ->all();
+        } catch (Throwable) {
+            $savedBars = [];
+        }
+
+        return array_values(array_unique([...$defaults, ...$savedBars]));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function defaultCourts(string $lang): array
+    {
+        return match ($lang) {
+            'ar' => [
+                'هيئة القنيطرة / محكمة القنيطرة',
+                'هيئة الدار البيضاء',
+                'هيئة الرباط',
+                'هيئة مراكش',
+                'هيئة فاس',
+                'هيئة طنجة',
+                'هيئة أكادير',
+            ],
+            'fr' => [
+                'Barreau de Kenitra / Tribunal de Kenitra',
+                'Barreau de Casablanca',
+                'Barreau de Rabat',
+                'Barreau de Marrakech',
+                'Barreau de Fes',
+                'Barreau de Tanger',
+                'Barreau d Agadir',
+            ],
+            default => [
+                'Kenitra Bar / Kenitra Court',
+                'Casablanca Bar',
+                'Rabat Bar',
+                'Marrakech Bar',
+                'Fes Bar',
+                'Tangier Bar',
+                'Agadir Bar',
+            ],
+        };
     }
 }
