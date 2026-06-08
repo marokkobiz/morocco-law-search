@@ -20,8 +20,17 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'company',
+        'phone',
         'email',
+        'bar',
         'password',
+        'access_status',
+        'stripe_customer_id',
+        'stripe_subscription_id',
+        'trial_ends_at',
+        'billing_active_at',
+        'billing_ends_at',
     ];
 
     /**
@@ -44,6 +53,39 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'trial_ends_at' => 'datetime',
+            'billing_active_at' => 'datetime',
+            'billing_ends_at' => 'datetime',
         ];
+    }
+
+    public function hasBillableAccess(): bool
+    {
+        if ($this->access_status === 'active') {
+            return true;
+        }
+
+        if ($this->trial_ends_at && $this->trial_ends_at->isFuture()) {
+            return true;
+        }
+
+        return $this->billing_active_at !== null
+            && ($this->billing_ends_at === null || $this->billing_ends_at->isFuture());
+    }
+
+    public function requiresPayment(): bool
+    {
+        return config('billing.require_payment') && !$this->hasBillableAccess();
+    }
+
+    public function markBillingActive(string $subscriptionId, ?string $customerId = null): void
+    {
+        $this->forceFill([
+            'access_status' => 'active',
+            'stripe_customer_id' => $customerId ?: $this->stripe_customer_id,
+            'stripe_subscription_id' => $subscriptionId,
+            'billing_active_at' => now(),
+            'billing_ends_at' => null,
+        ])->save();
     }
 }
