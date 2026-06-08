@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CorpusStatusController;
 use Illuminate\Support\Facades\Route;
 
@@ -9,18 +10,20 @@ Route::get('/', function () {
 
 Route::get('/app', function () {
     return view('react-law-search');
+})->middleware('auth');
+
+Route::get('/login', [AuthController::class, 'loginForm'])->name('login');
+Route::get('/register', [AuthController::class, 'registerForm'])->name('register');
+
+Route::middleware('guest')->group(function (): void {
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
 });
 
-Route::get('/login', function () {
-    return view('auth-page', ['mode' => 'login']);
-});
-
-Route::get('/register', function () {
-    return view('auth-page', ['mode' => 'register']);
-});
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
 
 Route::get('/laravel-search', function () {
     return view('law-search');
-});
+})->middleware('auth');
 
 Route::get('/corpus/status', [CorpusStatusController::class, 'show']);
