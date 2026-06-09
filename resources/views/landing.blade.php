@@ -5,7 +5,7 @@
 @section('content')
   @php
     $lang = request('lang');
-    $lang = in_array($lang, ['en', 'fr', 'ar'], true) ? $lang : 'en';
+    $lang = in_array($lang, ['en', 'fr', 'ar'], true) ? $lang : 'ar';
     $copy = [
       'en' => [
         'badge' => 'Professional Legal Research',
