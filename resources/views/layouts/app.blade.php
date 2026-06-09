@@ -1,6 +1,6 @@
 @php
   $interfaceLanguage = request('lang');
-  $interfaceLanguage = in_array($interfaceLanguage, ['en', 'fr', 'ar'], true) ? $interfaceLanguage : 'en';
+  $interfaceLanguage = in_array($interfaceLanguage, ['en', 'fr', 'ar'], true) ? $interfaceLanguage : 'ar';
   $isArabic = $interfaceLanguage === 'ar';
   $layoutCopy = [
     'en' => ['about' => 'About', 'sources' => 'Sources', 'coverage' => 'Coverage', 'login' => 'Login', 'start' => 'Get Started', 'footer' => 'Legal information from indexed sources. Not a substitute for legal advice.'],
