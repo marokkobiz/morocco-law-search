@@ -1281,24 +1281,28 @@ class LawSearchService
             return null;
         }
 
+        if (str_contains($sourceUrl, 'adala.justice.gov.ma/api/uploads/')) {
+            return str_replace('adala.justice.gov.ma/api/uploads/', 'adala.justice.gov.ma/uploads/', $sourceUrl);
+        }
+
         if (str_starts_with($sourceUrl, 'http://') || str_starts_with($sourceUrl, 'https://')) {
             return $sourceUrl;
         }
 
         if (str_starts_with($sourceUrl, '/uploads/')) {
-            return 'https://adala.justice.gov.ma/api'.$sourceUrl;
-        }
-
-        if (str_starts_with($sourceUrl, 'uploads/')) {
-            return 'https://adala.justice.gov.ma/api/'.$sourceUrl;
-        }
-
-        if (str_starts_with($sourceUrl, '/api/uploads/')) {
             return 'https://adala.justice.gov.ma'.$sourceUrl;
         }
 
-        if (str_starts_with($sourceUrl, 'api/uploads/')) {
+        if (str_starts_with($sourceUrl, 'uploads/')) {
             return 'https://adala.justice.gov.ma/'.$sourceUrl;
+        }
+
+        if (str_starts_with($sourceUrl, '/api/uploads/')) {
+            return 'https://adala.justice.gov.ma'.substr($sourceUrl, 4);
+        }
+
+        if (str_starts_with($sourceUrl, 'api/uploads/')) {
+            return 'https://adala.justice.gov.ma/'.substr($sourceUrl, 4);
         }
 
         return null;

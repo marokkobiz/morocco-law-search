@@ -93,6 +93,21 @@
         box-shadow: 0 0 0 4px rgba(7, 87, 216, 0.16), 0 24px 64px rgba(7, 87, 216, 0.16);
       }
 
+      .suggestions-panel {
+        max-height: min(360px, 46vh);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+
+      .suggestions-panel::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .suggestions-panel::-webkit-scrollbar-thumb {
+        background: rgba(7, 87, 216, 0.32);
+        border-radius: 999px;
+      }
+
       .support-widget {
         display: none !important;
       }
