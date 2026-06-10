@@ -12,7 +12,7 @@ use Throwable;
 
 class LawSearchService
 {
-    public const SEARCH_RESULT_LIMIT = 40;
+    public const SEARCH_RESULT_LIMIT = 1000;
 
     private const SUGGESTION_LIMIT = 8;
     private const CHAT_ONLY_CATEGORIES = ['official-bulletin', 'official_bulletin', 'Official Bulletin', 'Bulletins officiels'];
@@ -81,7 +81,7 @@ class LawSearchService
     public function search(string $keyword, int $limit = self::SEARCH_RESULT_LIMIT, array $options = []): array
     {
         $keyword = trim($keyword);
-        $limit = max(1, min($limit, 100));
+        $limit = max(1, min($limit, self::SEARCH_RESULT_LIMIT));
 
         if ($keyword === '') {
             return ['results' => [], 'hasMore' => false, 'limit' => $limit];
@@ -104,7 +104,7 @@ class LawSearchService
 
     public function latestOfficialBulletinArticles(int $limit = self::SEARCH_RESULT_LIMIT): array
     {
-        $limit = max(1, min($limit, 100));
+        $limit = max(1, min($limit, self::SEARCH_RESULT_LIMIT));
 
         $corpusPayload = $this->runLatestOfficialBulletinCorpus($limit);
 
@@ -1283,6 +1283,22 @@ class LawSearchService
 
         if (str_starts_with($sourceUrl, 'http://') || str_starts_with($sourceUrl, 'https://')) {
             return $sourceUrl;
+        }
+
+        if (str_starts_with($sourceUrl, '/uploads/')) {
+            return 'https://adala.justice.gov.ma/api'.$sourceUrl;
+        }
+
+        if (str_starts_with($sourceUrl, 'uploads/')) {
+            return 'https://adala.justice.gov.ma/api/'.$sourceUrl;
+        }
+
+        if (str_starts_with($sourceUrl, '/api/uploads/')) {
+            return 'https://adala.justice.gov.ma'.$sourceUrl;
+        }
+
+        if (str_starts_with($sourceUrl, 'api/uploads/')) {
+            return 'https://adala.justice.gov.ma/'.$sourceUrl;
         }
 
         return null;
