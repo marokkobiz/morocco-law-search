@@ -88,6 +88,11 @@
         direction: rtl;
       }
 
+      .result-card.is-jump-target {
+        border-color: #0757d8;
+        box-shadow: 0 0 0 4px rgba(7, 87, 216, 0.16), 0 24px 64px rgba(7, 87, 216, 0.16);
+      }
+
       .support-widget {
         display: none !important;
       }
@@ -108,6 +113,119 @@
             window.location.assign('/');
           }
         }, true);
+      })();
+    </script>
+
+    <script>
+      (() => {
+        const pendingKey = 'marokko.pendingArticleJump';
+
+        const normalize = (value) => (value || '')
+          .toString()
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^\p{L}\p{N}]+/gu, ' ')
+          .trim();
+
+        const parseArticleSuggestion = (text) => {
+          const value = (text || '').toString().trim();
+          const match = value.match(/^(.*?)\s+-\s+Article\s+(.+)$/i);
+
+          if (!match) {
+            return null;
+          }
+
+          return {
+            document: normalize(match[1]),
+            article: normalize(`Article ${match[2]}`),
+            raw: value,
+          };
+        };
+
+        const rememberArticleJump = (row) => {
+          const label = row.querySelector('span');
+          const type = row.querySelector('strong')?.textContent.trim().toUpperCase();
+          const text = label?.dataset.originalLabel || label?.textContent.trim() || '';
+
+          if (type !== 'ARTICLE') {
+            return;
+          }
+
+          const parsed = parseArticleSuggestion(text);
+
+          if (!parsed) {
+            return;
+          }
+
+          sessionStorage.setItem(pendingKey, JSON.stringify({
+            ...parsed,
+            createdAt: Date.now(),
+          }));
+        };
+
+        const findJumpTarget = (pending) => {
+          const cards = [...document.querySelectorAll('.result-card')];
+
+          return cards.find((card) => {
+            const title = normalize(card.querySelector('h3')?.textContent || '');
+            const article = normalize(card.querySelector('.article-number')?.textContent || '');
+            const source = normalize(card.querySelector('.source-box strong')?.textContent || '');
+
+            return article === pending.article
+              && (title.includes(pending.document) || source.includes(pending.document) || pending.document.includes(title));
+          }) || cards.find((card) => {
+            const title = normalize(card.querySelector('h3')?.textContent || '');
+            return normalize(pending.raw) === title || title.includes(normalize(pending.raw));
+          });
+        };
+
+        const tryJumpToPendingArticle = () => {
+          const raw = sessionStorage.getItem(pendingKey);
+
+          if (!raw) {
+            return;
+          }
+
+          let pending;
+
+          try {
+            pending = JSON.parse(raw);
+          } catch {
+            sessionStorage.removeItem(pendingKey);
+            return;
+          }
+
+          if (!pending?.createdAt || Date.now() - pending.createdAt > 15000) {
+            sessionStorage.removeItem(pendingKey);
+            return;
+          }
+
+          const target = findJumpTarget(pending);
+
+          if (!target) {
+            return;
+          }
+
+          sessionStorage.removeItem(pendingKey);
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.add('is-jump-target');
+          window.setTimeout(() => target.classList.remove('is-jump-target'), 2400);
+        };
+
+        document.addEventListener('click', (event) => {
+          const suggestion = event.target.closest('.suggestion-row');
+
+          if (suggestion) {
+            rememberArticleJump(suggestion);
+          }
+        }, true);
+
+        window.addEventListener('load', tryJumpToPendingArticle);
+        new MutationObserver(tryJumpToPendingArticle).observe(document.getElementById('root'), {
+          childList: true,
+          subtree: true,
+        });
       })();
     </script>
 

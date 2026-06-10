@@ -1195,7 +1195,7 @@ class LawSearchService
                 'subdomain' => $subdomain,
                 'source_name' => $row->source_name,
                 'source_type' => $row->source_type,
-                'source_url' => $row->source_url,
+                'source_url' => $this->safeSourceUrl($row->source_url),
                 'language' => $row->article_language ?: $row->language,
                 'tags' => $tags,
                 'bo_number' => $row->bo_number,
@@ -1240,7 +1240,7 @@ class LawSearchService
             'category' => $law->category,
             'source_name' => $law->source_name,
             'source_type' => 'legacy',
-            'source_url' => $law->source_url,
+            'source_url' => $this->safeSourceUrl($law->source_url),
             'language' => $law->language,
             'bo_number' => null,
             'publication_date' => null,
@@ -1271,6 +1271,21 @@ class LawSearchService
             })
             ->sortByDesc(fn (object $row): float => (float) $row->rerank_score + ((float) ($row->relevance_score ?? 0) / 10000))
             ->values();
+    }
+
+    private function safeSourceUrl(?string $sourceUrl): ?string
+    {
+        $sourceUrl = trim((string) $sourceUrl);
+
+        if ($sourceUrl === '') {
+            return null;
+        }
+
+        if (str_starts_with($sourceUrl, 'http://') || str_starts_with($sourceUrl, 'https://')) {
+            return $sourceUrl;
+        }
+
+        return null;
     }
 
     private function corpusRerankScore(object $row, array $tokens, array $queryTaxonomy): float
