@@ -115,6 +115,32 @@ npm run build
   php artisan pail --timeout=0
   ```
 
+## Search Index & Embeddings
+
+Retrieval uses two indexes on top of the legal corpus:
+
+- **Full-text (BM25)**: a SQLite FTS5 index over normalized chunk text (Arabic letter-variant unification + diacritic stripping, French accent folding). Rebuild it after any corpus import:
+
+  ```bash
+  php artisan legal-search:build-fts
+  ```
+
+- **Semantic (bge-m3)**: chunk embeddings stored as packed float32 blobs plus compact binary codes for a fast full-corpus Hamming scan. Generate them with Ollama running (`ollama pull bge-m3` once):
+
+  ```bash
+  php artisan corpus:embed-chunks --active-only
+  ```
+
+  Embedding requests are batched; the full active corpus takes roughly an hour. Do not run it at the same time as `legal-search:build-fts` (SQLite write lock).
+
+The FTS index only exists on SQLite; on MySQL the search falls back to the legacy LIKE scoring, while semantic search works on both drivers.
+
+Evaluate retrieval/AI quality before and after changes:
+
+```bash
+php artisan legal-ai:evaluate --suite=holdout --retrieval-only
+```
+
 ## Testing
 
 Run the test suite with:

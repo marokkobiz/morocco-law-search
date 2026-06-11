@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -74,6 +75,7 @@ class LawSearchService
     public function __construct(
         private readonly LegalDomainClassifier $classifier,
         private readonly LegalEmbeddingService $embeddings,
+        private readonly SearchTextNormalizer $normalizer,
     )
     {
     }
@@ -304,6 +306,8 @@ class LawSearchService
 
         $semanticScores = $this->semanticChunkScores($keyword, $options);
         $semanticChunkIds = array_keys($semanticScores);
+        $ftsScores = $this->ftsChunkScores($keyword, null, (bool) ($options['includeChatOnlySources'] ?? false));
+        $ftsChunkIds = array_keys($ftsScores);
 
         $query = $this->activeCorpusBaseQuery()->select($this->corpusFields());
 
@@ -311,7 +315,7 @@ class LawSearchService
             $this->excludeChatOnlyCorpusSources($query);
         }
 
-        $query->where(function ($where) use ($keyword, $articleNumber, $documentHints, $referencePatterns, $terms, $semanticChunkIds): void {
+        $query->where(function ($where) use ($keyword, $articleNumber, $documentHints, $referencePatterns, $terms, $semanticChunkIds, $ftsChunkIds): void {
             $like = '%'.$keyword.'%';
 
             foreach ([
@@ -353,6 +357,10 @@ class LawSearchService
                 $where->orWhereIn('legal_chunks.id', $semanticChunkIds);
             }
 
+            if ($ftsChunkIds) {
+                $where->orWhereIn('legal_chunks.id', $ftsChunkIds);
+            }
+
             $terms->each(function (string $term) use ($where): void {
                 $termLike = '%'.$term.'%';
 
@@ -382,6 +390,7 @@ class LawSearchService
         $metadataScoreSql = $this->corpusMetadataScoreSql($keyword, $documentHints, $referencePatterns, $queryTaxonomy);
         $articleTitleScoreSql = $this->corpusArticleTitleScoreSql($keyword, $terms->all());
         $semanticScoreSql = $this->corpusSemanticScoreSql($semanticScores);
+        $ftsScoreSql = $this->corpusFtsScoreSql($ftsScores);
         $authorityScoreSql = $this->corpusSourceAuthorityScoreSql();
         $scoreSql = $this->corpusScoreSql($keyword, $articleNumber, $documentHints, $referencePatterns, $terms->all(), $queryTaxonomy);
         $rows = $query
@@ -391,25 +400,25 @@ class LawSearchService
             ->selectRaw($metadataScoreSql['sql'].' AS metadata_score', $metadataScoreSql['bindings'])
             ->selectRaw($articleTitleScoreSql['sql'].' AS article_title_score', $articleTitleScoreSql['bindings'])
             ->selectRaw($semanticScoreSql['sql'].' AS semantic_score', $semanticScoreSql['bindings'])
+            ->selectRaw($ftsScoreSql['sql'].' AS fts_score', $ftsScoreSql['bindings'])
             ->selectRaw($authorityScoreSql['sql'].' AS source_authority_score', $authorityScoreSql['bindings'])
             ->selectRaw($this->articleSortSql('legal_articles.article_number').' AS article_sort_number')
             ->selectRaw($scoreSql['sql'].' AS relevance_score', $scoreSql['bindings'])
             ->orderByDesc('article_match_score')
+            ->orderByDesc(DB::raw('(relevance_score + fts_score + semantic_score)'))
             ->orderByDesc('document_match_score')
-            ->orderByDesc('semantic_score')
             ->orderByDesc('source_authority_score')
-            ->orderByDesc('relevance_score')
             ->orderBy('legal_documents.document_title')
             ->orderBy('article_sort_number')
             ->orderBy('legal_articles.article_number')
             ->orderBy('legal_chunks.chunk_index')
-            ->limit(max(21, $limit + 1))
+            ->limit(max(60, $limit + 1))
             ->get();
         $rows = $this->exactCorpusArticleRows($articleNumber, $documentHints, $limit)
             ->concat($rows)
             ->unique(fn (object $row): string => (string) ($row->legal_chunk_id ?? '').':'.(string) ($row->legal_article_id ?? ''))
             ->values();
-        $rankedRows = $this->rerankCorpusRows($rows->take(20), $keyword, $queryTaxonomy);
+        $rankedRows = $this->rerankCorpusRows($rows->take(60), $keyword, $queryTaxonomy);
         $selectedRows = $rankedRows->take(min($limit, 5));
 
         return [
@@ -445,7 +454,9 @@ class LawSearchService
 
         $domainScore = (int) ($queryTaxonomy['scores'][$domain] ?? 0);
 
-        return $terms->count() <= 5 && $domainScore >= 4;
+        // Only treat very short queries as a category browse; longer queries
+        // are specific questions and belong in the ranked text search.
+        return $terms->count() <= 3 && $domainScore >= 4;
     }
 
     private function shouldUseDocumentTitleFastPath(
@@ -1281,28 +1292,30 @@ class LawSearchService
             return null;
         }
 
-        if (str_contains($sourceUrl, 'adala.justice.gov.ma/api/uploads/')) {
-            return str_replace('adala.justice.gov.ma/api/uploads/', 'adala.justice.gov.ma/uploads/', $sourceUrl);
+        // Adala serves PDFs from /api/uploads/...; the bare /uploads/ path
+        // returns the portal's 404 page, so normalize toward the api form.
+        if (str_contains($sourceUrl, 'adala.justice.gov.ma/uploads/')) {
+            return str_replace('adala.justice.gov.ma/uploads/', 'adala.justice.gov.ma/api/uploads/', $sourceUrl);
         }
 
         if (str_starts_with($sourceUrl, 'http://') || str_starts_with($sourceUrl, 'https://')) {
             return $sourceUrl;
         }
 
-        if (str_starts_with($sourceUrl, '/uploads/')) {
+        if (str_starts_with($sourceUrl, '/api/uploads/')) {
             return 'https://adala.justice.gov.ma'.$sourceUrl;
         }
 
-        if (str_starts_with($sourceUrl, 'uploads/')) {
+        if (str_starts_with($sourceUrl, 'api/uploads/')) {
             return 'https://adala.justice.gov.ma/'.$sourceUrl;
         }
 
-        if (str_starts_with($sourceUrl, '/api/uploads/')) {
-            return 'https://adala.justice.gov.ma'.substr($sourceUrl, 4);
+        if (str_starts_with($sourceUrl, '/uploads/')) {
+            return 'https://adala.justice.gov.ma/api'.$sourceUrl;
         }
 
-        if (str_starts_with($sourceUrl, 'api/uploads/')) {
-            return 'https://adala.justice.gov.ma/'.substr($sourceUrl, 4);
+        if (str_starts_with($sourceUrl, 'uploads/')) {
+            return 'https://adala.justice.gov.ma/api/'.$sourceUrl;
         }
 
         return null;
@@ -1368,15 +1381,24 @@ class LawSearchService
         $candidateLimit = max(50, (int) config('legal_ai.semantic_search.candidate_limit', 2000));
         $resultLimit = max(1, (int) config('legal_ai.semantic_search.result_limit', 12));
         $minimumScore = (float) config('legal_ai.semantic_search.min_score', 0.55);
+        $candidateIds = $this->semanticCandidateIds($keyword, $queryVector, $candidateLimit, $options);
         $query = $this->activeCorpusBaseQuery()
             ->select([
                 'legal_chunks.id AS legal_chunk_id',
                 'legal_chunks.embedding',
+                'legal_chunks.embedding_packed',
                 'legal_chunks.embedding_model',
             ])
-            ->whereNotNull('legal_chunks.embedding')
-            ->where('legal_chunks.embedding_model', $this->embeddings->model())
-            ->limit($candidateLimit);
+            ->where(fn ($where) => $where
+                ->whereNotNull('legal_chunks.embedding_packed')
+                ->orWhereNotNull('legal_chunks.embedding'))
+            ->where('legal_chunks.embedding_model', $this->embeddings->model());
+
+        if ($candidateIds) {
+            $query->whereIn('legal_chunks.id', $candidateIds);
+        } else {
+            $query->limit($candidateLimit);
+        }
 
         if (!($options['includeChatOnlySources'] ?? false)) {
             $this->excludeChatOnlyCorpusSources($query);
@@ -1385,7 +1407,9 @@ class LawSearchService
         return $query
             ->get()
             ->mapWithKeys(function (object $row) use ($queryVector, $minimumScore): array {
-                $storedVector = $this->embeddings->decodeStoredVector($row->embedding);
+                $storedVector = $row->embedding_packed !== null
+                    ? $this->embeddings->unpackVector($row->embedding_packed)
+                    : $this->embeddings->decodeStoredVector($row->embedding);
                 $score = $storedVector ? $this->embeddings->cosineSimilarity($queryVector, $storedVector) : 0.0;
 
                 return $score >= $minimumScore
@@ -1395,6 +1419,137 @@ class LawSearchService
             ->sortDesc()
             ->take($resultLimit)
             ->all();
+    }
+
+    /**
+     * Candidate chunk ids for semantic scoring. Primary path scans compact
+     * binary embedding codes over the whole active corpus (true semantic
+     * recall, works on any DB driver); falls back to a BM25 lexical prefilter
+     * while binary codes are not yet populated.
+     *
+     * @return list<int>
+     */
+    private function semanticCandidateIds(string $keyword, array $queryVector, int $candidateLimit, array $options): array
+    {
+        $queryCode = $this->embeddings->binarizeVector($queryVector);
+
+        if ($queryCode !== null) {
+            $codeQuery = $this->activeCorpusBaseQuery()
+                ->select([
+                    'legal_chunks.id AS id',
+                    'legal_chunks.embedding_binary AS code',
+                ])
+                ->whereNotNull('legal_chunks.embedding_binary')
+                ->where('legal_chunks.embedding_model', $this->embeddings->model());
+
+            if (!($options['includeChatOnlySources'] ?? false)) {
+                $this->excludeChatOnlyCorpusSources($codeQuery);
+            }
+
+            $hammingLimit = min($candidateLimit, 1000);
+            $candidates = $this->embeddings->topHammingCandidates($queryCode, $codeQuery->cursor(), $hammingLimit);
+
+            if ($candidates) {
+                return $candidates;
+            }
+        }
+
+        return array_keys($this->ftsChunkScores($keyword, $candidateLimit, (bool) ($options['includeChatOnlySources'] ?? false)));
+    }
+
+    /**
+     * Top corpus chunks for a keyword ranked by BM25 over the SQLite FTS5
+     * index, as [chunk_id => positive relevance score]. Empty when the index
+     * is unavailable (non-sqlite drivers) so callers can fall back to LIKE.
+     */
+    private function ftsChunkScores(string $keyword, ?int $limit = null, bool $includeChatOnly = false): array
+    {
+        if (!$this->ftsIndexAvailable()) {
+            return [];
+        }
+
+        $tokens = collect($this->normalizer->tokens($keyword))
+            ->reject(fn (string $token): bool => in_array($token, self::SEARCH_STOP_WORDS, true))
+            ->take(12)
+            ->values();
+
+        if ($tokens->isEmpty()) {
+            return [];
+        }
+
+        // Prefix-match longer tokens so singular/plural and derived forms
+        // still hit (FTS5 unicode61 does not stem: loyer vs loyers).
+        $match = $tokens
+            ->map(function (string $token): string {
+                $quoted = '"'.str_replace('"', '', $token).'"';
+
+                return mb_strlen($token, 'UTF-8') >= 4 ? $quoted.'*' : $quoted;
+            })
+            ->implode(' OR ');
+        $limit = max(20, $limit ?? (int) config('legal_ai.fts.result_limit', 300));
+        $chatOnlyFilter = $includeChatOnly ? '' : ' AND chat_only = 0';
+
+        try {
+            $rows = DB::select(
+                'SELECT chunk_id, bm25(legal_chunks_fts, 0.0, 0.0, 5.0, 8.0, 10.0, 4.0) AS rank
+                 FROM legal_chunks_fts WHERE legal_chunks_fts MATCH ?'.$chatOnlyFilter.'
+                 ORDER BY rank LIMIT '.$limit,
+                [$match]
+            );
+        } catch (Throwable $error) {
+            Log::warning('FTS search failed', ['message' => $error->getMessage()]);
+
+            return [];
+        }
+
+        $scores = [];
+
+        foreach ($rows as $row) {
+            // SQLite bm25() returns negative values where lower is better.
+            $scores[(int) $row->chunk_id] = round(max(0.0, -(float) $row->rank), 4);
+        }
+
+        return $scores;
+    }
+
+    private function ftsIndexAvailable(): bool
+    {
+        static $available = null;
+
+        if ($available !== null) {
+            return $available;
+        }
+
+        try {
+            $available = DB::connection()->getDriverName() === 'sqlite'
+                && DB::selectOne("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'legal_chunks_fts'") !== null;
+        } catch (Throwable) {
+            $available = false;
+        }
+
+        return $available;
+    }
+
+    private function corpusFtsScoreSql(array $ftsScores): array
+    {
+        if (!$ftsScores) {
+            return ['sql' => '0', 'bindings' => []];
+        }
+
+        $clauses = [];
+        $bindings = [];
+
+        foreach ($ftsScores as $chunkId => $score) {
+            $clauses[] = 'WHEN ? THEN ?';
+            $bindings[] = (int) $chunkId;
+            // BM25 magnitudes are ~5-25; x8 keeps them comparable to LIKE weights.
+            $bindings[] = round((float) $score * 8, 4);
+        }
+
+        return [
+            'sql' => '(CASE legal_chunks.id '.implode(' ', $clauses).' ELSE 0 END)',
+            'bindings' => $bindings,
+        ];
     }
 
     private function corpusSemanticScoreSql(array $semanticScores): array

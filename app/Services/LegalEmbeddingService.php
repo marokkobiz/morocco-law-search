@@ -27,6 +27,54 @@ class LegalEmbeddingService
         return hash('sha256', $this->normalizeEmbeddingText($text));
     }
 
+    /**
+     * Embed several texts in one Ollama request. Returns vectors aligned with
+     * the input order, or null when the batch call failed entirely.
+     *
+     * @param list<string> $texts
+     * @return list<?array>|null
+     */
+    public function embedBatch(array $texts): ?array
+    {
+        $texts = array_map(fn (string $text): string => $this->normalizeEmbeddingText($text), $texts);
+        $this->lastError = null;
+
+        if (!$this->isEnabled() || !$texts) {
+            return null;
+        }
+
+        $baseUrl = rtrim((string) config('legal_ai.embeddings.base_url', 'http://localhost:11434'), '/');
+        $timeout = max(60, (int) config('legal_ai.embeddings.timeout_seconds', 30));
+
+        try {
+            $response = Http::timeout($timeout)
+                ->retry(1, 200)
+                ->post($baseUrl.'/api/embed', [
+                    'model' => $this->model(),
+                    'input' => array_values($texts),
+                ]);
+
+            if (!$response->successful()) {
+                return $this->recordFailure('Ollama batch embed request failed', $response->status(), $response->body());
+            }
+
+            $embeddings = data_get($response->json(), 'embeddings');
+
+            if (!is_array($embeddings) || count($embeddings) !== count($texts)) {
+                $this->lastError = 'Ollama batch embed returned a mismatched embedding count.';
+
+                return null;
+            }
+
+            return array_map(fn (mixed $vector): ?array => $this->normalizeVector($vector), $embeddings);
+        } catch (Throwable $error) {
+            $this->lastError = $error->getMessage();
+            Log::warning('Ollama batch embedding unavailable', ['message' => $error->getMessage()]);
+
+            return null;
+        }
+    }
+
     public function embed(string $text): ?array
     {
         $text = $this->normalizeEmbeddingText($text);
@@ -105,6 +153,101 @@ class LegalEmbeddingService
         }
 
         return round($dot / (sqrt($leftMagnitude) * sqrt($rightMagnitude)), 6);
+    }
+
+    /**
+     * Sign-quantize a float vector into a bit string (1 bit per dimension),
+     * used for fast Hamming-distance candidate scans.
+     */
+    public function binarizeVector(array $vector): ?string
+    {
+        $vector = $this->normalizeVector($vector);
+
+        if (!$vector) {
+            return null;
+        }
+
+        $code = '';
+        $byte = 0;
+        $count = 0;
+
+        foreach ($vector as $value) {
+            $byte = ($byte << 1) | ($value > 0.0 ? 1 : 0);
+
+            if (++$count === 8) {
+                $code .= chr($byte);
+                $byte = 0;
+                $count = 0;
+            }
+        }
+
+        if ($count > 0) {
+            $code .= chr(($byte << (8 - $count)) & 0xFF);
+        }
+
+        return $code;
+    }
+
+    /**
+     * Rank [id => binary code] rows by Hamming distance to the query code and
+     * return the closest $limit ids (ascending distance).
+     *
+     * @param iterable<object{id: int|string, code: string}> $codeRows
+     * @return list<int>
+     */
+    public function topHammingCandidates(string $queryCode, iterable $codeRows, int $limit): array
+    {
+        static $popcount = null;
+
+        if ($popcount === null) {
+            $popcount = [];
+
+            for ($byte = 0; $byte < 256; $byte++) {
+                $popcount[$byte] = substr_count(decbin($byte), '1');
+            }
+        }
+
+        $length = strlen($queryCode);
+        $distances = [];
+
+        foreach ($codeRows as $row) {
+            $code = (string) $row->code;
+
+            if (strlen($code) !== $length) {
+                continue;
+            }
+
+            $xor = $code ^ $queryCode;
+            $distance = 0;
+
+            foreach (count_chars($xor, 1) as $byte => $occurrences) {
+                $distance += $popcount[$byte] * $occurrences;
+            }
+
+            $distances[(int) $row->id] = $distance;
+        }
+
+        asort($distances);
+
+        return array_map('intval', array_keys(array_slice($distances, 0, $limit, true)));
+    }
+
+    public function packVector(array $vector): ?string
+    {
+        $vector = $this->normalizeVector($vector);
+
+        return $vector ? pack('g*', ...$vector) : null;
+    }
+
+    public function unpackVector(mixed $value): ?array
+    {
+        if (!is_string($value) || $value === '' || strlen($value) % 4 !== 0) {
+            return null;
+        }
+
+        $vector = unpack('g*', $value);
+
+        return $vector ? $this->normalizeVector(array_values($vector)) : null;
     }
 
     public function decodeStoredVector(mixed $value): ?array
