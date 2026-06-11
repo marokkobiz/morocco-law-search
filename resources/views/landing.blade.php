@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Moroccan Legal Research | Marokko Biz')
+@section('title', 'Moroccan Legal Research | MarocLoi')
 
 @section('content')
   @php
@@ -9,7 +9,7 @@
     $copy = [
       'en' => [
         'badge' => 'Professional Legal Research',
-        'title' => 'Moroccan Legal<br>Research Engine',
+        'title' => 'Moroccan Legal<br>Loipedia',
         'subtitle' => 'Search Moroccan legislation, official bulletins, legal texts, and source-backed analysis from one professional workspace.',
         'placeholder' => 'Search article, code, bulletin, or legal issue...',
         'search' => 'Search',
@@ -40,7 +40,7 @@
       ],
       'fr' => [
         'badge' => 'Recherche juridique professionnelle',
-        'title' => 'Moteur de recherche<br>juridique marocain',
+        'title' => 'Loipedia<br>juridique marocain',
         'subtitle' => 'Recherchez la legislation marocaine, les bulletins officiels, les textes juridiques et des analyses appuyees par des sources dans un seul espace professionnel.',
         'placeholder' => 'Rechercher un article, code, bulletin ou sujet juridique...',
         'search' => 'Rechercher',
@@ -71,7 +71,7 @@
       ],
       'ar' => [
         'badge' => 'بحث قانوني مهني',
-        'title' => 'محرك البحث<br>القانوني المغربي',
+        'title' => 'Loipedia<br>القانوني المغربي',
         'subtitle' => 'ابحث في التشريع المغربي والنشرات الرسمية والنصوص القانونية والتحليلات المدعومة بالمصادر من فضاء مهني واحد.',
         'placeholder' => 'ابحث عن مادة، مدونة، نشرة رسمية، أو موضوع قانوني...',
         'search' => 'بحث',

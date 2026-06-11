@@ -37,6 +37,7 @@
       })();
     </script>
     @vite(['resources/css/search-workspace.css', 'resources/js/search-workspace.js'])
+    <link rel="stylesheet" href="/css/search-remodel.css">
     <style>
       .interface-language-control {
         display: inline-flex;

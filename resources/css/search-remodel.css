@@ -1,0 +1,415 @@
+/*
+ * Search workspace remodel — loaded after the bundled stylesheet and
+ * overrides it. Keeps the white + blue identity, replaces the glassy,
+ * pill-heavy look with crisp solid surfaces and a clearer hierarchy.
+ */
+
+:root {
+  --ink: #0a1530;
+  --ink-soft: #2c4060;
+  --muted: #5d6f8a;
+  --blue: #0b5cdb;
+  --blue-deep: #0747ae;
+  --blue-2: #2f7ff0;
+  --blue-3: #eef5ff;
+  --surface: #ffffff;
+  --surface-solid: #ffffff;
+  --surface-soft: #f8fbff;
+  --line: #dce6f5;
+  --line-strong: #b9cdee;
+  --shadow-soft: 0 1px 2px rgba(13, 47, 105, 0.05), 0 10px 30px rgba(13, 47, 105, 0.07);
+  --shadow-lift: 0 2px 6px rgba(13, 47, 105, 0.08), 0 18px 44px rgba(13, 47, 105, 0.12);
+  --radius: 14px;
+}
+
+/* ---- Canvas: clean white, faint blue wash at the top ---- */
+
+body {
+  background: linear-gradient(180deg, #f0f6ff 0%, #ffffff 360px), #ffffff;
+}
+
+body::before {
+  background: none;
+}
+
+/* ---- Top bar ---- */
+
+.topbar {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(13, 47, 105, 0.04);
+}
+
+.topbar-link {
+  color: var(--blue);
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+}
+
+.topbar-link:hover {
+  background: var(--blue-3);
+  transform: none;
+}
+
+.topbar-meta {
+  border-color: var(--line);
+}
+
+/* ---- Hero: compact, search-first ---- */
+
+.search-hero {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow-soft);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  min-height: auto;
+}
+
+.search-hero::before {
+  background: linear-gradient(160deg, #f0f6ff 0%, rgba(240, 246, 255, 0) 55%);
+}
+
+.search-hero::after {
+  content: none;
+}
+
+.hero-kicker {
+  color: var(--blue);
+  letter-spacing: 0.14em;
+}
+
+.search-hero h1 {
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  font-size: clamp(2.4rem, 4.6vw, 4.2rem);
+  line-height: 1.04;
+  margin: 14px 0 10px;
+}
+
+.hero-subcopy {
+  color: var(--muted);
+  font-size: 1.02rem;
+}
+
+.library-panel,
+.results-zone {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-radius: 20px;
+}
+
+/* ---- Search bar ---- */
+
+.search-console {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.search-input-row {
+  background: #ffffff;
+  border: 2px solid var(--line-strong);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(13, 47, 105, 0.05);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-input-row:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(11, 92, 219, 0.12);
+}
+
+.search-input-icon {
+  color: var(--blue);
+}
+
+.search-button,
+.primary-action {
+  background: var(--blue);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(7, 71, 174, 0.35);
+  transition: background 0.15s;
+}
+
+.search-button:hover,
+.primary-action:hover {
+  background: var(--blue-deep);
+  transform: none;
+}
+
+/* Quick topic chips under the search bar */
+
+.quick-strip button,
+.quick-strip a {
+  color: var(--ink-soft);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.quick-strip button:hover,
+.quick-strip a:hover {
+  color: var(--blue);
+  border-color: var(--blue);
+  background: var(--blue-3);
+}
+
+/* ---- Suggestions dropdown ---- */
+
+.suggestions-panel {
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lift);
+}
+
+.suggestion-row {
+  border-radius: 10px;
+}
+
+.suggestion-row:hover {
+  background: var(--blue-3);
+}
+
+/* ---- Results area ---- */
+
+.results-head {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+
+.result-count {
+  color: var(--ink);
+}
+
+.result-filter-strip button {
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.result-filter-strip button:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.result-filter-strip button.is-active,
+.result-filter-strip button[aria-pressed="true"] {
+  color: #ffffff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.result-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.result-card::before {
+  background: linear-gradient(90deg, var(--blue), var(--blue-2), transparent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.result-card:hover::before,
+.result-card.is-jump-target::before {
+  opacity: 0.9;
+}
+
+.result-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.result-card.is-jump-target {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(11, 92, 219, 0.14);
+}
+
+.result-topline .category-chip {
+  color: var(--blue-deep);
+  background: var(--blue-3);
+  border: 0;
+  border-radius: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.result-card h3,
+.result-card h2 {
+  color: var(--ink);
+}
+
+.article-meta-row .article-number {
+  color: var(--blue-deep);
+  background: var(--blue-3);
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.article-preview {
+  color: var(--ink-soft);
+}
+
+.tag-list .tag {
+  color: var(--muted);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.source-box {
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--blue);
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.translation-box {
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.ghost-action {
+  color: var(--blue);
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+}
+
+.ghost-action:hover {
+  background: var(--blue-3);
+  transform: none;
+}
+
+.score-pill {
+  color: var(--blue-deep);
+  background: var(--blue-3);
+  border: 0;
+  font-weight: 800;
+}
+
+/* ---- Overview / metric panels ---- */
+
+.library-panel,
+.metric-card,
+.category-radar,
+.state-panel,
+.empty-panel {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.metric-card:hover {
+  box-shadow: var(--shadow-soft);
+}
+
+.coverage-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.coverage-item:hover {
+  border-color: var(--blue);
+  background: var(--blue-3);
+}
+
+.section-label {
+  color: var(--blue);
+  letter-spacing: 0.14em;
+}
+
+/* ---- Assistant chat widget ---- */
+
+.support-launcher {
+  background: linear-gradient(135deg, var(--blue), var(--blue-2));
+  box-shadow: 0 10px 26px rgba(11, 92, 219, 0.4);
+}
+
+.support-launcher:hover {
+  background: linear-gradient(135deg, var(--blue-deep), var(--blue));
+}
+
+.support-panel {
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  box-shadow: var(--shadow-lift);
+}
+
+.support-chat-head {
+  background: linear-gradient(135deg, var(--blue), var(--blue-2));
+  color: #ffffff;
+}
+
+.chat-bubble {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  box-shadow: none;
+}
+
+.chat-message.is-assistant .chat-bubble {
+  background: #ffffff;
+}
+
+.chat-message:not(.is-assistant) .chat-bubble {
+  color: #ffffff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.chat-input-row,
+.support-chat-input {
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+}
+
+.chat-input-row:focus-within,
+.support-chat-input:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(11, 92, 219, 0.12);
+}
+
+.support-chat-input button[type="submit"],
+.chat-input-row button[type="submit"] {
+  background: var(--blue);
+  color: #ffffff;
+}
+
+.support-chat-input button[type="submit"]:hover,
+.chat-input-row button[type="submit"]:hover {
+  background: var(--blue-deep);
+}
+
+.citation-card {
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--blue);
+  border-radius: 10px;
+}
+
+/* ---- Focus visibility ---- */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgba(11, 92, 219, 0.35);
+}
