@@ -9,6 +9,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/css/search-workspace.css',
+                'resources/css/search-remodel.css',
                 'resources/js/search-workspace.js',
             ],
             refresh: true,

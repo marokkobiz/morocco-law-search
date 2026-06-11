@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Marokko Biz | Moroccan Law Search</title>
-    <link rel="icon" href="/icons/a.png">
+    <link rel="icon" href="/marokko-biz-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -36,7 +36,7 @@
         };
       })();
     </script>
-    @vite(['resources/css/search-workspace.css', 'resources/js/search-workspace.js'])
+    @vite(['resources/css/search-workspace.css', 'resources/css/search-remodel.css', 'resources/js/search-workspace.js'])
     <style>
       .interface-language-control {
         display: inline-flex;
@@ -106,10 +106,6 @@
       .suggestions-panel::-webkit-scrollbar-thumb {
         background: rgba(7, 87, 216, 0.32);
         border-radius: 999px;
-      }
-
-      .support-widget {
-        display: none !important;
       }
 
     </style>
