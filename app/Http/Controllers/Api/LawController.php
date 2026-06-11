@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Law;
 use App\Models\LawTranslation;
+use App\Services\AiReasoningService;
+use App\Services\ChatLawService;
 use App\Services\LawSearchService;
 use App\Services\TranslationService;
 use App\Services\TranslationUnavailableException;
@@ -160,6 +162,8 @@ class LawController extends Controller
 
     public function __construct(
         private readonly LawSearchService $laws,
+        private readonly AiReasoningService $aiReasoning,
+        private readonly ChatLawService $chatLaws,
         private readonly TranslationService $translations,
     )
     {
@@ -218,6 +222,64 @@ class LawController extends Controller
             'hasMore' => $payload['hasMore'],
             'limit' => $payload['limit'],
         ]);
+    }
+
+    public function chat(Request $request): JsonResponse
+    {
+        // Case analysis runs two local LLM passes and can exceed PHP's
+        // default web execution limit.
+        set_time_limit(600);
+
+        $question = trim((string) $request->input('message', ''));
+
+        if ($question === '') {
+            return response()->json(['message' => 'Chat message is required'], 400);
+        }
+
+        $history = collect($request->input('history', []))
+            ->filter(fn (mixed $message) => is_array($message))
+            ->take(-8)
+            ->map(fn (array $message) => [
+                'role' => ($message['role'] ?? 'user') === 'assistant' ? 'assistant' : 'user',
+                'text' => trim((string) ($message['text'] ?? '')),
+            ])
+            ->filter(fn (array $message) => $message['text'] !== '')
+            ->values()
+            ->all();
+        $intent = $this->chatLaws->classifyIntent($question, $history);
+        $aiPlan = $intent === ChatLawService::INTENT_CASE_ANALYSIS
+            ? $this->aiReasoning->createSearchPlan($question, $history)
+            : null;
+        $context = $this->chatLaws->prepare($question, $history, $aiPlan, $intent);
+        $citations = $context['citations'];
+        $answer = $context['answer']
+            ?? $this->aiReasoning->answer($question, $citations, $context['plan'] ?? ['aiPlan' => $aiPlan])
+            ?? $context['fallbackAnswer'];
+        $payload = [
+            'question' => $question,
+            'intent' => $context['intent'] ?? $intent,
+            'answer' => $answer,
+            'answerSupport' => $this->aiReasoning->verifyAnswerSupport(
+                $answer,
+                $citations,
+                $context['responseLanguage'] ?? 'en'
+            ),
+            'citations' => $citations,
+        ];
+
+        if ($request->boolean('debug')) {
+            $payload['diagnostics'] = $context['diagnostics'] ?? [
+                'planningQuestion' => $question,
+                'queries' => [],
+                'rawResultCount' => 0,
+                'acceptedResultCount' => count($citations),
+                'rejectedResultCount' => 0,
+                'rawResults' => [],
+                'acceptedCitations' => [],
+            ];
+        }
+
+        return response()->json($payload);
     }
 
     public function translate(Law $law, Request $request): JsonResponse
@@ -417,6 +479,34 @@ class LawController extends Controller
                 if (count($results) >= $limit) {
                     $hasMore = $hasMore || count($queries) > 1;
                     break 2;
+                }
+            }
+        }
+
+        // Sparse keyword results usually mean a vocabulary mismatch (or a
+        // cross-language query); retry the leading queries with semantic
+        // search to find articles by meaning.
+        if (count($results) < 10) {
+            $semanticOptions = array_merge($options, ['disableSemanticSearch' => false]);
+
+            foreach (array_slice($queries, 0, 2) as $query) {
+                $payload = $this->laws->search($query, $limit, $semanticOptions);
+                $hasMore = $hasMore || (bool) ($payload['hasMore'] ?? false);
+
+                foreach ($payload['results'] ?? [] as $result) {
+                    $key = $this->searchResultKey($result);
+
+                    if (isset($seen[$key])) {
+                        continue;
+                    }
+
+                    $result['matched_query'] = $query;
+                    $results[] = $result;
+                    $seen[$key] = true;
+
+                    if (count($results) >= $limit) {
+                        break 2;
+                    }
                 }
             }
         }

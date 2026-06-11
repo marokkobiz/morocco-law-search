@@ -12,5 +12,6 @@ Route::post('/billing/stripe-webhook', [BillingController::class, 'webhook'])->m
 Route::prefix('laws')->middleware(['web', 'auth', 'paid', 'throttle:240,1'])->group(function (): void {
     Route::get('/suggestions', [LawController::class, 'suggestions']);
     Route::get('/search', [LawController::class, 'search']);
+    Route::post('/chat', [LawController::class, 'chat']);
     Route::get('/{law}/translate', [LawController::class, 'translate']);
 });
