@@ -10,6 +10,8 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/css/search-workspace.css',
                 'resources/js/search-workspace.js',
+                'resources/js/search-behaviors.js',
+                'resources/js/search-translations.js',
             ],
             refresh: true,
         }),

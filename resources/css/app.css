@@ -6,9 +6,20 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
     --font-serif: 'Playfair Display', ui-serif, Georgia, serif;
+    --font-display: 'Playfair Display', ui-serif, Georgia, serif;
+    --color-brand-50: #eff6ff;
+    --color-brand-100: #dbeafe;
+    --color-brand-200: #bfdbfe;
+    --color-brand-300: #93c5fd;
+    --color-brand-400: #60a5fa;
+    --color-brand-500: #3b82f6;
+    --color-brand-600: #2563eb;
+    --color-brand-700: #1d4ed8;
+    --color-brand-800: #1e40af;
+    --color-brand-900: #1e3a8a;
 }
 
 @layer base {
@@ -143,9 +154,6 @@
     }
 
     /* --- Auth page --- */
-    .auth-page {
-        @apply min-h-screen grid place-items-center bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 px-4 py-8;
-    }
     .auth-card {
         @apply w-full max-w-md bg-white rounded-2xl shadow-xl shadow-blue-500/5 border border-gray-100 p-8;
     }
@@ -154,16 +162,6 @@
     }
     .auth-card h1 {
         @apply text-2xl font-bold text-gray-900 mt-1;
-    }
-    .auth-language-switcher {
-        @apply flex items-center justify-end gap-1 mb-4;
-    }
-    .auth-language-switcher a {
-        @apply inline-flex items-center justify-center min-w-10 rounded-lg px-3 py-1.5 text-xs font-bold
-               text-blue-600 bg-blue-50 border border-blue-100 no-underline transition-colors;
-    }
-    .auth-language-switcher a.is-active {
-        @apply text-white bg-blue-600 border-blue-600;
     }
     .auth-card form {
         @apply mt-6 space-y-4;
@@ -201,16 +199,91 @@
     .auth-link {
         @apply block mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors;
     }
-    .auth-brand {
-        @apply fixed top-4 left-4 inline-flex items-center gap-3 font-bold no-underline text-gray-800;
+    /* ============================================
+       Search Workspace (react-law-search)
+       ============================================ */
+
+    /* Interface language control */
+    .interface-language-control {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 38px;
+        padding: 5px 7px 5px 10px;
+        border: 1px solid rgba(105, 145, 205, 0.34);
+        border-radius: 999px;
+        color: #0757d8;
+        background: rgba(231, 241, 255, 0.82);
+        font-size: 0.78rem;
+        font-weight: 900;
     }
-    .auth-brand img {
-        @apply w-10 h-10 rounded-xl;
+
+    .interface-language-control select {
+        min-height: 28px;
+        border: 0;
+        border-radius: 999px;
+        color: #0757d8;
+        background: #fff;
+        font: inherit;
+        font-size: 0.76rem;
+        font-weight: 900;
+        outline: 0;
     }
-    [dir='rtl'] .auth-brand {
-        @apply left-auto right-4;
+
+    /* RTL overrides for search workspace */
+    html[dir="rtl"] .app-shell {
+        direction: rtl;
     }
-    [dir='rtl'] .auth-language-switcher {
-        @apply justify-start;
+
+    html[dir="rtl"] .search-input-row,
+    html[dir="rtl"] .support-chat-input,
+    html[dir="rtl"] .chat-input-row {
+        direction: rtl;
+    }
+
+    html[dir="rtl"] .search-input-row input,
+    html[dir="rtl"] .support-chat-input textarea {
+        text-align: right;
+    }
+
+    html[dir="rtl"] .suggestion-row,
+    html[dir="rtl"] .results-head,
+    html[dir="rtl"] .result-tools,
+    html[dir="rtl"] .result-card,
+    html[dir="rtl"] .empty-panel,
+    html[dir="rtl"] .state-panel {
+        direction: rtl;
+    }
+
+    /* Jump target highlight */
+    .result-card.is-jump-target {
+        border-color: #0757d8;
+        box-shadow: 0 0 0 4px rgba(7, 87, 216, 0.16), 0 24px 64px rgba(7, 87, 216, 0.16);
+    }
+
+    /* Suggestions scrollbar */
+    .suggestions-panel {
+        max-height: min(360px, 46vh);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .suggestions-panel::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .suggestions-panel::-webkit-scrollbar-thumb {
+        background: rgba(7, 87, 216, 0.32);
+        border-radius: 999px;
+    }
+
+    /* Hide third-party support widget in search workspace */
+    .support-widget {
+        display: none !important;
+    }
+
+    /* Landing page body overrides when react-law-search is loaded inside app layout */
+    body {
+        scroll-behavior: smooth;
     }
 }

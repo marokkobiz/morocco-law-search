@@ -2,6 +2,14 @@
   $interfaceLanguage = request('lang');
   $interfaceLanguage = in_array($interfaceLanguage, ['en', 'fr', 'ar'], true) ? $interfaceLanguage : 'ar';
   $isArabic = $interfaceLanguage === 'ar';
+  $localeMeta = [
+    'en' => ['code' => 'EN', 'label' => 'English'],
+    'fr' => ['code' => 'FR', 'label' => 'Français'],
+    'ar' => ['code' => 'AR', 'label' => 'العربية'],
+  ];
+  $activeLocale = $interfaceLanguage;
+  $activeLocaleMeta = $localeMeta[$activeLocale];
+  $localeOptions = $localeMeta;
   $layoutCopy = [
     'en' => ['about' => 'About', 'sources' => 'Sources', 'coverage' => 'Coverage', 'login' => 'Login', 'start' => 'Get Started', 'footer' => 'Legal information from indexed sources. Not a substitute for legal advice.', 'privacy' => 'Privacy policy', 'terms' => 'Terms and conditions'],
     'fr' => ['about' => 'A propos', 'sources' => 'Sources', 'coverage' => 'Couverture', 'login' => 'Connexion', 'start' => 'Commencer', 'footer' => 'Information juridique issue de sources indexees. Ne remplace pas un avis juridique.', 'privacy' => 'Politique de confidentialite', 'terms' => 'Conditions generales'],
@@ -13,6 +21,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Moroccan Legal Research | MarocLoi')</title>
     <link rel="icon" href="/icons/a.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,6 +31,7 @@
       rel="stylesheet"
     >
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
   </head>
   <body class="font-sans antialiased text-gray-900 bg-white {{ $isArabic ? 'rtl' : '' }}">
     <nav class="nav-glass">
@@ -39,11 +49,35 @@
           </div>
 
           <div class="flex items-center gap-3">
-            <div class="hidden sm:flex items-center rounded-full border border-blue-100 bg-blue-50/80 p-1 text-xs font-bold text-blue-700">
-              @foreach (['en' => 'EN', 'fr' => 'FR', 'ar' => 'AR'] as $code => $label)
-                <a href="{{ request()->fullUrlWithQuery(['lang' => $code]) }}" class="px-2.5 py-1 rounded-full no-underline transition {{ $interfaceLanguage === $code ? 'bg-white text-blue-700 shadow-sm' : 'text-blue-500 hover:text-blue-700' }}">{{ $label }}</a>
-              @endforeach
-            </div>
+            <details class="relative">
+              <summary
+                class="list-none cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/50 [&::-webkit-details-marker]:hidden">
+                <span class="inline-flex items-center gap-2">
+                  <span class="uppercase">{{ $activeLocaleMeta['code'] }}</span>
+                  <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 9l6 6 6-6">
+                    </path>
+                  </svg>
+                </span>
+                <span class="sr-only">Select language</span>
+              </summary>
+              <div
+                class="absolute ltr:-right-20 rtl:-left-20 z-50 mt-2 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white py-2 shadow-xl">
+                @foreach ($localeOptions as $localeOption => $localeMeta)
+                  <a href="{{ request()->fullUrlWithQuery(['lang' => $localeOption]) }}"
+                    @class([
+                      'flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors',
+                      'bg-blue-50 text-blue-700' => $activeLocale === $localeOption,
+                      'text-slate-700 hover:bg-slate-50' => $activeLocale !== $localeOption,
+                    ])>
+                    <span
+                      class="min-w-7 rounded bg-slate-100 px-1.5 py-0.5 text-center text-xs font-black uppercase text-slate-700">{{ $localeMeta['code'] }}</span>
+                    <span>{{ $localeMeta['label'] }}</span>
+                  </a>
+                @endforeach
+              </div>
+            </details>
             @auth
               <a href="/app?lang={{ $interfaceLanguage }}" class="btn-primary-sm no-underline">{{ $interfaceLanguage === 'fr' ? 'Ouvrir l application' : ($interfaceLanguage === 'ar' ? 'فتح التطبيق' : 'Open app') }}</a>
             @else

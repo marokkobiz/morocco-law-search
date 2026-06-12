@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ForgotPasswordRequest;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 use Throwable;
 
@@ -16,8 +18,7 @@ class AuthController extends Controller
 
     public function loginForm(Request $request): View
     {
-        return view('auth-page', [
-            'mode' => 'login',
+        return view('auth.login', [
             'lang' => $this->language($request),
         ]);
     }
@@ -26,20 +27,23 @@ class AuthController extends Controller
     {
         $lang = $this->language($request);
 
-        return view('auth-page', [
-            'mode' => 'register',
+        return view('auth.register', [
             'lang' => $lang,
             'courts' => $this->courts($lang),
             'customBarValue' => self::CUSTOM_BAR_VALUE,
         ]);
     }
 
-    public function login(Request $request): RedirectResponse
+    public function passwordForm(Request $request): View
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
+        return view('auth.password', [
+            'lang' => $this->language($request),
         ]);
+    }
+
+    public function login(LoginRequest $request): RedirectResponse
+    {
+        $credentials = $request->validated();
 
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()
@@ -52,17 +56,10 @@ class AuthController extends Controller
         return redirect()->intended('/app?lang='.$this->language($request));
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(RegisterRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'company' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:40'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'bar' => ['required', 'string', 'max:255'],
-            'custom_bar' => ['nullable', 'required_if:bar,'.self::CUSTOM_BAR_VALUE, 'string', 'max:255'],
-            'password' => ['required', Password::min(8)],
-        ]);
+        $validated = $request->validated();
+        unset($validated['password_confirmation']);
 
         $validated['bar'] = trim($validated['bar'] === self::CUSTOM_BAR_VALUE
             ? (string) $validated['custom_bar']
@@ -99,8 +96,10 @@ class AuthController extends Controller
     private function language(Request $request): string
     {
         $lang = (string) $request->input('lang', $request->query('lang', 'en'));
+        $lang = in_array($lang, ['en', 'fr', 'ar'], true) ? $lang : 'en';
+        app()->setLocale($lang);
 
-        return in_array($lang, ['en', 'fr', 'ar'], true) ? $lang : 'en';
+        return $lang;
     }
 
     /**
