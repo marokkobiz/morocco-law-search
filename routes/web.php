@@ -15,7 +15,7 @@ Route::controller(PublicPageController::class)->name('pages.')->group(function (
 
 // Protected App Pages
 Route::middleware(['auth', 'paid'])->name('app.')->group(function () {
-    Route::get('/app', [PublicPageController::class, 'app'])->name('workspace');
+    Route::get('/dashboard', [PublicPageController::class, 'app'])->name('workspace');
     Route::get('/search', [PublicPageController::class, 'search'])->name('search');
 });
 

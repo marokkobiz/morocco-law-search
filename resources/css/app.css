@@ -199,9 +199,18 @@
     .auth-link {
         @apply block mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors;
     }
-    /* ============================================
-       Search Workspace (react-law-search)
-       ============================================ */
+/* --- Image effects --- */
+.img-elevate {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.img-elevate:hover {
+    transform: scale(1.02) translateY(-4px);
+    box-shadow: 0 20px 60px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* ============================================
+   Search Workspace (react-law-search)
+   ============================================ */
 
     /* Interface language control */
     .interface-language-control {
