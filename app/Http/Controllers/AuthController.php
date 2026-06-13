@@ -16,16 +16,16 @@ class AuthController extends Controller
 {
     private const CUSTOM_BAR_VALUE = '__custom_bar__';
 
-    public function loginForm(Request $request): View
+    public function loginForm(): View
     {
         return view('auth.login', [
-            'lang' => $this->language($request),
+            'lang' => app()->getLocale(),
         ]);
     }
 
-    public function registerForm(Request $request): View
+    public function registerForm(): View
     {
-        $lang = $this->language($request);
+        $lang = app()->getLocale();
 
         return view('auth.register', [
             'lang' => $lang,
@@ -34,10 +34,10 @@ class AuthController extends Controller
         ]);
     }
 
-    public function passwordForm(Request $request): View
+    public function passwordForm(): View
     {
         return view('auth.password', [
-            'lang' => $this->language($request),
+            'lang' => app()->getLocale(),
         ]);
     }
 
@@ -53,7 +53,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended('/app?lang='.$this->language($request));
+        return redirect()->intended('/app');
     }
 
     public function register(RegisterRequest $request): RedirectResponse
@@ -77,10 +77,10 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         if ($user->requiresPayment()) {
-            return redirect('/billing?lang='.$this->language($request));
+            return redirect('/billing');
         }
 
-        return redirect('/app?lang='.$this->language($request));
+        return redirect('/app');
     }
 
     public function logout(Request $request): RedirectResponse
@@ -90,23 +90,9 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/login?lang='.$this->language($request));
+        return redirect('/login');
     }
 
-    private function language(Request $request): string
-    {
-        $lang = (string) $request->input('lang', $request->query('lang', 'en'));
-        $lang = in_array($lang, ['en', 'fr', 'ar'], true) ? $lang : 'en';
-        app()->setLocale($lang);
-
-        return $lang;
-    }
-
-    /**
-     * Default bars stay visible, and saved custom bars become available to the next users.
-     *
-     * @return list<string>
-     */
     private function courts(string $lang): array
     {
         $defaults = $this->defaultCourts($lang);

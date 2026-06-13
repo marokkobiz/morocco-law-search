@@ -22,7 +22,6 @@
 
     <form action="/forgot-password" method="post">
       @csrf
-      <input type="hidden" name="lang" value="{{ $lang }}">
 
       <label>
         {{ __('auth.email') }}
@@ -32,7 +31,7 @@
       <button type="submit">{{ __('auth.send_reset_link') }}</button>
     </form>
 
-    <a href="/login?lang={{ $lang }}" class="auth-link text-center">
+    <a href="/login" class="auth-link text-center">
       {{ __('auth.back_to_login') }}
     </a>
   </section>

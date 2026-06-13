@@ -2,21 +2,21 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\ComingSoonController;
 use App\Http\Controllers\CorpusStatusController;
-use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 // Public Pages
-Route::controller(PublicPageController::class)->name('pages.')->group(function () {
-    Route::get('/', 'comingSoon')->name('home');
-    Route::get('/test', 'home')->name('test');
-    Route::get('/corpus/status', 'corpusStatus')->name('corpus.status');
-});
+Route::get('/', ComingSoonController::class)->name('home');
+Route::get('/test', LandingController::class)->name('landing');
+Route::get('/corpus/status', [CorpusStatusController::class, 'show'])->name('corpus.status');
 
 // Protected App Pages
 Route::middleware(['auth', 'paid'])->name('app.')->group(function () {
-    Route::get('/dashboard', [PublicPageController::class, 'app'])->name('workspace');
-    Route::get('/search', [PublicPageController::class, 'search'])->name('search');
+    Route::get('/dashboard', WorkspaceController::class)->name('workspace');
+    Route::get('/search', WorkspaceController::class)->name('search');
 });
 
 // Billing

@@ -16,7 +16,6 @@
 
     <form action="/login" method="post" data-auth-gate>
       @csrf
-      <input type="hidden" name="lang" value="{{ $lang }}">
 
       <label>
         {{ __('auth.email') }}
@@ -29,7 +28,7 @@
       </label>
 
       <div class="flex items-center justify-end mt-2">
-        <a href="/forgot-password?lang={{ $lang }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+        <a href="/forgot-password" class="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
           {{ __('auth.forgot_password') }}
         </a>
       </div>
@@ -37,7 +36,7 @@
       <button type="submit">{{ __('auth.login_button') }}</button>
     </form>
 
-    <a href="/register?lang={{ $lang }}" class="auth-link text-center">
+    <a href="/register" class="auth-link text-center">
       {{ __('auth.to_register') }}
     </a>
   </section>

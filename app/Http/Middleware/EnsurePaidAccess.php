@@ -27,13 +27,6 @@ class EnsurePaidAccess
             ], 402);
         }
 
-        return redirect('/billing?lang='.$this->language($request));
-    }
-
-    private function language(Request $request): string
-    {
-        $lang = (string) $request->query('lang', 'en');
-
-        return in_array($lang, ['en', 'fr', 'ar'], true) ? $lang : 'en';
+        return redirect('/billing');
     }
 }

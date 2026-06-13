@@ -24,7 +24,6 @@
 
     <form action="/register" method="post" data-auth-gate>
       @csrf
-      <input type="hidden" name="lang" value="{{ $lang }}">
 
       <div class="auth-field-grid">
         <label>
@@ -72,7 +71,7 @@
       <button type="submit">{{ __('auth.register_button') }}</button>
     </form>
 
-    <a href="/login?lang={{ $lang }}" class="auth-link text-center">
+    <a href="/login" class="auth-link text-center">
       {{ __('auth.to_login') }}
     </a>
   </section>

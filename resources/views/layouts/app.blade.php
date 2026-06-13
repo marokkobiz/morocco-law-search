@@ -1,6 +1,5 @@
 @php
-  $interfaceLanguage = request('lang');
-  $interfaceLanguage = in_array($interfaceLanguage, ['en', 'fr', 'ar'], true) ? $interfaceLanguage : 'ar';
+  $interfaceLanguage = app()->getLocale();
   $isArabic = $interfaceLanguage === 'ar';
   $localeMeta = [
     'en' => ['code' => 'EN', 'label' => 'English'],
@@ -34,60 +33,54 @@
     @stack('styles')
   </head>
   <body class="font-sans antialiased text-gray-900 bg-white {{ $isArabic ? 'rtl' : '' }}">
-    <nav class="nav-glass">
-      <div class="container-page">
-        <div class="flex items-center justify-between h-16 md:h-20">
-            <a href="/?lang={{ $interfaceLanguage }}" class="flex items-center gap-3 font-bold text-gray-900 no-underline">
-            <img src="/icons/a.png" alt="MarocLoi" class="w-9 h-9 rounded-xl shadow-md shadow-blue-500/20">
-            <span class="text-sm md:text-base">Maroc<span class="text-blue-600">Loi</span></span>
-          </a>
+    <header class="sticky top-0 z-40 bg-gray-900 border-b border-gray-800">
+      <div class="flex items-center h-14 px-4 lg:px-6 gap-4">
+        <a href="/" class="flex items-center gap-2.5 shrink-0 no-underline">
+          <img src="/icons/a.png" alt="MarocLoi" class="w-8 h-8 rounded-lg">
+          <span class="text-sm font-bold text-white hidden sm:inline">Maroc<span class="text-blue-400">Loi</span></span>
+        </a>
 
-          <div class="hidden md:flex items-center gap-1">
-            <a href="https://www.marokkobiz.com/" class="nav-link">{{ $layoutCopy['about'] }}</a>
-            <a href="#sources" class="nav-link">{{ $layoutCopy['sources'] }}</a>
-            <a href="#coverage" class="nav-link">{{ $layoutCopy['coverage'] }}</a>
-          </div>
+        <div class="hidden md:flex items-center gap-1 mx-auto">
+          <a href="https://www.marokkobiz.com/" class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy['about'] }}</a>
+          <a href="#sources" class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy['sources'] }}</a>
+          <a href="#coverage" class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy['coverage'] }}</a>
+        </div>
 
-          <div class="flex items-center gap-3">
-            <details class="relative">
-              <summary
-                class="list-none cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/50 [&::-webkit-details-marker]:hidden">
-                <span class="inline-flex items-center gap-2">
-                  <span class="uppercase">{{ $activeLocaleMeta['code'] }}</span>
-                  <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 9l6 6 6-6">
-                    </path>
-                  </svg>
-                </span>
-                <span class="sr-only">Select language</span>
-              </summary>
-              <div
-                class="absolute ltr:-right-20 rtl:-left-20 z-50 mt-2 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white py-2 shadow-xl">
-                @foreach ($localeOptions as $localeOption => $localeMeta)
-                  <a href="{{ request()->fullUrlWithQuery(['lang' => $localeOption]) }}"
-                    @class([
-                      'flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors',
-                      'bg-blue-50 text-blue-700' => $activeLocale === $localeOption,
-                      'text-slate-700 hover:bg-slate-50' => $activeLocale !== $localeOption,
-                    ])>
-                    <span
-                      class="min-w-7 rounded bg-slate-100 px-1.5 py-0.5 text-center text-xs font-black uppercase text-slate-700">{{ $localeMeta['code'] }}</span>
-                    <span>{{ $localeMeta['label'] }}</span>
-                  </a>
-                @endforeach
-              </div>
-            </details>
-            @auth
-              <a href="/app?lang={{ $interfaceLanguage }}" class="btn-primary-sm no-underline">{{ $interfaceLanguage === 'fr' ? 'Ouvrir l application' : ($interfaceLanguage === 'ar' ? 'فتح التطبيق' : 'Open app') }}</a>
-            @else
-              <a href="/login?lang={{ $interfaceLanguage }}" class="hidden sm:inline-flex text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors no-underline">{{ $layoutCopy['login'] }}</a>
-              <a href="/register?lang={{ $interfaceLanguage }}" class="btn-primary-sm no-underline">{{ $layoutCopy['start'] }}</a>
-            @endauth
-          </div>
+        <div class="flex items-center gap-3 shrink-0">
+          <details class="relative">
+            <summary
+              class="list-none cursor-pointer rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-bold text-gray-300 transition-colors hover:border-gray-600 hover:text-white [&::-webkit-details-marker]:hidden">
+              <span class="inline-flex items-center gap-2">
+                <span class="uppercase">{{ $activeLocaleMeta['code'] }}</span>
+                <svg class="h-3.5 w-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 9l6 6 6-6"></path>
+                </svg>
+              </span>
+              <span class="sr-only">Select language</span>
+            </summary>
+            <div class="absolute ltr:-right-4 rtl:-left-4 z-50 mt-2 w-44 overflow-hidden rounded-lg border border-gray-200 bg-white py-2 shadow-xl">
+              @foreach ($localeOptions as $localeOption => $localeMeta)
+                <a href="{{ request()->fullUrlWithQuery(['lang' => $localeOption]) }}"
+                  @class([
+                    'flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors',
+                    'bg-blue-50 text-blue-700' => $activeLocale === $localeOption,
+                    'text-gray-700 hover:bg-gray-50' => $activeLocale !== $localeOption,
+                  ])>
+                  <span class="min-w-7 rounded bg-gray-100 px-1.5 py-0.5 text-center text-xs font-black uppercase text-gray-600">{{ $localeMeta['code'] }}</span>
+                  <span>{{ $localeMeta['label'] }}</span>
+                </a>
+              @endforeach
+            </div>
+          </details>
+          @auth
+            <a href="{{ route('app.workspace') }}" class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $interfaceLanguage === 'fr' ? 'Ouvrir l app' : ($interfaceLanguage === 'ar' ? 'فتح التطبيق' : 'Open app') }}</a>
+          @else
+            <a href="{{ route('login') }}" class="text-xs font-semibold text-gray-400 hover:text-gray-200 transition-colors no-underline">{{ $layoutCopy['login'] }}</a>
+            <a href="{{ route('register') }}" class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $layoutCopy['start'] }}</a>
+          @endauth
         </div>
       </div>
-    </nav>
+    </header>
 
     <main>
       @yield('content')

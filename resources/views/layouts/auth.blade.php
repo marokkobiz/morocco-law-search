@@ -1,5 +1,5 @@
 @php
-    $pageLanguage = in_array(request('lang'), ['en', 'fr', 'ar'], true) ? request('lang') : 'en';
+    $pageLanguage = app()->getLocale();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $pageLanguage }}" dir="{{ $pageLanguage === 'ar' ? 'rtl' : 'ltr' }}">
@@ -34,7 +34,7 @@
         <div class="flex-1 flex flex-col bg-slate-50">
             <div class="flex items-center justify-center pt-4 sm:pt-6 px-4">
                 <p class="text-center text-sm text-slate-500">
-                    <a href="{{ route('pages.test') }}"
+                    <a href="{{ route('landing') }}"
                         class="inline-flex items-center hover:text-slate-700 transition-colors">
                         <svg class="h-4 w-4 ltr:mr-2 rtl:ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

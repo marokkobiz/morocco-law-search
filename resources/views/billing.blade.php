@@ -52,7 +52,6 @@
 
     <form action="/billing/checkout" method="post" class="mt-5">
       @csrf
-      <input type="hidden" name="lang" value="{{ $lang }}">
       <button type="submit">
         {{ config('billing.require_payment') ? $copy['checkout'] : $copy['continue'] }}
       </button>

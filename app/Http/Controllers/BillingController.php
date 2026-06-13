@@ -14,7 +14,7 @@ class BillingController extends Controller
     public function show(Request $request): View
     {
         return view('billing', [
-            'lang' => $this->language($request),
+            'lang' => app()->getLocale(),
             'user' => $request->user(),
             'stripeReady' => config('billing.stripe.secret') && config('billing.stripe.price_id'),
         ]);
@@ -25,13 +25,13 @@ class BillingController extends Controller
         $user = $request->user();
 
         if (!$user) {
-            return redirect('/login?lang='.$this->language($request));
+            return redirect('/login');
         }
 
         if (!config('billing.require_payment')) {
             $user->markBillingActive('local-billing-disabled');
 
-            return redirect('/app?lang='.$this->language($request));
+            return redirect('/app');
         }
 
         $secret = (string) config('billing.stripe.secret');
@@ -43,8 +43,8 @@ class BillingController extends Controller
             ]);
         }
 
-        $successUrl = url('/billing/success').'?session_id={CHECKOUT_SESSION_ID}&lang='.$this->language($request);
-        $cancelUrl = url('/billing').'?lang='.$this->language($request);
+        $successUrl = url('/billing/success').'?session_id={CHECKOUT_SESSION_ID}';
+        $cancelUrl = url('/billing');
 
         $response = Http::asForm()
             ->withToken($secret)
@@ -73,7 +73,7 @@ class BillingController extends Controller
         $user = $request->user();
 
         if (!$user) {
-            return redirect('/login?lang='.$this->language($request));
+            return redirect('/login');
         }
 
         $sessionId = trim((string) $request->query('session_id', ''));
@@ -90,7 +90,7 @@ class BillingController extends Controller
             }
         }
 
-        return redirect('/app?lang='.$this->language($request));
+        return redirect('/app');
     }
 
     public function webhook(Request $request): JsonResponse
@@ -142,12 +142,5 @@ class BillingController extends Controller
         $expected = hash_hmac('sha256', $signedPayload, $secret);
 
         return hash_equals($expected, $signature[1]);
-    }
-
-    private function language(Request $request): string
-    {
-        $lang = (string) $request->input('lang', $request->query('lang', 'en'));
-
-        return in_array($lang, ['en', 'fr', 'ar'], true) ? $lang : 'en';
     }
 }
