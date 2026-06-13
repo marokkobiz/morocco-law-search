@@ -254,4 +254,18 @@ el('chat-form').addEventListener('submit', async (e) => {
   }
 });
 
+// Assistant popup toggle
+const openAssistant = () => {
+  el('assistant-popup').classList.remove('hidden');
+  el('assistant-fab').classList.add('hidden');
+  el('chat-input').focus();
+};
+const closeAssistant = () => {
+  el('assistant-popup').classList.add('hidden');
+  el('assistant-fab').classList.remove('hidden');
+};
+el('assistant-toggle')?.addEventListener('click', openAssistant);
+el('assistant-fab')?.addEventListener('click', openAssistant);
+el('assistant-close')?.addEventListener('click', closeAssistant);
+
 overviewStats();

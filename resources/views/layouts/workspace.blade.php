@@ -73,7 +73,7 @@
         </div>
     </header>
 
-    <div class="flex" style="min-height: calc(100vh - 3.5rem);">
+    <div class="flex overflow-hidden h-[90vh]">
         @yield('workspace-content')
     </div>
 
