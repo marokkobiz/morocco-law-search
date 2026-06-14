@@ -16,6 +16,7 @@ const overviewStats = async () => {
     el('stat-articles').textContent = (data.totalArticles ?? 0).toLocaleString();
     el('stat-sources').textContent = (data.totalSources ?? 0).toLocaleString();
     el('stat-areas').textContent = (data.totalCategories ?? 0).toLocaleString();
+    el('category-loading')?.classList.add('hidden');
     const list = el('category-list');
     list.innerHTML = '';
     (data.categories ?? []).forEach((cat) => {

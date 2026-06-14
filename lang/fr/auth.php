@@ -32,4 +32,5 @@ return [
     'note' => 'Le paiement pourra être connecté après validation de l\'inscription et des prix.',
     'welcome_back' => 'Bon retour',
     'platform_access' => 'Accès plateforme',
+    'remember_me' => 'Se souvenir de moi',
 ];

@@ -32,4 +32,5 @@ return [
     'note' => 'Payment hookup can be connected after the account intake and pricing are confirmed.',
     'welcome_back' => 'Welcome back',
     'platform_access' => 'Platform access',
+    'remember_me' => 'Remember me',
 ];

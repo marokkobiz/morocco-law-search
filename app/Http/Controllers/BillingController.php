@@ -31,7 +31,7 @@ class BillingController extends Controller
         if (!config('billing.require_payment')) {
             $user->markBillingActive('local-billing-disabled');
 
-            return redirect('/app');
+            return redirect('/dashboard');
         }
 
         $secret = (string) config('billing.stripe.secret');
@@ -90,7 +90,7 @@ class BillingController extends Controller
             }
         }
 
-        return redirect('/app');
+        return redirect('/dashboard');
     }
 
     public function webhook(Request $request): JsonResponse

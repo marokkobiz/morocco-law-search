@@ -51,8 +51,8 @@
                             placeholder="{{ $c('Search laws, articles, references...', 'Recherchez lois, articles, références...', 'ابحث في القوانين والمواد والمراجع...') }}"
                             class="w-full h-9 bg-gray-800 border border-gray-700 ltr:pl-10 rtl:pr-10 ltr:pr-14 sm:ltr:pr-9 rtl:pl-14 sm:rtl:pl-9 rounded-lg text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
                         <button id="clear-search" type="button"
-                            class="hidden absolute ltr:right-9 sm:ltr:right-2 rtl:left-9 sm:rtl:left-2 w-5 h-5 rounded-full bg-gray-600 hover:bg-gray-500 flex items-center justify-center transition-colors cursor-pointer">
-                            <svg class="w-3 h-3 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="hidden absolute ltr:right-9 sm:ltr:right-1 rtl:left-9 sm:rtl:left-1 w-5 h-5 flex items-center justify-center transition-colors cursor-pointer">
+                            <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>

@@ -114,7 +114,7 @@
                         class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $locale === 'fr' ? 'Dashboard' : ($locale === 'ar' ? 'لوحة التحكم' : 'Dashboard') }}</a>
                 @else
                     <a href="{{ route('login') }}"
-                        class="text-xs font-semibold text-gray-400 hover:text-gray-200 transition-colors no-underline">{{ $layoutCopy['login'] }}</a>
+                        class="inline-flex items-center text-xs h-8 px-4 py-1.5 rounded-lg font-semibold text-white border border-white/30 hover:bg-white/10 transition-all duration-200 no-underline">{{ $layoutCopy['login'] }}</a>
                     <a href="{{ route('register') }}"
                         class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $layoutCopy['start'] }}</a>
                 @endauth
@@ -158,9 +158,6 @@
                             </form>
                         </div>
                     </details>
-                @else
-                    <a href="{{ route('login') }}"
-                        class="text-xs font-semibold text-gray-400 hover:text-gray-200 transition-colors no-underline">{{ $c('Login', 'Connexion', 'تسجيل الدخول') }}</a>
                 @endauth
             </div>
         </div>

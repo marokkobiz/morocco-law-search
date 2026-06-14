@@ -26,7 +26,8 @@
                         {{ __('landing.badge') }}
                     </span>
 
-                    <h1 class="mt-4 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-bold leading-none tracking-tight">
+                    <h1
+                        class="mt-4 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-bold leading-none tracking-tight">
                         <span class="gradient-text">{!! __('landing.title_html') !!}</span>
                     </h1>
 
@@ -57,9 +58,8 @@
                 </div>
 
                 <div class="hidden lg:flex justify-center" data-animate="fade-up" style="--delay: 0.15s">
-                    <img src="{{ asset('images/hero2.jpg') }}"
-                         alt="MarocLoi Dashboard Preview"
-                         class="img-elevate w-full max-w-lg rounded-2xl shadow-2xl shadow-blue-900/40 ring-1 ring-white/10">
+                    <img src="{{ asset('images/hero2.jpg') }}" alt="MarocLoi Dashboard Preview"
+                        class="img-elevate w-full max-w-lg rounded-2xl shadow-2xl shadow-blue-900/40 ring-1 ring-white/10">
                 </div>
             </div>
 
@@ -144,9 +144,8 @@
         <div class="container-page">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                 <div class="hidden lg:flex justify-center" data-animate="fade-up">
-                    <img src="{{ asset('/images/hero.jpg') }}"
-                         alt="Coverage Visualization"
-                         class="img-elevate w-full max-w-md rounded-2xl shadow-lg shadow-blue-500/5 ring-1 ring-blue-100">
+                    <img src="{{ asset('/images/hero.jpg') }}" alt="Coverage Visualization"
+                        class="img-elevate w-full max-w-md rounded-2xl shadow-lg shadow-blue-500/5 ring-1 ring-blue-100">
                 </div>
 
                 <div data-animate="fade-up" style="--delay: 0.15s">
@@ -155,59 +154,56 @@
                     <p class="section-desc">{{ __('landing.coverage_desc') }}</p>
 
                     <div class="card p-6 md:p-8 border-blue-100 bg-linear-to-br from-blue-50/50 to-white mt-8">
-                    <div class="space-y-5">
-                        <div class="flex items-start gap-4">
-                            <div
-                                class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0 mt-1">
-                                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                        d="M5 13l4 4L19 7" />
-                                </svg>
+                        <div class="space-y-5">
+                            <div class="flex items-start gap-4">
+                                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0 mt-1">
+                                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <strong
+                                        class="block text-gray-900 font-bold">{{ __('landing.coverage_item_1_title') }}</strong>
+                                    <span
+                                        class="text-sm text-gray-600 mt-1 block">{{ __('landing.coverage_item_1_desc') }}</span>
+                                </div>
                             </div>
-                            <div>
-                                <strong
-                                    class="block text-gray-900 font-bold">{{ __('landing.coverage_item_1_title') }}</strong>
-                                <span
-                                    class="text-sm text-gray-600 mt-1 block">{{ __('landing.coverage_item_1_desc') }}</span>
+                            <div class="flex items-start gap-4">
+                                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0 mt-1">
+                                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <strong
+                                        class="block text-gray-900 font-bold">{{ __('landing.coverage_item_2_title') }}</strong>
+                                    <span
+                                        class="text-sm text-gray-600 mt-1 block">{{ __('landing.coverage_item_2_desc') }}</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-start gap-4">
-                            <div
-                                class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0 mt-1">
-                                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                        d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                            <div>
-                                <strong
-                                    class="block text-gray-900 font-bold">{{ __('landing.coverage_item_2_title') }}</strong>
-                                <span
-                                    class="text-sm text-gray-600 mt-1 block">{{ __('landing.coverage_item_2_desc') }}</span>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-4">
-                            <div
-                                class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0 mt-1">
-                                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                        d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                            <div>
-                                <strong
-                                    class="block text-gray-900 font-bold">{{ __('landing.coverage_item_3_title') }}</strong>
-                                <span
-                                    class="text-sm text-gray-600 mt-1 block">{{ __('landing.coverage_item_3_desc') }}</span>
+                            <div class="flex items-start gap-4">
+                                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0 mt-1">
+                                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <strong
+                                        class="block text-gray-900 font-bold">{{ __('landing.coverage_item_3_title') }}</strong>
+                                    <span
+                                        class="text-sm text-gray-600 mt-1 block">{{ __('landing.coverage_item_3_desc') }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
     </section>
 
     {{-- Database Section --}}
@@ -220,9 +216,8 @@
                     <p class="section-desc">{{ __('landing.database_desc') }}</p>
                 </div>
                 <div class="hidden lg:block shrink-0" data-animate="fade-in" style="--delay: 0.1s">
-                    <img src="https://placehold.co/200x200/2563eb/dbeafe?text=Legal+DB"
-                         alt="Database"
-                         class="img-elevate rounded-xl shadow-lg shadow-blue-500/10 ring-1 ring-blue-100/50">
+                    <img src="https://placehold.co/200x200/2563eb/dbeafe?text=Legal+DB" alt="Database"
+                        class="img-elevate rounded-xl shadow-lg shadow-blue-500/10 ring-1 ring-blue-100/50">
                 </div>
             </div>
 
@@ -274,17 +269,18 @@
     </section>
 
     {{-- CTA Section --}}
-    <section class="relative overflow-hidden bg-linear-to-br from-blue-600 via-blue-700 to-indigo-800 py-20 md:py-28">
-        <div class="absolute inset-0 pointer-events-none">
-            <div class="absolute -top-20 -right-20 w-80 h-80 bg-blue-400/20 rounded-full blur-3xl"></div>
-            <div class="absolute -bottom-20 -left-20 w-80 h-80 bg-indigo-400/20 rounded-full blur-3xl"></div>
+    <section class="relative overflow-hidden py-20 md:py-28 bg-gray-900">
+        <div class="absolute inset-0">
+            <img src="{{ asset('images/cta-background.jpg') }}" alt="" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-black/20"></div>
+            <div class="absolute inset-0 bg-linear-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
         </div>
         <div class="relative z-10 container-page text-center" data-animate="fade-up">
             <h2 class="text-3xl md:text-5xl font-serif font-bold text-white leading-tight">{{ __('landing.cta_title') }}
             </h2>
             <p class="mt-4 text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">{{ __('landing.cta_desc') }}</p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-                <a href="/register"
+                <a href="{{ route('register') }}"
                     class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-blue-700 bg-white hover:bg-blue-50 shadow-2xl shadow-blue-900/30 transition-all duration-200 no-underline">
                     {{ __('landing.cta_create') }}
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

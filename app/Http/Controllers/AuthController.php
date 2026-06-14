@@ -53,7 +53,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended('/app');
+        return redirect()->intended('/dashboard');
     }
 
     public function register(RegisterRequest $request): RedirectResponse
@@ -80,7 +80,7 @@ class AuthController extends Controller
             return redirect('/billing');
         }
 
-        return redirect('/app');
+        return redirect('/dashboard');
     }
 
     public function logout(Request $request): RedirectResponse

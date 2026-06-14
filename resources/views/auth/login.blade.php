@@ -27,7 +27,11 @@
         <input type="password" name="password" placeholder="{{ __('auth.password_placeholder') }}" minlength="8" maxlength="255" autocomplete="current-password" required>
       </label>
 
-      <div class="flex items-center justify-end mt-2">
+      <div class="flex items-center justify-between mt-2">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="remember" value="1" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+          <span class="text-xs font-semibold text-gray-600">{{ __('auth.remember_me') }}</span>
+        </label>
         <a href="/forgot-password" class="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
           {{ __('auth.forgot_password') }}
         </a>

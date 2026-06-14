@@ -12,7 +12,7 @@
         <button id="sidebar-toggle" type="button"
             class="lg:hidden absolute top-3 ltr:right-3 rtl:left-3 z-10 w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors cursor-pointer shadow-md">
             <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
         </button>
         <div class="mx-auto bg-white h-full overflow-hidden flex flex-col">
@@ -21,9 +21,10 @@
             <div id="results-header"
                 class="hidden shrink-0 px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white">
                 <div class="flex items-center justify-between gap-3">
-                    <div>h</div>
+                    <div class="block sm:hidden">-</div>
                     <div class="min-w-0 flex-1 text-center">
-                        <h2 class="text-base sm:text-lg lg:text-xl font-bold text-gray-900 truncate" id="results-title"></h2>
+                        <h2 class="text-base sm:text-lg lg:text-xl font-bold text-gray-900 truncate" id="results-title">
+                        </h2>
                         <p class="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">
                             <span id="result-count"></span>
                         </p>
@@ -70,37 +71,6 @@
                         </button>
                     @endforeach
                 </div>
-
-                {{-- Example Card --}}
-                {{-- <div class="mt-12 w-full max-w-3xl">
-                    <div class="rounded-2xl border border-indigo-400 p-6 shadow-lg">
-
-                        <div class="flex items-start gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12h6m-3-3v6m8-3A9 9 0 1112 3a9 9 0 019 9z" />
-                                </svg>
-                            </div>
-
-                            <div>
-                                <h3 class="font-semibold text-lg">
-                                    {{ $c('Try asking', 'Essayez de demander', 'جرّب أن تسأل') }}
-                                </h3>
-
-                                <p class="text-gray-600 mt-2">
-                                    {{ $c(
-                                        'What are the rights of an employee after dismissal?',
-                                        'Quels sont les droits d\'un salarié après licenciement ?',
-                                        'ما هي حقوق العامل بعد الفصل من العمل؟',
-                                    ) }}
-                                </p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div> --}}
-
             </div>
 
             {{-- Loading --}}
@@ -144,19 +114,23 @@
         style="height: calc(100vh - 3.5rem); top: 3.5rem;">
 
         <div class="p-5 border border-gray-200 shrink-0">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">{{ $c('Corpus Overview', 'Aperçu du corpus', 'نظرة عامة على المعطيات') }}</h3>
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
+                {{ $c('Corpus Overview', 'Aperçu du corpus', 'نظرة عامة على المعطيات') }}</h3>
             <div class="grid grid-cols-3 gap-3">
                 <div class="text-center p-3 rounded-xl bg-linear-to-b from-gray-50 to-white border border-gray-100">
                     <strong class="block text-xl font-bold text-gray-900" id="stat-articles">—</strong>
-                    <span class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Articles', 'Articles', 'مواد') }}</span>
+                    <span
+                        class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Articles', 'Articles', 'مواد') }}</span>
                 </div>
                 <div class="text-center p-3 rounded-xl bg-linear-to-b from-gray-50 to-white border border-gray-100">
                     <strong class="block text-xl font-bold text-gray-900" id="stat-sources">—</strong>
-                    <span class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Sources', 'Sources', 'مصادر') }}</span>
+                    <span
+                        class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Sources', 'Sources', 'مصادر') }}</span>
                 </div>
                 <div class="text-center p-3 rounded-xl bg-linear-to-b from-gray-50 to-white border border-gray-100">
                     <strong class="block text-xl font-bold text-gray-900" id="stat-areas">—</strong>
-                    <span class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Areas', 'Domaines', 'مجالات') }}</span>
+                    <span
+                        class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Areas', 'Domaines', 'مجالات') }}</span>
                 </div>
             </div>
         </div>
@@ -164,6 +138,10 @@
         <div class="p-5 border border-gray-200 min-h-0 flex-1 overflow-y-auto">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
                 {{ $c('Browse Categories', 'Parcourir catégories', 'تصفح التصنيفات') }}</h3>
+            <div id="category-loading" class="flex items-center justify-center gap-2 py-4">
+                <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-xs text-gray-400">{{ $c('Loading...', 'Chargement...', 'جار التحميل...') }}</span>
+            </div>
             <div id="category-list" class="space-y-0.5"></div>
         </div>
 
@@ -177,9 +155,24 @@
             class="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-linear-to-r from-blue-600 to-indigo-600 rounded-t-2xl">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                        fill="#FFFFFF" height="100px" width="100px" version="1.1" id="XMLID_74_" viewBox="0 0 24 24"
+                        enable-background="new 0 0 24 24" xml:space="preserve">
+                        <g id="assistant">
+                            <g>
+                                <path
+                                    d="M9,12.5H8c-0.6,0-1-0.4-1-1v-1c0-0.6,0.4-1,1-1h1c0.6,0,1,0.4,1,1v1C10,12.1,9.6,12.5,9,12.5z" />
+                            </g>
+                            <g>
+                                <path
+                                    d="M16,12.5h-1c-0.6,0-1-0.4-1-1v-1c0-0.6,0.4-1,1-1h1c0.6,0,1,0.4,1,1v1C17,12.1,16.6,12.5,16,12.5z" />
+                            </g>
+                            <path d="M12,0c1.1,0,2,0.9,2,2s-0.9,2-2,2s-2-0.9-2-2S10.9,0,12,0z" />
+                            <g>
+                                <path
+                                    d="M12,24c-2.7,0-4.9-1.6-5-4.2c-1.1-0.3-2.3-0.8-3.5-1.4L3,18.1v-4.6c0-4.6,3.5-8.4,8-8.9V1.5h2v3.1c4.5,0.5,8,4.3,8,8.9    v4.6l-0.5,0.3c-0.9,0.5-2.1,1-3.5,1.4C16.9,22.4,14.7,24,12,24z M9.1,20.2C9.5,21.5,10.6,22,12,22s2.6-0.5,2.9-1.8    C13.3,20.5,11.6,20.6,9.1,20.2z M5,16.9c2.7,1.3,5.3,1.6,7,1.6c3,0,5.4-0.8,7-1.6v-1.5c-1.8,0.9-4.5,1.1-7,1.1s-5.2-0.2-7-1.1    V16.9z M5.1,12.8c0.1,0.7,2.2,1.7,7,1.7c4.3,0,6.9-0.9,7-1.7c-0.3-3.5-3.3-6.3-7-6.3S5.4,9.3,5.1,12.8z" />
+                            </g>
+                        </g>
                     </svg>
                 </div>
                 <div>
@@ -202,9 +195,24 @@
             <div class="flex items-start gap-2.5">
                 <div
                     class="w-7 h-7 rounded-lg bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                        fill="#FFFFFF" height="100px" width="100px" version="1.1" id="XMLID_74_" viewBox="0 0 24 24"
+                        enable-background="new 0 0 24 24" xml:space="preserve">
+                        <g id="assistant">
+                            <g>
+                                <path
+                                    d="M9,12.5H8c-0.6,0-1-0.4-1-1v-1c0-0.6,0.4-1,1-1h1c0.6,0,1,0.4,1,1v1C10,12.1,9.6,12.5,9,12.5z" />
+                            </g>
+                            <g>
+                                <path
+                                    d="M16,12.5h-1c-0.6,0-1-0.4-1-1v-1c0-0.6,0.4-1,1-1h1c0.6,0,1,0.4,1,1v1C17,12.1,16.6,12.5,16,12.5z" />
+                            </g>
+                            <path d="M12,0c1.1,0,2,0.9,2,2s-0.9,2-2,2s-2-0.9-2-2S10.9,0,12,0z" />
+                            <g>
+                                <path
+                                    d="M12,24c-2.7,0-4.9-1.6-5-4.2c-1.1-0.3-2.3-0.8-3.5-1.4L3,18.1v-4.6c0-4.6,3.5-8.4,8-8.9V1.5h2v3.1c4.5,0.5,8,4.3,8,8.9    v4.6l-0.5,0.3c-0.9,0.5-2.1,1-3.5,1.4C16.9,22.4,14.7,24,12,24z M9.1,20.2C9.5,21.5,10.6,22,12,22s2.6-0.5,2.9-1.8    C13.3,20.5,11.6,20.6,9.1,20.2z M5,16.9c2.7,1.3,5.3,1.6,7,1.6c3,0,5.4-0.8,7-1.6v-1.5c-1.8,0.9-4.5,1.1-7,1.1s-5.2-0.2-7-1.1    V16.9z M5.1,12.8c0.1,0.7,2.2,1.7,7,1.7c4.3,0,6.9-0.9,7-1.7c-0.3-3.5-3.3-6.3-7-6.3S5.4,9.3,5.1,12.8z" />
+                            </g>
+                        </g>
                     </svg>
                 </div>
                 <div class="bg-gray-50 rounded-xl rounded-tl-none px-3.5 py-2.5 border border-gray-100 flex-1">
