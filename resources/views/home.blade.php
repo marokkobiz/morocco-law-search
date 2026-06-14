@@ -215,10 +215,10 @@
                     <h2 class="section-title mt-4">{{ __('landing.database_title') }}</h2>
                     <p class="section-desc">{{ __('landing.database_desc') }}</p>
                 </div>
-                <div class="hidden lg:block shrink-0" data-animate="fade-in" style="--delay: 0.1s">
+                {{-- <div class="hidden lg:block shrink-0" data-animate="fade-in" style="--delay: 0.1s">
                     <img src="https://placehold.co/200x200/2563eb/dbeafe?text=Legal+DB" alt="Database"
                         class="img-elevate rounded-xl shadow-lg shadow-blue-500/10 ring-1 ring-blue-100/50">
-                </div>
+                </div> --}}
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-12">
