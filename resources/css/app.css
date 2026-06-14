@@ -294,7 +294,7 @@
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
-        background: var(--color-brand-900);
+        background: #101828;
 }
 
 /* Handle on hover */
