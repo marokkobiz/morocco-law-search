@@ -13,6 +13,14 @@ Route::get('/', ComingSoonController::class)->name('home');
 Route::get('/test', LandingController::class)->name('landing');
 Route::get('/corpus/status', [CorpusStatusController::class, 'show'])->name('corpus.status');
 
+// Locale switcher
+Route::get('/locale/{locale}', function ($locale) {
+    if (in_array($locale, ['en', 'fr', 'ar'])) {
+        session(['locale' => $locale]);
+    }
+    return redirect()->back();
+})->name('locale.switch');
+
 // Protected App Pages
 Route::middleware(['auth', 'paid'])->name('app.')->group(function () {
     Route::get('/dashboard', WorkspaceController::class)->name('workspace');

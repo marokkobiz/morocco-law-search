@@ -280,3 +280,24 @@
         scroll-behavior: smooth;
     }
 }
+
+
+/* width */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+        background: var(--color-brand-50);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+        background: var(--color-brand-900);
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-brand-600);
+}

@@ -60,7 +60,7 @@
             </summary>
             <div class="absolute ltr:-right-4 rtl:-left-4 z-50 mt-2 w-44 overflow-hidden rounded-lg border border-gray-200 bg-white py-2 shadow-xl">
               @foreach ($localeOptions as $localeOption => $localeMeta)
-                <a href="{{ request()->fullUrlWithQuery(['lang' => $localeOption]) }}"
+                  <a href="{{ route('locale.switch', $localeOption) }}"
                   @class([
                     'flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors',
                     'bg-blue-50 text-blue-700' => $activeLocale === $localeOption,

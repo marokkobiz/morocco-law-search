@@ -22,20 +22,23 @@ const overviewStats = async () => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-blue-50 hover:text-blue-700 cursor-pointer group';
-      btn.innerHTML = `<span class="font-medium text-gray-600 group-hover:text-blue-700">${cat.name}</span><span class="text-xs font-semibold text-gray-400 group-hover:text-blue-500">${(cat.count ?? 0).toLocaleString()}</span>`;
-      btn.addEventListener('click', () => doSearch(cat.name));
+      const label = (cat.category || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      btn.innerHTML = `<span class="font-medium text-gray-600 group-hover:text-blue-700">${label}</span><span class="text-xs font-semibold text-gray-400 group-hover:text-blue-500">${(cat.articleCount ?? 0).toLocaleString()}</span>`;
+      btn.addEventListener('click', () => doSearch(cat.category));
       list.appendChild(btn);
     });
   } catch {}
 };
 
 const showState = (state) => {
-  ['initial', 'loading', 'empty', 'header'].forEach((s) => el(`results-${s}`)?.classList.toggle('hidden', s !== state));
-  el('results-list').classList.toggle('hidden', state !== 'results');
+  const isResults = state === 'results';
+  ['initial', 'loading', 'empty'].forEach((s) => el(`results-${s}`)?.classList.toggle('hidden', s !== state));
+  el('results-header')?.classList.toggle('hidden', state === 'initial' || state === 'loading');
+  el('results-list').classList.toggle('hidden', !isResults);
 };
 
 const renderResults = (data) => {
-  el('results-title').textContent = `"${data.query}"`;
+  el('results-title').textContent = `${data.query}`;
   el('result-count').textContent = `${data.count} result${data.count !== 1 ? 's' : ''}`;
   const warn = el('translation-warning');
   if (data.translationWarning) { warn.textContent = data.translationWarning; warn.classList.remove('hidden'); }
@@ -45,6 +48,7 @@ const renderResults = (data) => {
   const list = el('results-list');
   list.innerHTML = '';
   data.results.forEach((r) => list.appendChild(buildResultCard(r)));
+  showState('results');
 };
 
 const buildResultCard = (r) => {
@@ -267,5 +271,41 @@ const closeAssistant = () => {
 el('assistant-toggle')?.addEventListener('click', openAssistant);
 el('assistant-fab')?.addEventListener('click', openAssistant);
 el('assistant-close')?.addEventListener('click', closeAssistant);
+
+// Sidebar toggle (mobile)
+const sidebar = el('sidebar-panel');
+const overlay = el('sidebar-overlay');
+el('sidebar-toggle')?.addEventListener('click', () => {
+  sidebar?.classList.toggle('hidden');
+  overlay?.classList.toggle('hidden');
+});
+overlay?.addEventListener('click', () => {
+  sidebar?.classList.add('hidden');
+  overlay?.classList.add('hidden');
+});
+
+// Reset workspace
+const resetWorkspace = () => {
+  el('search-input').value = '';
+  el('clear-search')?.classList.add('hidden');
+  el('suggestions-panel')?.classList.add('hidden');
+  ['initial', 'loading', 'empty', 'header', 'results'].forEach((s) => el(`results-${s}`)?.classList.add('hidden'));
+  el('results-list')?.classList.add('hidden');
+  el('results-initial')?.classList.remove('hidden');
+  el('translation-warning')?.classList.add('hidden');
+};
+
+// Clear search
+const clearBtn = el('clear-search');
+const searchInput = el('search-input');
+searchInput?.addEventListener('input', () => {
+  clearBtn?.classList.toggle('hidden', !searchInput.value.trim());
+});
+clearBtn?.addEventListener('click', () => {
+  resetWorkspace();
+  searchInput.focus();
+});
+
+el('clear-header-search')?.addEventListener('click', resetWorkspace);
 
 overviewStats();
