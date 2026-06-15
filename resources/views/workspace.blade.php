@@ -149,7 +149,7 @@
 
     {{-- Floating assistant popup --}}
     <div id="assistant-popup"
-        class="hidden fixed inset-4 sm:inset-auto sm:bottom-6 sm:ltr:left-6 sm:rtl:right-6 z-50 sm:w-96 bg-white rounded-2xl border border-gray-200 shadow-2xl flex flex-col sm:max-h-80 max-h-[calc(100vh-2rem)]">
+        class="hidden fixed inset-4 sm:inset-auto sm:bottom-6 sm:ltr:left-6 sm:rtl:right-6 z-50 sm:w-96 bg-white rounded-2xl border border-gray-200 shadow-2xl flex flex-col sm:max-h-[85vh] max-h-[calc(100vh-2rem)]">
 
         <div
             class="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-linear-to-r from-blue-600 to-indigo-600 rounded-t-2xl">
@@ -191,7 +191,7 @@
             </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4 space-y-3" id="chat-feed">
+        <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3" id="chat-feed">
             <div class="flex items-start gap-2.5">
                 <div
                     class="w-7 h-7 rounded-lg bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
@@ -225,9 +225,9 @@
 
         <div class="p-4 border-t border-gray-100">
             <form id="chat-form" class="flex items-center gap-2">
-                <input id="chat-input" type="text"
+                <textarea id="chat-input" rows="1"
                     placeholder="{{ $c('Ask a question...', 'Posez une question...', 'اسأل سؤالاً...') }}"
-                    class="flex-1 h-10 px-3.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50">
+                    class="flex-1 min-h-[40px] max-h-32 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 resize-none overflow-y-auto"></textarea>
                 <button type="submit"
                     class="h-10 w-10 flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors cursor-pointer shrink-0 shadow-sm">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

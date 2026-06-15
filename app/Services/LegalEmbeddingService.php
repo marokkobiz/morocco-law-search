@@ -2,24 +2,29 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use App\Contracts\Ai\EmbeddingProvider;
+use App\Services\Ai\AiProviderFactory;
 use Illuminate\Support\Str;
-use Throwable;
 
 class LegalEmbeddingService
 {
+    private readonly EmbeddingProvider $provider;
+
     private ?string $lastError = null;
+
+    public function __construct(AiProviderFactory $factory)
+    {
+        $this->provider = $factory->makeEmbeddingProvider();
+    }
 
     public function isEnabled(): bool
     {
-        return (bool) config('legal_ai.semantic_search.enabled', true)
-            && strtolower((string) config('legal_ai.embeddings.provider', 'ollama')) === 'ollama';
+        return $this->provider->isEnabled();
     }
 
     public function model(): string
     {
-        return (string) config('legal_ai.embeddings.model', 'nomic-embed-text');
+        return $this->provider->model();
     }
 
     public function checksum(string $text): string
@@ -29,55 +34,14 @@ class LegalEmbeddingService
 
     public function embed(string $text): ?array
     {
-        $text = $this->normalizeEmbeddingText($text);
-        $this->lastError = null;
+        $this->lastError = $this->provider->lastError();
 
-        if (!$this->isEnabled() || $text === '') {
-            return null;
-        }
-
-        $baseUrl = rtrim((string) config('legal_ai.embeddings.base_url', 'http://localhost:11434'), '/');
-        $timeout = (int) config('legal_ai.embeddings.timeout_seconds', 30);
-
-        try {
-            $response = Http::timeout($timeout)
-                ->retry(1, 200)
-                ->post($baseUrl.'/api/embed', [
-                    'model' => $this->model(),
-                    'input' => $text,
-                ]);
-
-            if ($response->successful()) {
-                return $this->normalizeVector(data_get($response->json(), 'embeddings.0'));
-            }
-
-            if ($response->status() !== 404) {
-                return $this->recordFailure('Ollama /api/embed request failed', $response->status(), $response->body());
-            }
-
-            $legacyResponse = Http::timeout($timeout)
-                ->retry(1, 200)
-                ->post($baseUrl.'/api/embeddings', [
-                    'model' => $this->model(),
-                    'prompt' => $text,
-                ]);
-
-            if (!$legacyResponse->successful()) {
-                return $this->recordFailure('Ollama embedding request failed', $legacyResponse->status(), $legacyResponse->body());
-            }
-
-            return $this->normalizeVector(data_get($legacyResponse->json(), 'embedding'));
-        } catch (Throwable $error) {
-            $this->lastError = $error->getMessage();
-            Log::warning('Ollama embedding unavailable', ['message' => $error->getMessage()]);
-
-            return null;
-        }
+        return $this->provider->embed($text);
     }
 
     public function lastError(): ?string
     {
-        return $this->lastError;
+        return $this->provider->lastError() ?? $this->lastError;
     }
 
     public function cosineSimilarity(array $left, array $right): float
@@ -129,18 +93,6 @@ class LegalEmbeddingService
             ->all();
 
         return count($vector) >= 2 ? $vector : null;
-    }
-
-    private function recordFailure(string $message, int $status, string $body): null
-    {
-        $body = Str::limit(trim($body), 500, '');
-        $this->lastError = trim("{$message}; status={$status}; body={$body}");
-        Log::warning($message, [
-            'status' => $status,
-            'body' => $body,
-        ]);
-
-        return null;
     }
 
     private function normalizeEmbeddingText(string $text): string

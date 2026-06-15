@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\CorpusController;
 use App\Http\Controllers\Api\LawController;
 use App\Http\Controllers\BillingController;
@@ -13,4 +14,5 @@ Route::prefix('laws')->middleware(['web', 'auth', 'paid', 'throttle:240,1'])->gr
     Route::get('/suggestions', [LawController::class, 'suggestions']);
     Route::get('/search', [LawController::class, 'search']);
     Route::get('/{law}/translate', [LawController::class, 'translate']);
+    Route::post('/ask', [ChatController::class, 'ask']);
 });

@@ -279,6 +279,14 @@ input[type="search"]::-ms-clear {
         border-radius: 999px;
     }
 
+    /* Hide textarea scrollbar in chat input */
+    #chat-input::-webkit-scrollbar {
+        display: none;
+    }
+    #chat-input {
+        scrollbar-width: none;
+    }
+
     /* Hide third-party support widget in search workspace */
     .support-widget {
         display: none !important;

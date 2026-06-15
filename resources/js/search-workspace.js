@@ -3,7 +3,11 @@ import './bootstrap';
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
 const api = async (url, opts = {}) => {
-  const res = await fetch(url, { headers: { 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', ...opts.headers }, ...opts });
+  const { headers: extraHeaders, ...rest } = opts;
+  const res = await fetch(url, {
+    headers: { 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', ...extraHeaders },
+    ...rest,
+  });
   if (!res.ok) throw new Error(res.statusText);
   return res.json();
 };
@@ -216,6 +220,7 @@ el('chat-form').addEventListener('submit', async (e) => {
   const q = input.value.trim();
   if (!q) return;
   input.value = '';
+  input.style.height = 'auto';
   const feed = el('chat-feed');
   const userBubble = document.createElement('div');
   userBubble.className = 'flex items-start gap-2 justify-end';
@@ -228,22 +233,35 @@ el('chat-form').addEventListener('submit', async (e) => {
   feed.appendChild(loadingBubble);
   feed.scrollTop = feed.scrollHeight;
   try {
-    const data = await api(`/api/laws/search?q=${encodeURIComponent(q)}&translation_mode=smart`);
+    const data = await api('/api/laws/ask', {
+      method: 'POST',
+      body: JSON.stringify({ question: q }),
+      headers: { 'Content-Type': 'application/json' },
+    });
     el('chat-loading').remove();
     const aiBubble = document.createElement('div');
     aiBubble.className = 'flex items-start gap-2';
-    let html = `<div class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0"><svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>`;
+    let html = `<div class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0"><svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.032-.133-2.052-.382-3.016z"/></svg></div>`;
     html += `<div class="bg-white rounded-xl rounded-tl-none px-3 py-2 border border-gray-100 flex-1">`;
-    if (data.count > 0) {
-      html += `<p class="text-xs text-gray-700 leading-relaxed mb-2">Found ${data.count} result${data.count !== 1 ? 's' : ''}:</p><ol class="list-decimal list-inside space-y-0.5">`;
-      data.results.slice(0, 5).forEach((r) => {
-        html += `<li class="text-xs text-gray-600"><span class="font-medium">${r.title || r.document_title || ''}</span>${r.article_number ? ` — ${r.article_number}` : ''}</li>`;
-      });
-      html += `</ol>`;
+    if (data.answer) {
+      html += `<p class="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">${data.answer}</p>`;
+      if (data.citations && data.citations.length > 0) {
+        html += `<hr class="my-2 border-gray-100">`;
+        html += `<p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Sources</p>`;
+        data.citations.forEach((c, i) => {
+          html += `<div class="mb-1.5 text-[11px]">`;
+          html += `<p class="text-gray-500 line-clamp-2">${c.content}</p>`;
+          html += `<p class="text-gray-400 mt-0.5">`;
+          html += `<span class="font-medium text-gray-600">${c.document_title}</span>`;
+          if (c.article_number) html += ` — ${c.article_number}`;
+          if (c.source_name) html += ` — <span class="text-gray-400">${c.source_name}</span>`;
+          if (c.source_url) html += ` — <a href="${c.source_url}" target="_blank" class="text-blue-600 hover:text-blue-700 font-semibold no-underline">Open source →</a>`;
+          html += `</p></div>`;
+        });
+      }
     } else {
-      html += `<p class="text-xs text-gray-600 leading-relaxed">No results found. Try rephrasing.</p>`;
+      html += `<p class="text-xs text-gray-600 leading-relaxed">No response received. Try rephrasing.</p>`;
     }
-    html += `<button type="button" class="mt-2 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-lg transition-colors cursor-pointer" onclick="doSearch('${q.replace(/'/g, "\\'")}')">View all &rarr;</button>`;
     html += `</div>`;
     aiBubble.innerHTML = html;
     feed.appendChild(aiBubble);
@@ -310,3 +328,19 @@ clearBtn?.addEventListener('click', () => {
 el('clear-header-search')?.addEventListener('click', resetWorkspace);
 
 overviewStats();
+
+// Auto-resize chat textarea
+const chatInput = el('chat-input');
+if (chatInput) {
+  const autoResize = () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = chatInput.scrollHeight + 'px';
+  };
+  chatInput.addEventListener('input', autoResize);
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      chatInput.closest('form').requestSubmit();
+    }
+  });
+}

@@ -178,9 +178,9 @@
                 </div>
                 <p class="text-sm text-gray-500 text-center">Copyright Marokko Biz of 31.01.12 SARL</p>
                 <div class="flex flex-col items-center md:items-end gap-1">
-                    <a href="https://www.marokkobiz.com/privacy-policy"
+                    <a href="https://marokkobiz.com/docs/Privacy_Policy.pdf"
                         class="text-sm text-gray-400 hover:text-gray-200 transition-colors">{{ $layoutCopy['privacy'] }}</a>
-                    <a href="https://www.marokkobiz.com/terms-and-conditions"
+                    <a href="https://marokkobiz.com/docs/terms_and_conditions.pdf"
                         class="text-sm text-gray-400 hover:text-gray-200 transition-colors">{{ $layoutCopy['terms'] }}</a>
                 </div>
             </div>
