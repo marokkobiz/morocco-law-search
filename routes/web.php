@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ComingSoonController;
 use App\Http\Controllers\CorpusStatusController;
+use App\Http\Controllers\CrawlerController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +13,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', ComingSoonController::class)->name('home');
 Route::get('/test', LandingController::class)->name('landing');
 Route::get('/corpus/status', [CorpusStatusController::class, 'show'])->name('corpus.status');
+
+// AI Crawler Dashboard
+Route::get('/crawler/dashboard', [CrawlerController::class, 'index'])->name('crawler.dashboard');
+Route::post('/crawler/start', [CrawlerController::class, 'start'])->name('crawler.start');
+Route::get('/crawler/status/{session}', [CrawlerController::class, 'status'])->name('crawler.status');
+Route::post('/crawler/retry/{page}', [CrawlerController::class, 'retry'])->name('crawler.retry');
+Route::post('/crawler/retry-all/{session}', [CrawlerController::class, 'retryAll'])->name('crawler.retry-all');
 
 // Locale switcher
 Route::get('/locale/{locale}', function ($locale) {

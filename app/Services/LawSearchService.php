@@ -605,7 +605,10 @@ class LawSearchService
         $query->where(function ($where) use ($domain): void {
             $where->where('legal_documents.domain', $domain)
                 ->orWhere('legal_articles.domain', $domain)
-                ->orWhere('legal_chunks.domain', $domain);
+                ->orWhere('legal_chunks.domain', $domain)
+                ->orWhere('legal_documents.domain', 'like', '%' . str_replace('_', ' ', $domain) . '%')
+                ->orWhere('legal_articles.domain', 'like', '%' . str_replace('_', ' ', $domain) . '%')
+                ->orWhere('legal_chunks.domain', 'like', '%' . str_replace('_', ' ', $domain) . '%');
 
             if ($domain === 'official-bulletin') {
                 $where->orWhere('legal_sources.source_type', 'BO')
