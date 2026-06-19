@@ -173,10 +173,25 @@
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
                     <img src="/icons/a.png" alt="MarocLoi" class="w-8 h-8 rounded-lg opacity-80">
-                    <span class="text-sm font-semibold text-gray-400">Maroc<span
-                            class="text-gray-300">Loi</span></span>
+                    <span class="text-sm font-semibold text-gray-400">Maroc<span class="text-gray-300">Loi</span></span>
                 </div>
-                <p class="text-sm text-gray-500 text-center">Copyright Marokko Biz of 31.01.12 SARL</p>
+                <div>
+                    <p class="text-sm text-gray-500 text-center">Copyright Marokko Biz of 31.01.12 SARL</p>
+                    <div class="text-center">
+                        <div
+                            class="flex flex-wrap items-center justify-center gap-x-1 text-[10px] sm:text-xs text-slate-400">
+                            <a href="https://www.de-bail.com" target="_blank" rel="noopener noreferrer"
+                                class="hover:text-slate-500 transition-colors duration-200 no-underline">
+                                de-bail.com
+                            </a>
+                            <span class="select-none"> - </span>
+                            <a href="https://www.marokkobiz.com" target="_blank" rel="noopener noreferrer"
+                                class="hover:text-slate-500 transition-colors duration-200 no-underline">
+                                marokkobiz.com
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 <div class="flex flex-col items-center md:items-end gap-1">
                     <a href="https://www.marokkobiz.com/privacy-policy"
                         class="text-sm text-gray-400 hover:text-gray-200 transition-colors">{{ $layoutCopy['privacy'] }}</a>
