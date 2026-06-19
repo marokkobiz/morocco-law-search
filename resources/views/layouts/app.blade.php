@@ -189,6 +189,11 @@
                                 class="hover:text-slate-500 transition-colors duration-200 no-underline">
                                 marokkobiz.com
                             </a>
+                            <span class="select-none"> - </span>
+                            <a href="https://www.marokkobiztv.com" target="_blank" rel="noopener noreferrer"
+                                class="hover:text-slate-500 transition-colors duration-200 no-underline">
+                                marokkobiztv.com
+                            </a>
                         </div>
                     </div>
                 </div>
