@@ -9,7 +9,7 @@ use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 // Public Pages
-Route::get('/', ComingSoonController::class)->name('landing');
+Route::get('/', LandingController::class)->name('landing');
 // Route::get('/test', LandingController::class)->name('landing');
 Route::get('/corpus/status', [CorpusStatusController::class, 'show'])->name('corpus.status');
 
