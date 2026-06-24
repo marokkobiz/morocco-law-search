@@ -36,12 +36,11 @@ class LegalEmbeddingService
             return null;
         }
 
-        $baseUrl = rtrim((string) config('legal_ai.embeddings.base_url', 'http://localhost:11434'), '/');
-        $timeout = (int) config('legal_ai.embeddings.timeout_seconds', 30);
+        $baseUrl = rtrim((string) config('legal_ai.embeddings.base_url', 'http://127.0.0.1:11434'), '/');
+        $timeout = (int) config('legal_ai.embeddings.timeout_seconds', 120);
 
         try {
-            $response = Http::timeout($timeout)
-                ->retry(1, 200)
+            $response = $this->client()
                 ->post($baseUrl.'/api/embed', [
                     'model' => $this->model(),
                     'input' => $text,
@@ -55,8 +54,7 @@ class LegalEmbeddingService
                 return $this->recordFailure('Ollama /api/embed request failed', $response->status(), $response->body());
             }
 
-            $legacyResponse = Http::timeout($timeout)
-                ->retry(1, 200)
+            $legacyResponse = $this->client()
                 ->post($baseUrl.'/api/embeddings', [
                     'model' => $this->model(),
                     'prompt' => $text,
@@ -78,6 +76,22 @@ class LegalEmbeddingService
     public function lastError(): ?string
     {
         return $this->lastError;
+    }
+
+    /**
+     * HTTP client tuned for a local Ollama instance: explicit connect timeout
+     * (so a dead IPv6 address fails fast) plus retries with linear backoff to
+     * ride out transient connection blips without failing the whole document.
+     */
+    private function client(): \Illuminate\Http\Client\PendingRequest
+    {
+        $timeout = (int) config('legal_ai.embeddings.timeout_seconds', 120);
+        $connectTimeout = max(1, (int) config('legal_ai.embeddings.connect_timeout_seconds', 15));
+        $retries = max(1, (int) config('legal_ai.embeddings.max_retries', 3));
+
+        return Http::connectTimeout($connectTimeout)
+            ->timeout($timeout)
+            ->retry($retries, fn (int $attempt): int => $attempt * 1000, throw: false);
     }
 
     public function cosineSimilarity(array $left, array $right): float

@@ -74,6 +74,7 @@ class LawSearchService
     public function __construct(
         private readonly LegalDomainClassifier $classifier,
         private readonly LegalEmbeddingService $embeddings,
+        private readonly LegalVectorStoreService $vectorStore,
     )
     {
     }
@@ -1368,6 +1369,27 @@ class LawSearchService
             return [];
         }
 
+        $resultLimit = max(1, (int) config('legal_ai.semantic_search.result_limit', 12));
+        $minimumScore = (float) config('legal_ai.semantic_search.min_score', 0.55);
+
+        if ($this->vectorStore->isEnabled()) {
+            $scores = $this->vectorStore->searchSimilar($queryVector, [
+                'limit' => max($resultLimit, (int) config('legal_ai.semantic_search.candidate_limit', 2000)),
+                'min_score' => $minimumScore,
+                'include_chat_only_sources' => (bool) ($options['includeChatOnlySources'] ?? false),
+                'embedding_model' => $this->embeddings->model(),
+            ]);
+
+            if ($scores !== null) {
+                return array_slice($scores, 0, $resultLimit, true);
+            }
+        }
+
+        return $this->semanticChunkScoresFromDatabase($queryVector, $options);
+    }
+
+    private function semanticChunkScoresFromDatabase(array $queryVector, array $options): array
+    {
         $candidateLimit = max(50, (int) config('legal_ai.semantic_search.candidate_limit', 2000));
         $resultLimit = max(1, (int) config('legal_ai.semantic_search.result_limit', 12));
         $minimumScore = (float) config('legal_ai.semantic_search.min_score', 0.55);

@@ -11,7 +11,11 @@ return [
     'embeddings' => [
         'provider' => env('LEGAL_EMBEDDING_PROVIDER', 'ollama'),
         'model' => env('OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text'),
-        'base_url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
-        'timeout_seconds' => (int) env('OLLAMA_EMBEDDING_TIMEOUT_SECONDS', 5),
+        // Use 127.0.0.1 (not "localhost") so Windows does not try IPv6 ::1 first,
+        // where Ollama is not listening, and stall the cURL connect attempt.
+        'base_url' => env('OLLAMA_BASE_URL', 'http://127.0.0.1:11434'),
+        'timeout_seconds' => (int) env('OLLAMA_EMBEDDING_TIMEOUT_SECONDS', 120),
+        'connect_timeout_seconds' => (int) env('OLLAMA_EMBEDDING_CONNECT_TIMEOUT_SECONDS', 15),
+        'max_retries' => (int) env('OLLAMA_EMBEDDING_MAX_RETRIES', 3),
     ],
 ];

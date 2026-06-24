@@ -129,6 +129,40 @@ composer test
 - `php artisan migrate:fresh`
 - `php artisan config:clear`
 - `php artisan optimize:clear`
+- `php artisan corpus:embed-chunks` — generate embeddings and sync them to Qdrant
+- `php artisan corpus:sync-qdrant` — backfill existing SQL embeddings into Qdrant
+
+## Qdrant Vector Search
+
+Semantic search uses [Qdrant](https://qdrant.tech/) for fast vector retrieval. SQL remains the source of truth for corpus metadata; Qdrant stores chunk embeddings and search filters.
+
+1. Start Qdrant locally:
+
+   ```bash
+   docker compose up -d qdrant
+   ```
+
+2. Add these values to `.env`:
+
+   ```env
+   QDRANT_ENABLED=true
+   QDRANT_URL=http://127.0.0.1:6333
+   QDRANT_COLLECTION=legal_chunks
+   QDRANT_VECTOR_SIZE=768
+
+   LEGAL_SEMANTIC_SEARCH_ENABLED=true
+   OLLAMA_BASE_URL=http://127.0.0.1:11434
+   OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+   ```
+
+3. Embed the corpus and sync vectors:
+
+   ```bash
+   php artisan corpus:embed-chunks
+   php artisan corpus:sync-qdrant
+   ```
+
+If Qdrant is unavailable, search automatically falls back to the previous SQL + PHP cosine similarity path.
 
 ## License
 

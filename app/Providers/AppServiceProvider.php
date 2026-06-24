@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\LegalChunk;
+use App\Observers\LegalChunkObserver;
 use App\Services\AI\AIProviderFactory;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +22,6 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        LegalChunk::observe(LegalChunkObserver::class);
     }
 }

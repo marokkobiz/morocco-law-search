@@ -93,6 +93,10 @@ class LawPdfImportService
         $text = $source['text'] ?? $this->parsePdfContent($source['pdfContent'] ?? $this->downloadPdf($source));
         $articles = $this->parseArticlesFromText($text);
 
+        if (!$articles && ($source['allowUnstructuredFallback'] ?? false)) {
+            $articles = $this->fallbackSingleArticleFromText($text);
+        }
+
         if (!$articles) {
             throw new RuntimeException('No article markers were found in '.$sourceUrl.'.');
         }
@@ -269,6 +273,21 @@ class LawPdfImportService
             '٨' => '8',
             '٩' => '9',
         ]);
+    }
+
+    private function fallbackSingleArticleFromText(string $text): array
+    {
+        $text = $this->normalizePdfText($text);
+        $content = $this->cleanArticleContent($text);
+
+        if (mb_strlen($content) <= self::MIN_ARTICLE_LENGTH) {
+            return [];
+        }
+
+        return [[
+            'articleNumber' => 'Article 1',
+            'content' => $content,
+        ]];
     }
 
     private function sourceValue(array $source, string $camelKey, string $snakeKey): ?string

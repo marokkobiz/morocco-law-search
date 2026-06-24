@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\LegalChunk;
 use App\Services\LegalEmbeddingService;
+use App\Services\LegalVectorStoreService;
 use Illuminate\Console\Command;
 
 class EmbedLegalChunks extends Command
@@ -14,7 +15,7 @@ class EmbedLegalChunks extends Command
 
     protected $description = 'Generate semantic embeddings for legal corpus chunks using the configured local provider.';
 
-    public function handle(LegalEmbeddingService $embeddings): int
+    public function handle(LegalEmbeddingService $embeddings, LegalVectorStoreService $vectorStore): int
     {
         if (!$embeddings->isEnabled()) {
             $this->warn('Semantic embeddings are disabled.');
@@ -27,17 +28,20 @@ class EmbedLegalChunks extends Command
         $processed = 0;
         $updated = 0;
         $skipped = 0;
+        $synced = 0;
         $failed = false;
 
         $query = LegalChunk::query()
-            ->select(['id', 'content', 'embedding_model', 'embedding_checksum'])
+            ->select(['id', 'legal_article_id', 'legal_document_version_id', 'chunk_index', 'content', 'domain', 'subdomain', 'tags', 'embedding', 'embedding_model', 'embedding_checksum'])
             ->orderBy('id');
 
         if ($limit) {
             $query->limit($limit);
         }
 
-        $query->chunkById(50, function ($chunks) use ($embeddings, &$processed, &$updated, &$skipped, &$failed): bool {
+        $query->chunkById(50, function ($chunks) use ($embeddings, $vectorStore, &$processed, &$updated, &$skipped, &$synced, &$failed): bool {
+            $pendingQdrant = [];
+
             foreach ($chunks as $chunk) {
                 $processed++;
                 $checksum = $embeddings->checksum($chunk->content);
@@ -67,20 +71,35 @@ class EmbedLegalChunks extends Command
                 ])->save();
 
                 $updated++;
+                $pendingQdrant[] = [
+                    'chunk' => $chunk->fresh(),
+                    'vector' => $vector,
+                ];
             }
 
-            $this->line("Processed {$processed}; updated {$updated}; skipped {$skipped}.");
+            if ($pendingQdrant !== [] && $vectorStore->isEnabled()) {
+                if (!$vectorStore->upsertChunks($pendingQdrant)) {
+                    $this->error('Qdrant sync failed.'.($vectorStore->lastError() ? ' '.$vectorStore->lastError() : ''));
+                    $failed = true;
+
+                    return false;
+                }
+
+                $synced += count($pendingQdrant);
+            }
+
+            $this->line("Processed {$processed}; updated {$updated}; synced {$synced}; skipped {$skipped}.");
 
             return true;
         });
 
         if ($failed) {
-            $this->warn("Embedding stopped early. Processed {$processed}; updated {$updated}; skipped {$skipped}.");
+            $this->warn("Embedding stopped early. Processed {$processed}; updated {$updated}; synced {$synced}; skipped {$skipped}.");
 
             return self::FAILURE;
         }
 
-        $this->info("Embedding complete. Processed {$processed}; updated {$updated}; skipped {$skipped}.");
+        $this->info("Embedding complete. Processed {$processed}; updated {$updated}; synced {$synced}; skipped {$skipped}.");
 
         return self::SUCCESS;
     }
