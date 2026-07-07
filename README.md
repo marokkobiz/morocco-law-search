@@ -1,135 +1,102 @@
-# Morocco Law Search
+# Maroc Law Crawler
 
-Morocco Law Search is a Laravel 12 application with Vite for frontend assets, SQLite for local development, and database-backed queues.
+Application de crawling et de recherche des lois marocaines à partir de deux sources officielles :
 
-## Requirements
+1. **SGG** (Secrétariat Général du Gouvernement) — [sgg.gov.ma](https://www.sgg.gov.ma/Accueil.aspx)
+2. **Adala** (Portail Juridique du Ministère de la Justice) — [adala.justice.gov.ma](https://adala.justice.gov.ma/fr)
 
-- PHP 8.2 or newer
-- Composer
-- Node.js 18 or newer
-- npm
-- SQLite enabled in PHP
+## Fonctionnalités
 
-## Project Setup
+- 🔍 **Crawling automatique** des textes juridiques depuis les deux sources
+- 💾 **Stockage structuré** des lois dans une base SQLite
+- 🔎 **Moteur de recherche** full-text avec filtres (source, type de texte)
+- 🌐 **Interface web** Flask pour la recherche interactive
+- 📊 **Statistiques** sur les textes indexés
 
-1. Install PHP dependencies:
+## Structure du projet
 
-   ```bash
-   composer install
-   ```
-
-2. Install frontend dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Create your environment file:
-
-   ```bash
-   # macOS / Linux
-   cp .env.example .env
-
-   # Windows PowerShell
-   Copy-Item .env.example .env
-   ```
-
-4. Update `.env` for your machine.
-
-   Recommended values for local development:
-
-   ```env
-   APP_NAME="Morocco Law Search"
-   APP_ENV=local
-   APP_DEBUG=true
-   APP_URL=http://localhost:8000
-   DB_CONNECTION=sqlite
-   QUEUE_CONNECTION=database
-   SESSION_DRIVER=database
-   CACHE_STORE=database
-   ```
-
-   If you keep spaces in `APP_NAME`, wrap the value in quotes.
-
-5. Create the SQLite database file if it does not exist yet:
-
-   ```bash
-   # macOS / Linux
-   touch database/database.sqlite
-
-   # Windows PowerShell
-   New-Item -ItemType File -Force database\database.sqlite
-   ```
-
-6. Generate the application key:
-
-   ```bash
-   php artisan key:generate
-   ```
-
-7. Run the migrations:
-
-   ```bash
-   php artisan migrate
-   ```
-
-## Running the App
-
-### Full development mode
-
-Run the Laravel server and Vite together with:
-
-```bash
-composer run dev
+```
+Crawler/
+├── main.py                  # Point d'entrée du programme
+├── config.py                # Configuration des URLs et paramètres
+├── requirements.txt         # Dépendances Python
+├── README.md                # Ce fichier
+├── Explication.md           # Document d'explication du code
+├── data/                    # Base de données SQLite
+│   └── maroc_lois.db
+├── crawlers/
+│   ├── __init__.py
+│   ├── sgg_crawler.py       # Crawler pour le site SGG
+│   └── adala_crawler.py     # Crawler pour le site Adala
+├── database/
+│   ├── __init__.py
+│   └── db_manager.py        # Gestionnaire de base de données SQLite
+├── search/
+│   ├── __init__.py
+│   └── search_engine.py     # Moteur de recherche
+├── web_interface/
+│   ├── __init__.py
+│   ├── app.py               # Application Flask
+│   └── templates/
+│       ├── index.html       # Page d'accueil
+│       └── results.html     # Page de résultats
+└── downloads/               # Téléchargements (optionnel)
 ```
 
-This starts:
-
-- Laravel server
-- Queue listener
-- Vite dev server
-
-### Run each service manually
-
-If you prefer to start them one by one:
+## Installation
 
 ```bash
-php artisan serve
-php artisan queue:listen --tries=1 --timeout=0
-npm run dev
+# Cloner ou copier le projet
+cd Crawler
+
+# Installer les dépendances
+pip install -r requirements.txt
 ```
 
-### Build assets for production
+## Utilisation
 
 ```bash
-npm run build
+# Lancer le crawling des deux sites
+python main.py crawl
+
+# Démarrer l'interface web (après crawling)
+python main.py serve
+
+# Mode recherche en ligne de commande
+python main.py search
+
+# Crawling + interface web
+python main.py all
+
+# Afficher l'aide
+python main.py help
 ```
 
-## Notes
+## API REST
 
-- The default route currently returns the `welcome` view from `routes/web.php`.
-- `composer run dev` is configured to work on Windows by skipping Laravel Pail, which requires the `pcntl` extension.
-- If you want log tailing on a system that supports `pcntl`, run it separately with:
+Une fois le serveur démarré, les endpoints suivants sont disponibles :
 
-  ```bash
-  php artisan pail --timeout=0
-  ```
+| Endpoint | Description |
+|----------|-------------|
+| `GET /` | Page d'accueil avec statistiques |
+| `GET /search?q=terme&source=SGG&type=Loi` | Recherche de textes |
+| `GET /api/search?q=terme` | API JSON de recherche |
+| `GET /api/stats` | API JSON des statistiques |
 
-## Testing
+## Sources
 
-Run the test suite with:
+### SGG (Secrétariat Général du Gouvernement)
+- Bulletin Officiel du Royaume du Maroc
+- Textes consolidés
+- Textes importants
+- Recherche dans les sommaires du BO
 
-```bash
-composer test
-```
+### Adala (Portail Juridique)
+- Textes législatifs et réglementaires
+- Ressources thématiques
+- Nouveautés législatives
+- Projets de lois
 
-## Useful Commands
+## Licence
 
-- `php artisan route:list`
-- `php artisan migrate:fresh`
-- `php artisan config:clear`
-- `php artisan optimize:clear`
-
-## License
-
-This project is open-sourced under the MIT license.
+Projet à but éducatif. Les données appartiennent aux institutions gouvernementales marocaines.

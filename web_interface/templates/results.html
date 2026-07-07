@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résultats - {{ query }} | Lois Marocaines</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a3a5c 0%, #003566 100%);
+            color: white;
+            padding: 20px;
+        }
+        .header-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .header a:hover { text-decoration: underline; }
+        .header .logo {
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+        .mini-search {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            gap: 8px;
+        }
+        .mini-search input {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+        .mini-search button {
+            padding: 10px 20px;
+            background: #ffc107;
+            color: #003566;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .sidebar {
+            width: 240px;
+            flex-shrink: 0;
+        }
+        .sidebar h3 {
+            color: #003566;
+            font-size: 1em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ffc107;
+        }
+        .sidebar .filter-section {
+            background: white;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .sidebar label {
+            display: block;
+            font-size: 0.85em;
+            padding: 4px 0;
+            cursor: pointer;
+        }
+        .sidebar label:hover { color: #003566; }
+        .sidebar input[type="checkbox"] { margin-right: 6px; }
+        .sidebar .apply-btn {
+            width: 100%;
+            padding: 10px;
+            background: #003566;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .sidebar .apply-btn:hover { background: #002244; }
+        .main {
+            flex: 1;
+            min-width: 300px;
+        }
+        .result-info {
+            background: #e3f2fd;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.95em;
+        }
+        .result-info strong { color: #003566; }
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
+        }
+        .result-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .result-card .meta {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .source-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        .source-tag.sgg { background: #e3f2fd; color: #003566; }
+        .source-tag.adala { background: #fff3e0; color: #e65100; }
+        .type-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            background: #f5f5f5;
+            color: #666;
+            font-weight: 500;
+        }
+        .result-card h3 {
+            font-size: 1em;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        .result-card h3 a {
+            color: #003566;
+            text-decoration: none;
+        }
+        .result-card h3 a:hover { text-decoration: underline; }
+        .result-card .details {
+            font-size: 0.85em;
+            color: #666;
+        }
+        .result-card .details span { margin-right: 16px; }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+        }
+        .pagination a, .pagination span {
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: white;
+            text-decoration: none;
+            color: #003566;
+            font-weight: 500;
+        }
+        .pagination a:hover { background: #e3f2fd; }
+        .pagination .active {
+            background: #003566;
+            color: white;
+        }
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .no-results h2 { color: #003566; margin-bottom: 10px; }
+        .no-results p { color: #888; }
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-inner">
+            <a href="/" class="logo">Lois Marocaines</a>
+            <form class="mini-search" action="/search" method="GET">
+                <input type="text" name="q" value="{{ query }}" placeholder="Rechercher...">
+                <button type="submit">Chercher</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="sidebar">
+            <form action="/search" method="GET">
+                <input type="hidden" name="q" value="{{ query }}">
+                <div class="filter-section">
+                    <h3>Sources</h3>
+                    {% for s in filters.sources %}
+                    <label>
+                        <input type="checkbox" name="source" value="{{ s }}"
+                            {% if s in selected_sources %}checked{% endif %}>
+                        {{ s }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="filter-section">
+                    <h3>Types de textes</h3>
+                    {% for t in filters.types %}
+                    <label>
+                        <input type="checkbox" name="type" value="{{ t }}"
+                            {% if t in selected_types %}checked{% endif %}>
+                        {{ t }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="apply-btn">Appliquer les filtres</button>
+            </form>
+        </aside>
+
+        <div class="main">
+            <div class="result-info">
+                <strong>{{ results.total }}</strong> résultat(s) pour <strong>"{{ query }}"</strong>
+                {% if selected_sources %}
+                    · Sources: {{ selected_sources|join(", ") }}
+                {% endif %}
+                {% if selected_types %}
+                    · Types: {{ selected_types|join(", ") }}
+                {% endif %}
+                · Page {{ results.page }}/{{ (results.total // results.per_page) + (1 if results.total % results.per_page else 0) }}
+            </div>
+
+            {% if results.data %}
+                {% for law in results.data %}
+                <div class="result-card">
+                    <div class="meta">
+                        <span class="source-tag {% if law.source == 'SGG' %}sgg{% else %}adala{% endif %}">{{ law.source }}</span>
+                        {% if law.type %}
+                        <span class="type-tag">{{ law.type }}</span>
+                        {% endif %}
+                        {% if law.theme %}
+                        <span class="type-tag">{{ law.theme }}</span>
+                        {% endif %}
+                    </div>
+                    <h3>
+                        {% if law.law_url %}
+                        <a href="{{ law.law_url }}" target="_blank">{{ law.title }}</a>
+                        {% else %}
+                        {{ law.title }}
+                        {% endif %}
+                    </h3>
+                    <div class="details">
+                        {% if law.number %}
+                        <span>N°: {{ law.number }}</span>
+                        {% endif %}
+                        {% if law.date_gregorian %}
+                        <span>Date: {{ law.date_gregorian }}</span>
+                        {% endif %}
+                        {% if law.source_url %}
+                        <span>Source:
+                            <a href="{{ law.source_url }}" target="_blank" style="color:#666;">{{ law.source_url.split('/')[:3]|join('/') }}</a>
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% set total_pages = (results.total // results.per_page) + (1 if results.total % results.per_page else 0) %}
+                {% if total_pages > 1 %}
+                <div class="pagination">
+                    {% if results.page > 1 %}
+                    <a href="?q={{ query }}&page={{ results.page - 1 }}{% for s in selected_sources %}&source={{ s }}{% endfor %}{% for t in selected_types %}&type={{ t }}{% endfor %}">Précédent</a>
+                    {% endif %}
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == results.page %}
+                        <span class="active">{{ p }}</span>
+                        {% elif p <= 5 or p > total_pages - 2 or (p >= results.page - 2 and p <= results.page + 2) %}
+                        <a href="?q={{ query }}&page={{ p }}{% for s in selected_sources %}&source={{ s }}{% endfor %}{% for t in selected_types %}&type={{ t }}{% endfor %}">{{ p }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if results.page < total_pages %}
+                    <a href="?q={{ query }}&page={{ results.page + 1 }}{% for s in selected_sources %}&source={{ s }}{% endfor %}{% for t in selected_types %}&type={{ t }}{% endfor %}">Suivant</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="no-results">
+                    <h2>Aucun résultat trouvé</h2>
+                    <p>Essayez de modifier votre recherche ou d'utiliser des termes plus génériques.</p>
+                    <p style="margin-top:12px;">
+                        <a href="/" style="color:#003566;">Retour à l'accueil</a>
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="footer">
+        Projet de crawling législatif - Données issues de sgg.gov.ma et adala.justice.gov.ma
+    </div>
+</body>
+</html>
