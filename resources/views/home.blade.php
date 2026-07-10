@@ -227,42 +227,42 @@
                     <div
                         class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mx-auto font-bold text-sm">
                         BO</div>
-                    <span class="block mt-3 text-sm font-semibold text-gray-800">Bulletin Officiel</span>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_bulletin') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-emerald-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.05s">
                     <div
                         class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto font-bold text-sm">
                         CT</div>
-                    <span class="block mt-3 text-sm font-semibold text-gray-800">Code du Travail</span>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_work_code') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-rose-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.1s">
                     <div
                         class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto font-bold text-sm">
                         CP</div>
-                    <span class="block mt-3 text-sm font-semibold text-gray-800">Code Pénal</span>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_penal_code') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-violet-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.15s">
                     <div
                         class="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center mx-auto font-bold text-sm">
                         CF</div>
-                    <span class="block mt-3 text-sm font-semibold text-gray-800">Code de la Famille</span>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_family_code') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-amber-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.2s">
                     <div
                         class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto font-bold text-sm">
                         DO</div>
-                    <span class="block mt-3 text-sm font-semibold text-gray-800">DOC</span>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_doc') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-cyan-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.25s">
                     <div
                         class="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center mx-auto font-bold text-sm">
                         IM</div>
-                    <span class="block mt-3 text-sm font-semibold text-gray-800">Immobilier</span>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_real_estate') }}</span>
                 </div>
             </div>
         </div>
