@@ -20,15 +20,14 @@ FILES_DOWNLOAD_TIMEOUT = 180
 
 # --- Downloader & Timeout Settings ---
 # This is the global timeout for all requests, including file downloads
-DOWNLOAD_TIMEOUT = 180 
+DOWNLOAD_TIMEOUT = 300 
 DOWNLOAD_MAXSIZE = 0
 COOKIES_ENABLED = False
 
 # --- Concurrency & Politeness ---
 # Keeping these conservative to avoid the Finance/Justice servers blocking you
-CONCURRENT_REQUESTS = 8
-CONCURRENT_REQUESTS_PER_DOMAIN = 2
-DOWNLOAD_DELAY = 5
+CONCURRENT_REQUESTS = 18
+DOWNLOAD_DELAY = 0.5
 AUTOTHROTTLE_ENABLED = True
 AUTOTHROTTLE_TARGET_CONCURRENCY = 2.0
 
@@ -36,6 +35,7 @@ AUTOTHROTTLE_TARGET_CONCURRENCY = 2.0
 RETRY_ENABLED = True
 RETRY_TIMES = 3
 RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408]
+DOWNLOAD_FAIL_ON_DATALOSS = False
 
 # --- Headers ---
 DEFAULT_REQUEST_HEADERS = {

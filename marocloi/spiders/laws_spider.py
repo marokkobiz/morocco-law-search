@@ -11,6 +11,9 @@ class LawsSpider(scrapy.Spider):
     visited_urls = set()
 
     def parse(self, response):
+        
+        
+
         if response.url in self.visited_urls:
             return
         self.visited_urls.add(response.url)
