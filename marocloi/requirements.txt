@@ -1,1 +1,5 @@
 scrapy
+Docker
+Meilisearch
+Ubuntu
+WSL
