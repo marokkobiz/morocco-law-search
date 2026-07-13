@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'badge' => 'Recherche juridique professionnelle',
-    'title_html' => 'Recherche<br>juridique marocain',
+    'badge' => 'LOI-pedia Online',
+    'title_html' => 'LOI-pedia marocain<br>Online',
     'subtitle' => 'Recherchez la législation marocaine, les bulletins officiels, les textes juridiques et des analyses appuyées par des sources dans un seul espace professionnel.',
     'placeholder' => 'Rechercher un article, code, bulletin ou sujet juridique...',
     'search' => 'Rechercher',
@@ -35,4 +35,10 @@ return [
     'cta_desc' => 'Accédez à des milliers de documents juridiques marocains depuis un espace professionnel unique.',
     'cta_create' => 'Créer un compte gratuit',
     'cta_learn' => 'En savoir plus',
+    'source_bulletin' => 'Bulletin Officiel',
+    'source_work_code' => 'Code du travail',
+    'source_penal_code' => 'Code pénal',
+    'source_family_code' => 'Code de la famille',
+    'source_doc' => 'Documents juridiques',
+    'source_real_estate' => 'Immobilier',
 ];

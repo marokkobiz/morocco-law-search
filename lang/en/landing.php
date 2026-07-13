@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'badge' => 'Professional Legal Research',
-    'title_html' => 'Moroccan Legal<br>Research',
+    'badge' => 'LOI-pedia Online',
+    'title_html' => 'Moroccan LOI-pedia<br>Online',
     'subtitle' => 'Search Moroccan legislation, official bulletins, legal texts, and source-backed analysis from one professional workspace.',
     'placeholder' => 'Search article, code, bulletin, or legal issue...',
     'search' => 'Search',
@@ -35,4 +35,10 @@ return [
     'cta_desc' => 'Access thousands of Moroccan legal documents from a single, professional workspace.',
     'cta_create' => 'Create Free Account',
     'cta_learn' => 'Learn More',
+    'source_bulletin' => 'Official Bulletin',
+    'source_work_code' => 'Labour Code',
+    'source_penal_code' => 'Penal Code',
+    'source_family_code' => 'Family Code',
+    'source_doc' => 'Legal Documents',
+    'source_real_estate' => 'Real Estate',
 ];

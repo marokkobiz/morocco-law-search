@@ -68,7 +68,7 @@
             <a href="/" class="flex items-center gap-2.5 shrink-0 no-underline">
                 <img src="/icons/a.png" alt="MarocLoi" class="w-8 h-8 rounded-lg">
                 <span class="text-sm font-bold text-white hidden sm:inline">Maroc<span
-                        class="text-blue-400">Loi</span></span>
+                        class="text-blue-400">Loi.com</span></span>
             </a>
 
             <div class="hidden md:flex items-center gap-1 mx-auto">
@@ -173,7 +173,7 @@
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
                     <img src="/icons/a.png" alt="MarocLoi" class="w-8 h-8 rounded-lg opacity-80">
-                    <span class="text-sm font-semibold text-gray-400">Maroc<span class="text-gray-300">Loi</span></span>
+                    <span class="text-sm font-semibold text-gray-400">Maroc<span class="text-gray-300">Loi.com</span></span>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500 text-center">Copyright Marokko Biz of 31.01.12 SARL</p>
