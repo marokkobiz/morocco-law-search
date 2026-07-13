@@ -64,5 +64,14 @@ def index_ramis_data(filepath: str, doc_title: str, doc_language: str = "ar", do
     print(f"🎉 Success! Uploaded {len(flattened_articles)} articles to your Docker index.")
 
 if __name__ == "__main__":
-    # Once Rami hands you his first JSON file, drop it in your folder and test it here!
-    print("Pipeline ready. Pass a JSON file path to index_ramis_data() to populate Docker.")
+    try:
+        print("🚀 Starting test data pipeline injection...")
+        # Added 'morocco-law-search/' prefix to guide Python to the right folder
+        index_ramis_data(
+            filepath="morocco-law-search/test_law.json", 
+            doc_title="Moroccan_Legal_Code_Test", 
+            doc_language="ar", 
+            doc_type="Dahir"
+        )
+    except Exception as e:
+        print(f"❌ Error during injection: {e}")
