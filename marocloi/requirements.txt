@@ -3,3 +3,4 @@ Docker
 Meilisearch
 Ubuntu
 WSL
+Streamlit
