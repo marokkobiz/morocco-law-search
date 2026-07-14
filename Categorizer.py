@@ -5,21 +5,27 @@ import meilisearch
 client = meilisearch.Client("http://localhost:7700")
 
 def classify_law(title: str, text: str) -> str:
-    """ Automatically categorizes Moroccan laws into 4 main buckets using keyword matching """
+    """ Automatically categorizes Moroccan laws into 4 main buckets using bilingual keyword matching """
     title_lower = title.lower()
     text_lower = text.lower()
     
-    if "constitution" in title_lower or "الدستور" in title_lower:
+    # 1. Constitutional Law
+    if any(x in title_lower or x in text_lower for x in ["constitution", "constitutionnel", "الدستور", "دستوري"]):
         return "Constitutional"
-    elif any(x in title_lower or x in text_lower for x in ["pénal", "général", "جنائي", "العقوبات", "زجري"]):
+        
+    # 2. Criminal Law / Droit Pénal
+    elif any(x in title_lower or x in text_lower for x in ["pénal", "général", "infraction", "crime", "جنائي", "العقوبات", "زجري"]):
         return "Criminal"
-    elif any(x in title_lower or x in text_lower for x in ["commerce", "sociétés", "fiscal", "تجاري", "الشركات", "التجارة"]):
+        
+    # 3. Business & Commercial Law / Droit des Affaires
+    elif any(x in title_lower or x in text_lower for x in ["commerce", "commercial", "sociétés", "fiscal", "impôt", "تجاري", "الشركات", "التجارة"]):
         return "Business"
+        
+    # 4. Civil Law / Droit Civil (DOC)
     elif any(x in title_lower or x in text_lower for x in ["civil", "obligations", "contrats", "مدني", "التزامات", "عقود"]):
         return "Civil"
+        
     else:
-        # Decrees about administrative or time changes (like "الساعة القانونية") 
-        # often fall under public/administrative law, defaulting safely here.
         return "Uncategorized"
 
 def index_ramis_production_data(filepath: str):
