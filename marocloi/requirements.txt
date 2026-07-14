@@ -4,3 +4,4 @@ Meilisearch
 Ubuntu
 WSL
 Streamlit
+Supabase
