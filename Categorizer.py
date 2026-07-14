@@ -71,6 +71,13 @@ def index_ramis_production_data(filepath: str):
     print(f"🎉 Success! Uploaded {len(flattened_articles)} production articles to your Docker index.")
 
 if __name__ == "__main__":
+    index = client.index("moroccan_laws")
+    # 🧹 Wipes out every document inside this index
+    task = index.delete_all_documents()
+    client.wait_for_task(task.task_uid)
+
+    print("🗑️ All documents successfully deleted from the index!")
+
     try:
         print("🚀 Starting production data pipeline injection...")
         # Make sure your test_law.json contains the new array snippet you just pasted!
