@@ -24,7 +24,11 @@
 
     <form action="/register" method="post" data-auth-gate>
       @csrf
-
+       <input
+    type="hidden"
+    name="referral_code"
+    value="{{ $referralCode }}">
+    
       <div class="auth-field-grid">
         <label>
           {{ __('auth.full_name') }}

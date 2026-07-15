@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -24,6 +24,10 @@ class User extends Authenticatable
         'phone',
         'email',
         'bar',
+        'referral_code_used',
+        'referral_code',
+        'referred_by',  
+        'role',      
         'password',
         'access_status',
         'stripe_customer_id',
@@ -88,4 +92,14 @@ class User extends Authenticatable
             'billing_ends_at' => null,
         ])->save();
     }
+
+    public function referrals()
+    {
+    return $this->hasMany(User::class, 'referred_by');
+    }
+
+      public function referrer()
+      {
+          return $this->belongsTo(User::class, 'referred_by');
+      }
 }

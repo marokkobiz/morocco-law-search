@@ -20,6 +20,8 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'bar' => ['required', 'string', 'max:255'],
             'custom_bar' => ['nullable', 'required_if:bar,__custom_bar__', 'string', 'max:255'],
+            'referral_code_used' => ['nullable', 'string', 'max:100'],
+            'referral_code' => ['nullable', 'string'],
             'password' => ['required', 'string', 'min:8', 'max:255', 'confirmed'],
             'password_confirmation' => ['required', 'string', 'min:8', 'max:255'],
         ];

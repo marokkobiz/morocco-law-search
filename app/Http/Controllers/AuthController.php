@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
@@ -31,7 +32,8 @@ class AuthController extends Controller
             'lang' => $lang,
             'courts' => $this->courts($lang),
             'customBarValue' => self::CUSTOM_BAR_VALUE,
-        ]);
+            'referralCode' => request('ref'),
+]);
     }
 
     public function passwordForm(): View
@@ -52,35 +54,60 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        if (! Auth::user()->hasVerifiedEmail()) {
+            Auth::logout();
 
+            return redirect()
+                ->route('verification.notice')
+                ->with('message', 'Please verify your email first.');
+        }
+ 
         return redirect()->intended('/dashboard');
     }
 
     public function register(RegisterRequest $request): RedirectResponse
     {
         $validated = $request->validated();
-        unset($validated['password_confirmation']);
+
+$referralCode = $validated['referral_code'] ?? null;
+
+unset(
+    $validated['password_confirmation'],
+    $validated['referral_code']
+);
 
         $validated['bar'] = trim($validated['bar'] === self::CUSTOM_BAR_VALUE
             ? (string) $validated['custom_bar']
             : (string) $validated['bar']);
         unset($validated['custom_bar']);
 
-        $user = User::query()->create($validated + [
-            'access_status' => config('billing.require_payment') ? 'pending_payment' : 'active',
-            'trial_ends_at' => config('billing.default_trial_days') > 0
-                ? now()->addDays((int) config('billing.default_trial_days'))
-                : null,
-        ]);
+        $agent = null;
+
+if ($referralCode) {
+    $agent = User::where('referral_code', $referralCode)->first();
+}
+
+$user = User::create(array_merge($validated, [
+
+    'referral_code' => $this->generateReferralCode(),
+
+    'referred_by' => $agent?->id,
+
+    'access_status' => config('billing.require_payment')
+        ? 'pending_payment'
+        : 'active',
+
+    'trial_ends_at' => config('billing.default_trial_days') > 0
+        ? now()->addDays(config('billing.default_trial_days'))
+        : null,
+]));
 
         Auth::login($user);
         $request->session()->regenerate();
 
-        if ($user->requiresPayment()) {
-            return redirect('/billing');
-        }
+        $user->sendEmailVerificationNotification();
 
-        return redirect('/dashboard');
+        return redirect()->route('verification.notice');
     }
 
     public function logout(Request $request): RedirectResponse
@@ -149,4 +176,16 @@ class AuthController extends Controller
             ],
         };
     }
+
+private function generateReferralCode(): string
+{
+    do {
+        $code = strtoupper(Str::random(8));
+    } while (
+        User::where('referral_code', $code)->exists()
+    );
+
+    return $code;
+}
+
 }
