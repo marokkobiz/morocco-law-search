@@ -1,19 +1,21 @@
 import scrapy
 from datetime import datetime
 from w3lib.url import safe_url_string
+import re
 
 class LawsSpider(scrapy.Spider):
     name = "laws_spider"
     allowed_domains = ["adala.justice.gov.ma"]
-    start_urls = ["https://adala.justice.gov.ma/fr/resources"]
     
-    # Track visited URLs to prevent infinite recursion
+    # ⚡ Start URLs for both French and Arabic resources
+    start_urls = [
+        "https://adala.justice.gov.ma/fr/resources",
+        "https://adala.justice.gov.ma/ar/resources"
+    ]
+    
     visited_urls = set()
 
     def parse(self, response):
-        
-        
-
         if response.url in self.visited_urls:
             return
         self.visited_urls.add(response.url)
@@ -26,11 +28,9 @@ class LawsSpider(scrapy.Spider):
                 title = link_element.css('span.titre_plansite::text').get()
                 
                 if raw_url and title:
-                    # Clean the URL by removing fragments (#) and query parameters
                     clean_pdf_url = raw_url.split('#')[0].split('?')[0]
                     full_pdf_url = response.urljoin(clean_pdf_url)
                     
-                    # Yield a Request to handle the download with headers
                     yield scrapy.Request(
                         url=safe_url_string(full_pdf_url),
                         callback=self.save_pdf,
@@ -42,15 +42,15 @@ class LawsSpider(scrapy.Spider):
                         headers={'Referer': response.url}
                     )
 
-        # 2. Recursive Folder Traversal
+        # 2. Recursive Folder Traversal (Supports both /fr/resources and /ar/resources paths)
         category_links = response.css('a[href*="/resources/"]::attr(href)').getall()
         for link in category_links:
             full_url = response.urljoin(link)
-            if "/resources/" in full_url and full_url not in self.visited_urls:
+            # Ensure we allow crawling through both language structures
+            if ("/resources/" in full_url) and (full_url not in self.visited_urls):
                 yield response.follow(full_url, callback=self.parse)
 
     def save_pdf(self, response):
-        """Callback to process the actual file download."""
         yield {
             'title': response.meta['title'],
             'file_urls': [response.url],
@@ -62,11 +62,24 @@ class LawsSpider(scrapy.Spider):
         t = title.lower()
         scores = {"Constitutional": 0, "Civil": 0, "Criminal": 0, "Business": 0}
         
+        # ⚡ Bilingual Mapping (French + Arabic equivalent keywords)
         mapping = {
-            "Constitutional": ["constitution", "dahir", "législatif", "droit public", "royaume"],
-            "Civil": ["civil", "famille", "statut personnel", "héritage", "mariage", "divorce", "contrat"],
-            "Criminal": ["pénal", "procédure pénale", "pénitentiaire", "crime", "délit", "infraction"],
-            "Business": ["commercial", "société", "investissement", "fiscal", "assurance", "marché", "bancaire", "taxe"]
+            "Constitutional": [
+                "constitution", "dahir", "législatif", "droit public", "royaume", 
+                "دستور", "ظهير", "تشريعي", "قانون عام", "مملكة"
+            ],
+            "Civil": [
+                "civil", "famille", "statut personnel", "héritage", "mariage", "divorce", "contrat",
+                "مدني", "أسرة", "الأحوال الشخصية", "إرث", "زواج", "طلاق", "عقد"
+            ],
+            "Criminal": [
+                "pénal", "procédure pénale", "pénitentiaire", "crime", "délit", "infraction",
+                "جنائي", "المسطرة الجنائية", "سجون", "جريمة", "جنحة", "مخالفة"
+            ],
+            "Business": [
+                "commercial", "société", "investissement", "fiscal", "assurance", "marché", "bancaire", "taxe",
+                "تجاري", "شركة", "استثمار", "ضريبي", "تأمين", "صفقة", "بنكي", "ضريبة"
+            ]
         }
         
         for category, keywords in mapping.items():
