@@ -2,7 +2,7 @@ import json
 import meilisearch
 
 # Connect directly to your running Docker container
-client = meilisearch.Client("http://localhost:7700")
+client = meilisearch.Client("http://localhost:7800")
 
 def classify_law(title: str, text: str) -> str:
     """ Automatically categorizes Moroccan laws into 4 main buckets using bilingual keyword matching """
@@ -87,6 +87,6 @@ if __name__ == "__main__":
     try:
         print("🚀 Starting production data pipeline injection...")
         # Make sure your test_law.json contains the new array snippet you just pasted!
-        index_ramis_production_data(filepath="morocco-law-search/test_law.json")
+        index_ramis_production_data(filepath="test_law.json")
     except Exception as e:
         print(f"❌ Error during injection: {e}")
