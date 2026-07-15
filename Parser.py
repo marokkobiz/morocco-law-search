@@ -11,6 +11,8 @@ import pytesseract
 from PIL import Image
 import pdf2image
 
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
 # --- Helper for Manual Tesseract OCR ---
 def ocr_arabic_pdf(pdf_path):
     """Fallback manual OCR for stubborn Arabic PDFs."""
