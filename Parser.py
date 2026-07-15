@@ -14,8 +14,9 @@ import pdf2image
 # --- Helper for Manual Tesseract OCR ---
 def ocr_arabic_pdf(pdf_path):
     """Fallback manual OCR for stubborn Arabic PDFs."""
+    poppler_path = r'C:\Users\akhad\Downloads\Release-26.02.0-0\poppler-26.02.0\Library\bin'
     try:
-        pages = pdf2image.convert_from_path(pdf_path)
+        pages = pdf2image.convert_from_path(pdf_path, dpi=150, poppler_path=poppler_path)
         full_text = []
         for page in pages:
             # Using --psm 6 for uniform block text; added --oem 3 for best engine mode
