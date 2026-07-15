@@ -9,25 +9,21 @@ class LawsSpider(scrapy.Spider):
     name = "laws_spider"
     allowed_domains = ["adala.justice.gov.ma"]
     
-    # ⚡ Start at the root language gates to discover everything
     start_urls = [
-        "https://adala.justice.gov.ma/fr/resources",
-        "https://adala.justice.gov.ma/ar/resources"
+        "https://adala.justice.gov.ma/fr",
+        "https://adala.justice.gov.ma/ar"
     ]
     
-    # Sets to track discovered items and avoid duplicates
     visited_pages = set()
     discovered_pdfs = set()
 
-    # Configure Scrapy speed settings to be gentle but thorough
     custom_settings = {
         'CONCURRENT_REQUESTS': 16,
-        'DOWNLOAD_DELAY': 0.5,  # 0.5s delay to prevent getting blocked
+        'DOWNLOAD_DELAY': 0.5,
         'ROBOTSTXT_OBEY': False
     }
 
     def parse(self, response):
-        # Ignore non-HTML pages (like direct image links or documents)
         if not hasattr(response, "text"):
             return
 
@@ -36,29 +32,29 @@ class LawsSpider(scrapy.Spider):
             return
         self.visited_pages.add(current_url)
 
-        # 1. Aggressively scan ALL <a> links on the page
         all_links = response.css('a')
         for link in all_links:
             href = link.css('::attr(href)').get()
             if not href:
                 continue
 
-            # Clean and build the full absolute URL
             full_url = response.urljoin(href).split('#')[0]
             clean_url = safe_url_string(full_url)
             
-            # Extract whatever text is inside the link (falls back to clean filename if empty)
             link_text = " ".join(link.css('::text, *::text').getall()).strip()
 
-            # 🛑 Check if it's a PDF link
             if self.is_pdf_link(clean_url):
                 if clean_url not in self.discovered_pdfs:
                     self.discovered_pdfs.add(clean_url)
                     
-                    # Generate a fallback title from the file name if the link text is empty
                     if not link_text:
                         parsed_url = urlparse(clean_url)
                         link_text = unquote(os.path.basename(parsed_url.path))
+                    
+                    # ⚡ Check if the PDF is a Royal Message / Speech
+                    if self.is_blacklisted(link_text, clean_url):
+                        self.logger.info(f"⏭️ Skipping non-law document: {link_text}")
+                        continue
                     
                     yield scrapy.Request(
                         url=clean_url,
@@ -71,35 +67,58 @@ class LawsSpider(scrapy.Spider):
                         headers={'Referer': response.url}
                     )
             
-            # 🔄 Check if it is a recursive page we should crawl
             elif self.is_crawlable_page(clean_url):
                 yield response.follow(clean_url, callback=self.parse)
 
     def is_pdf_link(self, url: str) -> bool:
-        """Helper to check if a URL points to a PDF, ignoring query params."""
         parsed = urlparse(url)
         path = parsed.path.lower()
         return path.endswith('.pdf') or '.pdf' in path
 
     def is_crawlable_page(self, url: str) -> bool:
-        """Ensures we stay on adala.justice.gov.ma and don't download media files as HTML."""
         parsed = urlparse(url)
-        
-        # Must be within the allowed domain
         if parsed.netloc not in self.allowed_domains:
             return False
             
         path = parsed.path.lower()
-        
-        # Exclude common media/binary assets
         excluded_extensions = ('.zip', '.tar', '.gz', '.png', '.jpg', '.jpeg', '.gif', '.mp4', '.mp3', '.pdf')
         if path.endswith(excluded_extensions):
             return False
             
+        # ⚡ Avoid crawling entire web directories dedicated solely to Royal Speeches if possible
+        if "discours" in path or "messages" in path or "خطب" in path or "رسائل" in path:
+            return False
+
         return True
 
+    def is_blacklisted(self, title: str, url: str) -> bool:
+        """⚡ Filters out non-legislative items like Royal Speeches/Letters."""
+        title_lower = title.lower()
+        url_lower = url.lower()
+        
+        # Keywords for Royal Speeches / Letters
+        blacklist_keywords = [
+            # French
+            "discours royal", "discours royaux", "message royal", "messages royaux", 
+            "lettre royale", "lettres royales", "allocution",
+            # Arabic
+            "خطاب ملكي", "الخطب الملكية", "رسالة ملكية", "الرسائل الملكية", "رسائل ملكية",
+            "خطب جلالة", "رسالة جلالة","الرسالة الملكية", "الرسالة السامية", "الخطاب السامي"
+        ]
+        
+        # Check title
+        if any(keyword in title_lower for keyword in blacklist_keywords):
+            return True
+            
+        # Check URL paths (e.g., /fr/discours/ or /ar/messages/)
+        if any(keyword in url_lower for keyword in ["discours", "message", "خطاب", "رسالة"]):
+            # Double check to ensure we don't block laws that just mention a "date of message"
+            if not any(law_word in url_lower for law_word in ["loi", "dahir", "decret", "arrêté", "قانون", "ظهير", "مرسوم"]):
+                return True
+                
+        return False
+
     def save_pdf(self, response):
-        """Callback to process the actual file download."""
         yield {
             'title': response.meta['title'],
             'file_urls': [response.url],
