@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AdminMiddleware; // <--- 1. ADDED THIS IMPORT
 use App\Http\Middleware\EnsurePaidAccess;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'paid' => EnsurePaidAccess::class,
+            'admin' => AdminMiddleware::class, // <--- 2. ADDED THIS ALIAS
         ]);
         $middleware->web(append: [
             SetLocale::class,

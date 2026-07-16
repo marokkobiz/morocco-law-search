@@ -204,6 +204,7 @@
                     </div>
                 </div>
             </div>
+        </div>
     </section>
 
     {{-- Database Section --}}
@@ -215,10 +216,6 @@
                     <h2 class="section-title mt-4">{{ __('landing.database_title') }}</h2>
                     <p class="section-desc">{{ __('landing.database_desc') }}</p>
                 </div>
-                {{-- <div class="hidden lg:block shrink-0" data-animate="fade-in" style="--delay: 0.1s">
-                    <img src="https://placehold.co/200x200/2563eb/dbeafe?text=Legal+DB" alt="Database"
-                        class="img-elevate rounded-xl shadow-lg shadow-blue-500/10 ring-1 ring-blue-100/50">
-                </div> --}}
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-12">
@@ -268,30 +265,44 @@
         </div>
     </section>
 
-    {{-- CTA Section --}}
-    <section class="relative overflow-hidden py-20 md:py-28 bg-gray-900">
-        <div class="absolute inset-0">
-            <img src="{{ asset('images/cta-background.jpg') }}" alt="" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-black/20"></div>
-            <div class="absolute inset-0 bg-linear-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
-        </div>
-        <div class="relative z-10 container-page text-center" data-animate="fade-up">
-            <h2 class="text-3xl md:text-5xl font-serif font-bold text-white leading-tight">{{ __('landing.cta_title') }}
+    {{-- Bottom CTA Section --}}
+    <section class="py-16 bg-slate-900 text-white rounded-2xl mx-6 my-12 text-center relative overflow-hidden">
+        <div class="relative z-10 max-w-2xl mx-auto px-4">
+            <h2 class="text-3xl font-bold tracking-tight mb-3">
+                {{ __('landing.cta_title') }}
             </h2>
-            <p class="mt-4 text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">{{ __('landing.cta_desc') }}</p>
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-                <a href="{{ route('register') }}"
-                    class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-blue-700 bg-white hover:bg-blue-50 shadow-2xl shadow-blue-900/30 transition-all duration-200 no-underline">
-                    {{ __('landing.cta_create') }}
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                </a>
-                <a href="https://www.marokkobiz.com/"
-                    class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-white border border-white/30 hover:bg-white/10 transition-all duration-200 no-underline">
-                    {{ __('landing.cta_learn') }}
-                </a>
+            <p class="text-slate-400 text-sm mb-8">
+                {{ __('landing.cta_desc') }}
+            </p>
+
+            <div class="flex flex-wrap justify-center items-center gap-4">
+                @auth
+                    <!-- Shown when user is logged in -->
+                    <a href="{{ route('app.workspace') }}" 
+                       class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition shadow-lg flex items-center gap-2">
+                        <span>{{ __('Go to Dashboard') }}</span>
+                        <svg class="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+
+                    @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('admin.dashboard') }}" 
+                           class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-xl border border-slate-700 transition">
+                            {{ __('Admin Portal') }}
+                        </a>
+                    @endif
+                @else
+                    <!-- Shown when NOT logged in -->
+                    <a href="{{ route('register') }}" 
+                       class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition shadow-lg flex items-center gap-2">
+                        <span>{{ __('landing.cta_create') }}</span>
+                        <svg class="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+                    
+                    <a href="{{ route('login') }}" 
+                       class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm rounded-xl border border-slate-700 transition">
+                        {{ __('Log In') }}
+                    </a>
+                @endauth
             </div>
         </div>
     </section>

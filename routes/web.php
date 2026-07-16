@@ -10,11 +10,11 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Middleware\EnsureUserIsAdmin;
 
 
 // Public Pages
 Route::get('/', LandingController::class)->name('landing');
-// Route::get('/test', LandingController::class)->name('landing');
 Route::get('/corpus/status', [CorpusStatusController::class, 'show'])->name('corpus.status');
 
 // Locale switcher
@@ -31,7 +31,8 @@ Route::middleware(['auth', 'verified', 'paid'])->name('app.')->group(function ()
     Route::get('/search', WorkspaceController::class)->name('search');
 });
 
-Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+// Admin Pages (Protected with EnsureUserIsAdmin middleware)
+Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
     
     // Admin Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
