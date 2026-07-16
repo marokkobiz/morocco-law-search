@@ -70,21 +70,22 @@ def parse_single_pdf(pdf_path: str, converter: DocumentConverter) -> list:
     
 def parse_text_stream(text: str, pdf_path: str) -> list:
     articles = []
-    # Regex to capture "المادة" followed by digits
-    pattern = re.compile(r'(المادة\s+\d+)', re.IGNORECASE)
+    # Updated regex to match "المادة" OR "Article" (case-insensitive)
+    pattern = re.compile(r'(المادة\s+\d+|Article\s+\d+)', re.IGNORECASE)
     
-    # This creates the 'chunks' list that your loop needs
     chunks = pattern.split(text)
     
-    # Loop through the chunks, starting at index 1 (the first article)
-    # We iterate by 2 because pattern.split keeps the separators (the article headers)
     for i in range(1, len(chunks), 2):
         if i + 1 < len(chunks):
+            # Clean header to get just the number
+            header = chunks[i]
+            article_num = re.sub(r'(المادة|Article)', '', header, flags=re.IGNORECASE).strip()
+            
             article_data = {
-                "article_num": chunks[i].replace("المادة", "").strip(), 
+                "article_num": article_num,
                 "text": chunks[i+1].strip()[:1000],
                 "doc_source_file": str(Path(pdf_path).as_posix()),
-                "doc_language": "ar"
+                "doc_language": "ar" if "المادة" in header else "fr"
             }
             articles.append(article_data)
     return articles
@@ -104,7 +105,7 @@ if __name__ == "__main__":
 
     fast_conv = setup_converter(use_ocr=False)
     
-    pdf_dir = "./dowloaded_laws_ar"
+    pdf_dir = "./downloaded_laws"
     pdf_files = [os.path.join(pdf_dir, f) for f in os.listdir(pdf_dir) if f.endswith(".pdf")]
     
     for pdf in pdf_files:
