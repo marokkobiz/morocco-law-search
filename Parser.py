@@ -1,8 +1,11 @@
 import os
+os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
 import json
 import re
 import hashlib
 from pathlib import Path
+
+from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
@@ -11,18 +14,22 @@ import pytesseract
 from PIL import Image
 import pdf2image
 
+
+
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # --- Helper for Manual Tesseract OCR ---
 def ocr_arabic_pdf(pdf_path):
     """Fallback manual OCR for stubborn Arabic PDFs."""
-    poppler_path = r'C:\Users\akhad\Downloads\Release-26.02.0-0\poppler-26.02.0\Library\bin'
+    poppler_path = r'C:\poppler\Library\bin'
     try:
-        pages = pdf2image.convert_from_path(pdf_path, dpi=150, poppler_path=poppler_path)
+        pages = pdf2image.convert_from_path(pdf_path, dpi=100, poppler_path=poppler_path)
         full_text = []
         for page in pages:
             # Using --psm 6 for uniform block text; added --oem 3 for best engine mode
             text = pytesseract.image_to_string(page, lang='ara+fra', config='--psm 6 --oem 3')
+            print(f"DEBUG: OCR extracted {len(text)} characters from page.") # ADD THIS
+   
             full_text.append(text)
         return "\n".join(full_text)
     except Exception as e:
@@ -32,41 +39,55 @@ def ocr_arabic_pdf(pdf_path):
 def setup_converter(use_ocr: bool = False) -> DocumentConverter:
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = use_ocr
+    # If the import above fails, just delete this line and leave only the options below
     return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)})
 
 # --- Updated Parsing Logic ---
+# Create a small list to remember which files crashed previously
+failed_files = [] 
+
 def parse_single_pdf(pdf_path: str, converter: DocumentConverter) -> list:
-    doc_title = Path(pdf_path).stem
+    doc_title = Path(pdf_path).name
     
-    # Check if this looks like an Arabic file that needs manual intervention
-    # (If your docling pipeline continues to return empty results)
+    # If the file is known to be problematic, skip Docling entirely
+    if doc_title in failed_files:
+        print(f"   ⏩ Skipping Docling for known heavy file: {doc_title}")
+        return parse_text_stream(ocr_arabic_pdf(pdf_path), pdf_path)
+
     try:
         result = converter.convert(pdf_path)
-        doc = result.document
-        # If docling text content is minimal, force manual OCR
-        if not doc.text or len(doc.text) < 100:
-            raise ValueError("Docling failed to extract meaningful text.")
-    except:
-        print(f"   ⚠️ Switching to Manual Tesseract OCR for {doc_title}...")
-        manual_text = ocr_arabic_pdf(pdf_path)
-        # We treat manual_text as a single giant "page" or chunk for regex parsing
-        # Or you can re-feed this text into a mock structure if needed.
-        return parse_text_stream(manual_text, pdf_path)
-
-    # Proceed with standard docling iteration...
-    # (Your existing iteration logic goes here)
-    return extract_articles_from_docling(doc, pdf_path)
-
-def parse_text_stream(text: str, pdf_path: str) -> list:
-    """Helper to parse raw string text into article objects."""
-    articles = []
-    # Simplified regex for articles
-    pattern = re.compile(r'(المادة|الفصل|Article|Art\.)\s+([0-9\u0627-\u064a]+)', re.IGNORECASE)
+        full_text = result.document.export_to_text()
+        
+        if not full_text or len(full_text) < 100:
+            raise ValueError("No text found")
+            
+        return parse_text_stream(full_text, pdf_path)
+        
+    except Exception as e:
+        print(f"   ⚠️ Memory/Docling failure for {doc_title}, adding to failed list and switching to Manual OCR...")
+        failed_files.append(doc_title) # Remember this file for the future
+        return parse_text_stream(ocr_arabic_pdf(pdf_path), pdf_path)
     
-    # Split text into chunks by article markers
-    parts = pattern.split(text)
-    # logic to reconstruct into article objects...
-    return articles # Placeholder for your specific reconstruction logic
+def parse_text_stream(text: str, pdf_path: str) -> list:
+    articles = []
+    # Regex to capture "المادة" followed by digits
+    pattern = re.compile(r'(المادة\s+\d+)', re.IGNORECASE)
+    
+    # This creates the 'chunks' list that your loop needs
+    chunks = pattern.split(text)
+    
+    # Loop through the chunks, starting at index 1 (the first article)
+    # We iterate by 2 because pattern.split keeps the separators (the article headers)
+    for i in range(1, len(chunks), 2):
+        if i + 1 < len(chunks):
+            article_data = {
+                "article_num": chunks[i].replace("المادة", "").strip(), 
+                "text": chunks[i+1].strip()[:1000],
+                "doc_source_file": str(Path(pdf_path).as_posix()),
+                "doc_language": "ar"
+            }
+            articles.append(article_data)
+    return articles
 
 if __name__ == "__main__":
     # 1. Load existing data if file exists
@@ -83,7 +104,7 @@ if __name__ == "__main__":
 
     fast_conv = setup_converter(use_ocr=False)
     
-    pdf_dir = "./downloaded_laws"
+    pdf_dir = "./dowloaded_laws_ar"
     pdf_files = [os.path.join(pdf_dir, f) for f in os.listdir(pdf_dir) if f.endswith(".pdf")]
     
     for pdf in pdf_files:
@@ -100,5 +121,7 @@ if __name__ == "__main__":
             # Update the file after each successful document to ensure persistence
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(all_articles, f, ensure_ascii=False, indent=2)
+        import gc
+        gc.collect()
             
     print(f"🎉 Final count: {len(all_articles)} articles extracted.")
