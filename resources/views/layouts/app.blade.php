@@ -198,9 +198,9 @@
                     </div>
                 </div>
                 <div class="flex flex-col items-center md:items-end gap-1">
-                    <a href="https://www.marokkobiz.com/privacy-policy"
+                    <a href="http://marokkobiz.com/docs/privacy_policy.pdf" target="_blank"
                         class="text-sm text-gray-400 hover:text-gray-200 transition-colors">{{ $layoutCopy['privacy'] }}</a>
-                    <a href="https://www.marokkobiz.com/terms-and-conditions"
+                    <a href="http://marokkobiz.com/docs/terms_and_conditions.pdf" target="_blank"
                         class="text-sm text-gray-400 hover:text-gray-200 transition-colors">{{ $layoutCopy['terms'] }}</a>
                 </div>
             </div>
