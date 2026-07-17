@@ -9,10 +9,7 @@ from bidi.algorithm import get_display
 # =====================================================================
 # 🛠️ WINDOWS CONFIGURATION (Modify paths to match where you saved them)
 # =====================================================================
-# 1. Path to your Tesseract executable
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-
-# 2. Path to your Poppler bin folder
 POPPLER_PATH = r'C:\poppler\Library\bin' 
 # =====================================================================
 
@@ -20,11 +17,41 @@ def contains_arabic(text):
     """Checks if the text contains Arabic characters."""
     return bool(re.search(r'[\u0600-\u06FF]', text))
 
+def fix_reversed_arabic_text(raw_text):
+    """
+    Fixes raw Arabic text that was extracted backward/reversed 
+    at the character level by digital PDF extractors.
+    """
+    cleaned_lines = []
+    for line in raw_text.split('\n'):
+        line = line.strip()
+        if not line:
+            cleaned_lines.append("")
+            continue
+            
+        # Do not flip standard structural page boundary tags
+        if line.startswith("---") and line.endswith("---"):
+            cleaned_lines.append(line)
+            continue
+            
+        # Reverse the text line characters to fix the LTR layout rendering bug
+        reversed_line = line[::-1]
+        
+        # Keep numerical blocks, percentages, and punctuation properly oriented on flip
+        reversed_line = re.sub(r'\s*(\d+[\.\d%]*)\s*', r' \1 ', reversed_line)
+        reversed_line = reversed_line.replace(')', 'tmp_b').replace('(', ')').replace('tmp_b', '(')
+        
+        # Connect isolated shapes into natural cursive configurations
+        reshaped = arabic_reshaper.reshape(reversed_line)
+        logical_arabic = get_display(reshaped)
+        cleaned_lines.append(logical_arabic)
+        
+    return "\n".join(cleaned_lines)
+
 def process_with_ocr(pdf_path):
     """Converts PDF to high-res images and reads it visually via OCR."""
     print(f"   👁️ Visual OCR activated for better Arabic quality...")
     try:
-        # Pass the poppler_path variable directly here!
         pages = convert_from_path(pdf_path, dpi=300, poppler_path=POPPLER_PATH)
         ocr_content = []
         
@@ -41,10 +68,8 @@ def process_with_ocr(pdf_path):
             
         return "".join(ocr_content)
     except Exception as e:
-        print(f"   ❌ OCR Failed: {e}. Falling back to basic text pull.")
+        print(f"   ⚠️ OCR Environment bypassed/failed. Falling back to direct digital stream processing...")
         return None
-
-# ... (The rest of your process_pdf_folder and main execution blocks stay exactly the same)
 
 def process_pdf_folder(input_folder, output_folder):
     if not os.path.exists(output_folder):
@@ -64,25 +89,29 @@ def process_pdf_folder(input_folder, output_folder):
 
         print(f"Processing: {pdf_file}...")
         
-        # Step 1: Try a quick check with pdfplumber first
         try:
+            # Step 1: Extract raw text directly from the digital layer
+            extracted_content = []
             with pdfplumber.open(pdf_path) as pdf:
-                first_page_text = pdf.pages[0].extract_text() or ""
+                for i, page in enumerate(pdf.pages, start=1):
+                    text = page.extract_text() or ""
+                    extracted_content.append(f"\n--- PAGE {i} ---\n" + text)
             
-            # Step 2: If it's Arabic, or empty, use OCR for high-quality text extraction
-            if contains_arabic(first_page_text) or not first_page_text.strip():
+            raw_document_text = "".join(extracted_content)
+            
+            # Step 2: Determine if it's scrambled Arabic or standard French
+            if contains_arabic(raw_document_text):
+                print(f"   Detected digital Arabic layer. Reversing character layouts...")
+                full_text = fix_reversed_arabic_text(raw_document_text)
+            elif not raw_document_text.strip():
+                # If the PDF is completely blank (scanned image only), try OCR
                 full_text = process_with_ocr(pdf_path)
             else:
-                # If it's standard French digital text, extract it normally (much faster)
-                print(f"   📄 Standard French document detected. Extracting text directly...")
-                extracted_content = []
-                with pdfplumber.open(pdf_path) as pdf:
-                    for i, page in enumerate(pdf.pages, start=1):
-                        text = page.extract_text() or ""
-                        extracted_content.append(f"\n--- PAGE {i} ---\n" + text)
-                full_text = "".join(extracted_content)
+                # Standard French/English digital document
+                print(f"   📄 Standard Western document layout detected.")
+                full_text = raw_document_text
 
-            # Step 3: Save results
+            # Step 3: Save results cleanly
             if full_text:
                 with open(txt_path, "w", encoding="utf-8") as f:
                     f.write(full_text)
@@ -92,7 +121,7 @@ def process_pdf_folder(input_folder, output_folder):
             print(f"   ❌ Error processing {pdf_file}: {e}\n")
 
 if __name__ == "__main__":
-    INPUT_DIR = "./adalajustice_pdfs"  
+    INPUT_DIR = "./downloaded_laws/"  # Folder where you drop your Adala PDFs
     OUTPUT_DIR = "./extracted_laws"    
 
     if not os.path.exists(INPUT_DIR):

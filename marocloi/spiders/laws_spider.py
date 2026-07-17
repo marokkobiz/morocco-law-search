@@ -10,8 +10,8 @@ class LawsSpider(scrapy.Spider):
     allowed_domains = ["adala.justice.gov.ma"]
     
     start_urls = [
-        "https://adala.justice.gov.ma/fr",
-        "https://adala.justice.gov.ma/ar"
+        "https://adala.justice.gov.ma/fr/resouces",
+        "https://adala.justice.gov.ma/ar/resources"
     ]
     
     visited_pages = set()
