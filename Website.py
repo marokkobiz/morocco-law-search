@@ -377,7 +377,15 @@ else:
     # Display Results
     if search_query:
         try:
-            search_results = index.search(search_query, {"filter": filter_string, "limit": 20})
+            # Enforce strict 'AND' matching so more words = fewer, highly-targeted results
+            search_results = index.search(
+                search_query, 
+                {
+                  "filter": filter_string, 
+                  "limit": 20,
+                  "matchingStrategy": "all"  # <--- This is the magic key!
+                }
+            )
             hits = search_results.get("hits", [])
             
             if not hits:
