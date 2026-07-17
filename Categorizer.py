@@ -1,3 +1,5 @@
+#Uploads to Meilisearch Docker container and indexes the production data from Parser  JSON output format
+
 import json
 import meilisearch
 
