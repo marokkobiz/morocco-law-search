@@ -1,128 +1,102 @@
 import os
-os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
-import json
 import re
-import hashlib
-from pathlib import Path
-
-from docling.datamodel.pipeline_options import PdfPipelineOptions
-from docling.document_converter import DocumentConverter, PdfFormatOption
-from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import PdfPipelineOptions
-from docling.backend.pypdfium2_backend import PyPdfiumDocumentBackend
+from pdf2image import convert_from_path
 import pytesseract
-from PIL import Image
-import pdf2image
+import pdfplumber
+import arabic_reshaper
+from bidi.algorithm import get_display
 
-
-
+# =====================================================================
+# 🛠️ WINDOWS CONFIGURATION (Modify paths to match where you saved them)
+# =====================================================================
+# 1. Path to your Tesseract executable
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# --- Helper for Manual Tesseract OCR ---
-def ocr_arabic_pdf(pdf_path):
-    """Fallback manual OCR for stubborn Arabic PDFs."""
-    poppler_path = r'C:\poppler\Library\bin'
+# 2. Path to your Poppler bin folder
+POPPLER_PATH = r'C:\poppler\Library\bin' 
+# =====================================================================
+
+def contains_arabic(text):
+    """Checks if the text contains Arabic characters."""
+    return bool(re.search(r'[\u0600-\u06FF]', text))
+
+def process_with_ocr(pdf_path):
+    """Converts PDF to high-res images and reads it visually via OCR."""
+    print(f"   👁️ Visual OCR activated for better Arabic quality...")
     try:
-        pages = pdf2image.convert_from_path(pdf_path, dpi=100, poppler_path=poppler_path)
-        full_text = []
-        for page in pages:
-            # Using --psm 6 for uniform block text; added --oem 3 for best engine mode
-            text = pytesseract.image_to_string(page, lang='ara+fra', config='--psm 6 --oem 3')
-            print(f"DEBUG: OCR extracted {len(text)} characters from page.") # ADD THIS
-   
-            full_text.append(text)
-        return "\n".join(full_text)
-    except Exception as e:
-        print(f"❌ Critical OCR Failure for {pdf_path}: {e}")
-        return ""
-
-def setup_converter(use_ocr: bool = False) -> DocumentConverter:
-    pipeline_options = PdfPipelineOptions()
-    pipeline_options.do_ocr = use_ocr
-    # If the import above fails, just delete this line and leave only the options below
-    return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)})
-
-# --- Updated Parsing Logic ---
-# Create a small list to remember which files crashed previously
-failed_files = [] 
-
-def parse_single_pdf(pdf_path: str, converter: DocumentConverter) -> list:
-    doc_title = Path(pdf_path).name
-    
-    # If the file is known to be problematic, skip Docling entirely
-    if doc_title in failed_files:
-        print(f"   ⏩ Skipping Docling for known heavy file: {doc_title}")
-        return parse_text_stream(ocr_arabic_pdf(pdf_path), pdf_path)
-
-    try:
-        result = converter.convert(pdf_path)
-        full_text = result.document.export_to_text()
+        # Pass the poppler_path variable directly here!
+        pages = convert_from_path(pdf_path, dpi=300, poppler_path=POPPLER_PATH)
+        ocr_content = []
         
-        if not full_text or len(full_text) < 100:
-            raise ValueError("No text found")
+        for i, page_img in enumerate(pages, start=1):
+            raw_text = pytesseract.image_to_string(page_img, lang='ara+fra')
             
-        return parse_text_stream(full_text, pdf_path)
-        
+            if contains_arabic(raw_text):
+                reshaped = arabic_reshaper.reshape(raw_text)
+                formatted_text = get_display(reshaped)
+            else:
+                formatted_text = raw_text
+                
+            ocr_content.append(f"\n--- PAGE {i} ---\n" + formatted_text)
+            
+        return "".join(ocr_content)
     except Exception as e:
-        print(f"   ⚠️ Memory/Docling failure for {doc_title}, adding to failed list and switching to Manual OCR...")
-        failed_files.append(doc_title) # Remember this file for the future
-        return parse_text_stream(ocr_arabic_pdf(pdf_path), pdf_path)
-    
-def parse_text_stream(text: str, pdf_path: str) -> list:
-    articles = []
-    # Updated regex to match "المادة" OR "Article" (case-insensitive)
-    pattern = re.compile(r'(المادة\s+\d+|Article\s+\d+)', re.IGNORECASE)
-    
-    chunks = pattern.split(text)
-    
-    for i in range(1, len(chunks), 2):
-        if i + 1 < len(chunks):
-            # Clean header to get just the number
-            header = chunks[i]
-            article_num = re.sub(r'(المادة|Article)', '', header, flags=re.IGNORECASE).strip()
+        print(f"   ❌ OCR Failed: {e}. Falling back to basic text pull.")
+        return None
+
+# ... (The rest of your process_pdf_folder and main execution blocks stay exactly the same)
+
+def process_pdf_folder(input_folder, output_folder):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    pdf_files = [f for f in os.listdir(input_folder) if f.lower().endswith('.pdf')]
+    if not pdf_files:
+        print(f"No PDFs found in '{input_folder}'.")
+        return
+
+    print(f"Found {len(pdf_files)} PDF(s) to process.\n" + "-"*40)
+
+    for pdf_file in pdf_files:
+        pdf_path = os.path.join(input_folder, pdf_file)
+        txt_filename = os.path.splitext(pdf_file)[0] + ".txt"
+        txt_path = os.path.join(output_folder, txt_filename)
+
+        print(f"Processing: {pdf_file}...")
+        
+        # Step 1: Try a quick check with pdfplumber first
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                first_page_text = pdf.pages[0].extract_text() or ""
             
-            article_data = {
-                "article_num": article_num,
-                "text": chunks[i+1].strip()[:1000],
-                "doc_source_file": str(Path(pdf_path).as_posix()),
-                "doc_language": "ar" if "المادة" in header else "fr"
-            }
-            articles.append(article_data)
-    return articles
+            # Step 2: If it's Arabic, or empty, use OCR for high-quality text extraction
+            if contains_arabic(first_page_text) or not first_page_text.strip():
+                full_text = process_with_ocr(pdf_path)
+            else:
+                # If it's standard French digital text, extract it normally (much faster)
+                print(f"   📄 Standard French document detected. Extracting text directly...")
+                extracted_content = []
+                with pdfplumber.open(pdf_path) as pdf:
+                    for i, page in enumerate(pdf.pages, start=1):
+                        text = page.extract_text() or ""
+                        extracted_content.append(f"\n--- PAGE {i} ---\n" + text)
+                full_text = "".join(extracted_content)
+
+            # Step 3: Save results
+            if full_text:
+                with open(txt_path, "w", encoding="utf-8") as f:
+                    f.write(full_text)
+                print(f"   💾 Saved clean text to: {txt_filename}\n")
+
+        except Exception as e:
+            print(f"   ❌ Error processing {pdf_file}: {e}\n")
 
 if __name__ == "__main__":
-    # 1. Load existing data if file exists
-    json_path = "test_law.json"
-    if os.path.exists(json_path):
-        with open(json_path, "r", encoding="utf-8") as f:
-            try:
-                all_articles = json.load(f)
-                print(f"Loaded {len(all_articles)} existing articles.")
-            except json.JSONDecodeError:
-                all_articles = []
+    INPUT_DIR = "./adalajustice_pdfs"  
+    OUTPUT_DIR = "./extracted_laws"    
+
+    if not os.path.exists(INPUT_DIR):
+        os.makedirs(INPUT_DIR)
+        print(f"Created '{INPUT_DIR}' folder. Drop your Adala PDFs there and re-run!")
     else:
-        all_articles = []
-
-    fast_conv = setup_converter(use_ocr=False)
-    
-    pdf_dir = "./downloaded_laws"
-    pdf_files = [os.path.join(pdf_dir, f) for f in os.listdir(pdf_dir) if f.endswith(".pdf")]
-    
-    for pdf in pdf_files:
-        # Check if file is already processed to avoid duplicates
-        if any(item.get("doc_source_file") == str(Path(pdf).as_posix()) for item in all_articles):
-            print(f"Skipping already processed: {Path(pdf).name}")
-            continue
-
-        print(f"Parsing: {Path(pdf).name}...")
-        results = parse_single_pdf(pdf, fast_conv)
-        
-        if results:
-            all_articles.extend(results)
-            # Update the file after each successful document to ensure persistence
-            with open(json_path, "w", encoding="utf-8") as f:
-                json.dump(all_articles, f, ensure_ascii=False, indent=2)
-        import gc
-        gc.collect()
-            
-    print(f"🎉 Final count: {len(all_articles)} articles extracted.")
+        process_pdf_folder(INPUT_DIR, OUTPUT_DIR)

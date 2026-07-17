@@ -1,7 +1,8 @@
 scrapy
 Docker
 Meilisearch
-Ubuntu
 WSL
 Streamlit
 Supabase
+poppler
+tesseract
