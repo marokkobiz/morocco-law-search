@@ -23,7 +23,7 @@ supabase = get_supabase()
 
 @st.cache_resource
 def get_meilisearch_client():
-    return meilisearch.Client("http://localhost:7700")
+    return meilisearch.Client("http://localhost:7800")
 
 client = get_meilisearch_client()
 index = client.index("moroccan_laws")
