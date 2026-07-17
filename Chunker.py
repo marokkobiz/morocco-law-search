@@ -21,6 +21,28 @@ SPLIT_PATTERN = re.compile("|".join(ARTICLE_PATTERNS), re.MULTILINE)
 def contains_arabic(text):
     return bool(re.search(r'[\u0600-\u06FF]', text))
 
+def clean_footnotes(text: str) -> str:
+    """
+    Finds footnote boundaries (lines of underscores, dashes, or numbered lists like '2 - ...')
+    at the bottom of a text block and strips them away.
+    """
+    # 1. Split on clear horizontal separator lines (e.g., ________ or ---------)
+    # These are highly reliable indicators that footnotes have started.
+    parts = re.split(r'\n\s*_{3,}\s*\n|\n\s*-{3,}\s*\n', text)
+    text_cleaned = parts[0].strip()
+    
+    # 2. Fallback check: If there's no visual separator line, look for footnote list markers
+    # near the end of the text block (e.g., a line starting with '2 -' or Arabic '٢ -').
+    cleaned_lines = []
+    for line in text_cleaned.splitlines():
+        # Match lines starting with optional whitespace, a number (Bilingual), a dash/dot, and actual text
+        if re.match(r'^\s*[\d\u0660-\u0669]+\s*[-.]\s*[A-Za-zÀ-ÿأ-ي]', line):
+            # We hit the footnote section! Ignore this and everything after it.
+            break
+        cleaned_lines.append(line)
+        
+    return "\n".join(cleaned_lines).strip()
+
 def chunk_text_into_articles(file_content, filename):
     """
     Splits the document text into articles, preserving headers and content,
@@ -40,7 +62,7 @@ def chunk_text_into_articles(file_content, filename):
         articles.append({
             "id": str(uuid.uuid4()),
             "doc_title": doc_title,
-            "text": file_content.strip(),
+            "text": clean_footnotes(file_content),  # Clean footnotes here too
             "doc_language": lang,
             "doc_type": "Dahir",
             "doc_source_file": filename,
@@ -54,7 +76,7 @@ def chunk_text_into_articles(file_content, filename):
         articles.append({
             "id": str(uuid.uuid4()),
             "doc_title": doc_title,
-            "text": preamble_text,
+            "text": clean_footnotes(preamble_text),  # Clean footnotes out of the preamble
             "doc_language": lang,
             "doc_type": "Dahir",
             "doc_source_file": filename,
@@ -75,10 +97,13 @@ def chunk_text_into_articles(file_content, filename):
         # Normalize the article number string for easier querying later
         article_num = re.sub(r'^(Article|المادة|الفصل)\s*', '', header_match, flags=re.IGNORECASE).strip()
 
+        # Apply the footnote cleaning logic directly to the article text block
+        pure_article_text = clean_footnotes(full_chunk)
+
         articles.append({
             "id": str(uuid.uuid4()),
             "doc_title": doc_title,
-            "text": full_chunk,
+            "text": pure_article_text,
             "doc_language": lang,
             "doc_type": "Dahir",
             "doc_source_file": filename,
