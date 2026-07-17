@@ -17,36 +17,34 @@ def contains_arabic(text):
     """Checks if the text contains Arabic characters."""
     return bool(re.search(r'[\u0600-\u06FF]', text))
 
-def fix_reversed_arabic_text(raw_text):
-    """
-    Fixes raw Arabic text that was extracted backward/reversed 
-    at the character level by digital PDF extractors.
-    """
-    cleaned_lines = []
-    for line in raw_text.split('\n'):
-        line = line.strip()
-        if not line:
-            cleaned_lines.append("")
-            continue
-            
-        # Do not flip standard structural page boundary tags
-        if line.startswith("---") and line.endswith("---"):
-            cleaned_lines.append(line)
-            continue
-            
-        # Reverse the text line characters to fix the LTR layout rendering bug
-        reversed_line = line[::-1]
+def fix_extracted_arabic(raw_text):
+    corrected_lines = []
+    
+    for line in raw_text.splitlines():
+        # 1. Reverse the visual character order to logical order
+        logical_line = line[::-1]
         
-        # Keep numerical blocks, percentages, and punctuation properly oriented on flip
-        reversed_line = re.sub(r'\s*(\d+[\.\d%]*)\s*', r' \1 ', reversed_line)
-        reversed_line = reversed_line.replace(')', 'tmp_b').replace('(', ')').replace('tmp_b', '(')
+        # 2. Swap parentheses back to their correct orientation
+        logical_line = (logical_line.replace(')', '★')
+                                    .replace('(', ')')
+                                    .replace('★', '('))
         
-        # Connect isolated shapes into natural cursive configurations
-        reshaped = arabic_reshaper.reshape(reversed_line)
-        logical_arabic = get_display(reshaped)
-        cleaned_lines.append(logical_arabic)
+        # 3. Swap brackets if present
+        logical_line = (logical_line.replace(']', '★')
+                                    .replace('[', ']')
+                                    .replace('★', '['))
         
-    return "\n".join(cleaned_lines)
+        # 4. Correct numbers that were reversed when we flipped the line.
+        # This matches sequences of digits, dots, and percentages and restores their LTR order.
+        logical_line = re.sub(
+            r'[\d\.\%]+', 
+            lambda m: m.group(0)[::-1], 
+            logical_line
+        )
+        
+        corrected_lines.append(logical_line)
+        
+    return "\n".join(corrected_lines)
 
 def process_with_ocr(pdf_path):
     """Converts PDF to high-res images and reads it visually via OCR."""
@@ -102,7 +100,7 @@ def process_pdf_folder(input_folder, output_folder):
             # Step 2: Determine if it's scrambled Arabic or standard French
             if contains_arabic(raw_document_text):
                 print(f"   Detected digital Arabic layer. Reversing character layouts...")
-                full_text = fix_reversed_arabic_text(raw_document_text)
+                full_text = fix_extracted_arabic(raw_document_text)
             elif not raw_document_text.strip():
                 # If the PDF is completely blank (scanned image only), try OCR
                 full_text = process_with_ocr(pdf_path)
