@@ -58,7 +58,7 @@ jobs:
           restore-keys: ${{ runner.os }}-composer-
 
       - name: Install Composer dependencies
-        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
       # STEP 2: Setup the SSH Key so the runner can talk to Simply.com
       - name: Install SSH Key
@@ -87,7 +87,8 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/marocloi.com/ 
+            cd /var/www/marocloi.com/
+            /opt/alt/php83/usr/bin/php artisan package:discover --ansi
             /opt/alt/php83/usr/bin/php artisan migrate --force
             /opt/alt/php83/usr/bin/php artisan config:cache
             /opt/alt/php83/usr/bin/php artisan route:cache
