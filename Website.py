@@ -239,13 +239,27 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Helper Functions ---
-def highlight_search_terms(text, query):
-    if not query:
+def highlight_search_terms(text: str, query: str) -> str:
+    if not query or not query.strip():
         return text
-    words = re.escape(query).split(r'\ ')
-    pattern = r'(' + '|'.join(words) + r')'
-    return re.sub(pattern, r'<mark class="highlight">\1</mark>', text, flags=re.IGNORECASE)
 
+    # Clean the query
+    clean_query = query.strip()
+
+    # Option A: Match the full exact phrase (e.g. "bulletin officiel de la")
+    # Escape special regex characters in the search string
+    pattern = re.escape(clean_query)
+
+    # Replace exact phrase matches with highlighted HTML span
+    # flags=re.IGNORECASE makes it match regardless of upper/lower case
+    highlighted_text = re.sub(
+        f"({pattern})",
+        r'<mark style="background-color: #2563eb; color: white; padding: 2px 4px; border-radius: 4px;">\1</mark>',
+        text,
+        flags=re.IGNORECASE
+    )
+
+    return highlighted_text
 def is_valid_referral(code: str) -> bool:
     return bool(re.match(r"^[A-Z]{3}$", code))
 
