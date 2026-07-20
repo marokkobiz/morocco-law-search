@@ -93,13 +93,7 @@ $user = User::create(array_merge($validated, [
 
     'referred_by' => $agent?->id,
 
-    'access_status' => config('billing.require_payment')
-        ? 'pending_payment'
-        : 'active',
-
-    'trial_ends_at' => config('billing.default_trial_days') > 0
-        ? now()->addDays(config('billing.default_trial_days'))
-        : null,
+    'access_status' => 'active',
 ]));
 
         Auth::login($user);

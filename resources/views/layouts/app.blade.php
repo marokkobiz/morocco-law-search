@@ -11,38 +11,7 @@
     $activeLocale = $locale;
     $activeLocaleMeta = $localeMeta[$activeLocale];
     $localeOptions = $localeMeta;
-    $layoutCopy = [
-        'en' => [
-            'about' => 'About',
-            'sources' => 'Sources',
-            'coverage' => 'Coverage',
-            'login' => 'Login',
-            'start' => 'Get Started',
-            'footer' => 'Legal information from indexed sources. Not a substitute for legal advice.',
-            'privacy' => 'Privacy policy',
-            'terms' => 'Terms and conditions',
-        ],
-        'fr' => [
-            'about' => 'A propos',
-            'sources' => 'Sources',
-            'coverage' => 'Couverture',
-            'login' => 'Connexion',
-            'start' => 'Commencer',
-            'footer' => 'Information juridique issue de sources indexees. Ne remplace pas un avis juridique.',
-            'privacy' => 'Politique de confidentialite',
-            'terms' => 'Conditions generales',
-        ],
-        'ar' => [
-            'about' => 'من نحن',
-            'sources' => 'المصادر',
-            'coverage' => 'التغطية',
-            'login' => 'تسجيل الدخول',
-            'start' => 'ابدأ الآن',
-            'footer' => 'معلومات قانونية من مصادر مفهرسة. لا تغني عن استشارة قانونية.',
-            'privacy' => 'سياسة الخصوصية',
-            'terms' => 'الشروط والأحكام',
-        ],
-    ][$locale];
+    $layoutCopy = fn($key) => __("layout.$key");
 @endphp
 <!doctype html>
 <html lang="{{ $locale }}" dir="{{ $isArabic ? 'rtl' : 'ltr' }}">
@@ -73,11 +42,16 @@
 
             <div class="hidden md:flex items-center gap-1 mx-auto">
                 <a href="https://www.marokkobiz.com/"
-                    class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy['about'] }}</a>
-                <a href="#sources"
-                    class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy['sources'] }}</a>
-                <a href="#coverage"
-                    class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy['coverage'] }}</a>
+                    class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('about') }}</a>
+                <a href="/#sources"
+                    class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('sources') }}</a>
+                <a href="/#coverage"
+                    class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('coverage') }}</a>
+                    @if (Route::is('test') || Route::is('legal-aid'))
+                    <a href="{{ route('legal-aid') }}"
+                        class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('legal_aid') }}</a>
+                    @endif
+
             </div>
 
             <div class="flex items-center gap-3 shrink-0">
@@ -114,9 +88,9 @@
                         class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $locale === 'fr' ? 'Dashboard' : ($locale === 'ar' ? 'لوحة التحكم' : 'Dashboard') }}</a>
                 @else
                     <a href="{{ route('login') }}"
-                        class="inline-flex items-center text-xs h-8 px-4 py-1.5 rounded-lg font-semibold text-white border border-white/30 hover:bg-white/10 transition-all duration-200 no-underline">{{ $layoutCopy['login'] }}</a>
+                        class="inline-flex items-center text-xs h-8 px-4 py-1.5 rounded-lg font-semibold text-white border border-white/30 hover:bg-white/10 transition-all duration-200 no-underline">{{ $layoutCopy('login') }}</a>
                     <a href="{{ route('register') }}"
-                        class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $layoutCopy['start'] }}</a>
+                        class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $layoutCopy('start') }}</a>
                 @endauth
             </div>
 
@@ -169,7 +143,7 @@
 
     <footer class="bg-gray-900 py-10">
         <div class="container-page">
-            <p class="text-sm text-gray-400 text-center mb-8">{{ $layoutCopy['footer'] }}</p>
+            <p class="text-sm text-gray-400 text-center mb-8">{{ $layoutCopy('footer') }}</p>
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
                     <img src="/icons/a.png" alt="MarocLoi" class="w-8 h-8 rounded-lg opacity-80">
@@ -199,9 +173,9 @@
                 </div>
                 <div class="flex flex-col items-center md:items-end gap-1">
                     <a href="http://marokkobiz.com/docs/privacy_policy.pdf" target="_blank"
-                        class="text-sm text-gray-400 hover:text-gray-200 transition-colors">{{ $layoutCopy['privacy'] }}</a>
+                        class="text-sm text-gray-400 hover:text-gray-200 transition-colors">{{ $layoutCopy('privacy') }}</a>
                     <a href="http://marokkobiz.com/docs/terms_and_conditions.pdf" target="_blank"
-                        class="text-sm text-gray-400 hover:text-gray-200 transition-colors">{{ $layoutCopy['terms'] }}</a>
+                        class="text-sm text-gray-400 hover:text-gray-200 transition-colors">{{ $layoutCopy('terms') }}</a>
                 </div>
             </div>
         </div>

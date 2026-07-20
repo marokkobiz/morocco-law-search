@@ -1,47 +1,49 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BillingController;
-use App\Http\Controllers\ComingSoonController;
-use App\Http\Controllers\CorpusStatusController;
-use App\Http\Controllers\LandingController;
-use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CorpusStatusController;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\LegalAidController;
+use App\Http\Controllers\WorkspaceController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
-
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 // Public Pages
 Route::get('/', LandingController::class)->name('landing');
 // Route::get('/test', LandingController::class)->name('landing');
-Route::get('/corpus/status', [CorpusStatusController::class, 'show'])->name('corpus.status');
+// Route::get('/corpus/status', [CorpusStatusController::class, 'show'])->name('corpus.status');
+
+Route::get('/test/beta/legal-aid', [LegalAidController::class, 'index'])->name('legal-aid');
 
 // Locale switcher
 Route::get('/locale/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'fr', 'ar'])) {
         session(['locale' => $locale]);
     }
+
     return redirect()->back();
 })->name('locale.switch');
 
 // Protected App Pages
-Route::middleware(['auth', 'verified', 'paid'])->name('app.')->group(function () {
+Route::middleware(['auth'])->name('app.')->group(function () {
     Route::get('/dashboard', WorkspaceController::class)->name('workspace');
     Route::get('/search', WorkspaceController::class)->name('search');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
-    
+
     // Admin Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     // Admin Users List
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    
+
     // Toggle User Agent Status
     Route::post('/users/{user}/toggle-agent', [UserController::class, 'toggleAgent'])->name('users.toggle-agent');
-    
+
 });
 
 Route::middleware('auth')->group(function () {
@@ -56,19 +58,11 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('app.workspace');
     })->middleware('signed')->name('verification.verify');
 
-    Route::post('/email/verification-notification', function (Illuminate\Http\Request $request) {
+    Route::post('/email/verification-notification', function (Request $request) {
         $request->user()->sendEmailVerificationNotification();
 
         return back()->with('status', 'Verification link sent!');
     })->middleware('throttle:6,1')->name('verification.send');
-});
-
-
-// Billing
-Route::middleware('auth')->name('billing.')->prefix('billing')->group(function () {
-    Route::get('/', [BillingController::class, 'show'])->name('show');
-    Route::post('/checkout', [BillingController::class, 'checkout'])->name('checkout');
-    Route::get('/success', [BillingController::class, 'success'])->name('success');
 });
 
 // Auth

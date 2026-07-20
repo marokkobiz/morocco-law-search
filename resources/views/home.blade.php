@@ -241,7 +241,7 @@
                     <div
                         class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto font-bold text-sm">
                         CP</div>
-                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_penal_code') }}</span>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_penal_law') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-violet-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.15s">

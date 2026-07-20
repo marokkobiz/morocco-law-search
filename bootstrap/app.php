@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\EnsurePaidAccess;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,9 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Console/Commands',
     ])
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
-            'paid' => EnsurePaidAccess::class,
-        ]);
         $middleware->web(append: [
             SetLocale::class,
         ]);
