@@ -1,5 +1,6 @@
 import os
 import re
+import pypdf
 from pdf2image import convert_from_path
 import pytesseract
 import pdfplumber
@@ -69,6 +70,20 @@ def process_with_ocr(pdf_path):
         print(f"   ⚠️ OCR Environment bypassed/failed. Falling back to direct digital stream processing...")
         return None
 
+def is_pdf_complete(pdf_path):
+    """Checks if the file is completely downloaded and valid before opening."""
+    # 1. Ignore if file size is 0
+    if os.path.getsize(pdf_path) == 0:
+        return False
+    
+    # 2. Try reading trailer with pypdf to check EOF integrity
+    try:
+        with open(pdf_path, 'rb') as f:
+            reader = pypdf.PdfReader(f)
+            return len(reader.pages) > 0
+    except Exception:
+        return False
+
 def process_pdf_folder(input_folder, output_folder):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -85,10 +100,18 @@ def process_pdf_folder(input_folder, output_folder):
         txt_filename = os.path.splitext(pdf_file)[0] + ".txt"
         txt_path = os.path.join(output_folder, txt_filename)
 
+        # Skip if already parsed
+        if os.path.exists(txt_path):
+            continue
+
+        # Check if the crawler is still writing the file
+        if not is_pdf_complete(pdf_path):
+            print(f"⏳ Skipping incomplete/downloading file: {pdf_file}")
+            continue
+
         print(f"Processing: {pdf_file}...")
         
         try:
-            # Step 1: Extract raw text directly from the digital layer
             extracted_content = []
             with pdfplumber.open(pdf_path) as pdf:
                 for i, page in enumerate(pdf.pages, start=1):
@@ -97,19 +120,15 @@ def process_pdf_folder(input_folder, output_folder):
             
             raw_document_text = "".join(extracted_content)
             
-            # Step 2: Determine if it's scrambled Arabic or standard French
             if contains_arabic(raw_document_text):
                 print(f"   Detected digital Arabic layer. Reversing character layouts...")
                 full_text = fix_extracted_arabic(raw_document_text)
             elif not raw_document_text.strip():
-                # If the PDF is completely blank (scanned image only), try OCR
                 full_text = process_with_ocr(pdf_path)
             else:
-                # Standard French/English digital document
                 print(f"   📄 Standard Western document layout detected.")
                 full_text = raw_document_text
 
-            # Step 3: Save results cleanly
             if full_text:
                 with open(txt_path, "w", encoding="utf-8") as f:
                     f.write(full_text)
