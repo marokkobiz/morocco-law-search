@@ -240,26 +240,22 @@ st.markdown("""
 
 # --- Helper Functions ---
 def highlight_search_terms(text: str, query: str) -> str:
-    if not query or not query.strip():
-        return text
+    if not query or not query.strip() or not text:
+        return text or ""
 
-    # Clean the query
-    clean_query = query.strip()
+    clean_q = query.strip()
+    
+    # Escape the full query so special characters don't break regex
+    pattern = re.escape(clean_q)
 
-    # Option A: Match the full exact phrase (e.g. "bulletin officiel de la")
-    # Escape special regex characters in the search string
-    pattern = re.escape(clean_query)
-
-    # Replace exact phrase matches with highlighted HTML span
-    # flags=re.IGNORECASE makes it match regardless of upper/lower case
-    highlighted_text = re.sub(
+    # Highlight only the exact sequence typed by the user
+    return re.sub(
         f"({pattern})",
         r'<mark style="background-color: #2563eb; color: white; padding: 2px 4px; border-radius: 4px;">\1</mark>',
         text,
         flags=re.IGNORECASE
     )
 
-    return highlighted_text
 def is_valid_referral(code: str) -> bool:
     return bool(re.match(r"^[A-Z]{3}$", code))
 
@@ -389,36 +385,47 @@ else:
     filter_string = " AND ".join(filter_clauses) if filter_clauses else ""
 
     # Display Results
-    if search_query:
+    if search_query and search_query.strip():
         try:
-            # Enforce strict 'AND' matching so more words = fewer, highly-targeted results
+            clean_q = search_query.strip()
+            exact_query = f'"{clean_q}"'
+        
             search_results = index.search(
-                search_query, 
+                exact_query, 
                 {
-                  "filter": filter_string, 
-                  "limit": 20,
-                  "matchingStrategy": "all"  # <--- This is the magic key!
+                    "filter": filter_string, 
+                    "matchingStrategy": "all",
+                    "limit": 50
                 }
             )
-            hits = search_results.get("hits", [])
+            raw_hits = search_results.get("hits", [])
+            
+            # Strict Python post-filter to ensure exact sentence match
+            hits = [
+                h for h in raw_hits 
+                if clean_q.lower() in h.get('text', '').lower() or clean_q.lower() in h.get('document_title', '').lower()
+            ]
             
             if not hits:
-                st.warning("No matching clauses discovered.")
+                st.warning("No matching clauses discovered for exact sequence.")
             else:
                 st.markdown(f"📊 **Found {len(hits)} matching clauses**")
                 for hit in hits:
                     raw_text = hit.get('text', '')
+                    doc_title = hit.get('document_title', '')
+                    
                     highlighted_text = highlight_search_terms(raw_text, search_query)
+                    highlighted_title = highlight_search_terms(doc_title, search_query)
                     
                     card_html = f"""
                     <div class="law-card">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 15px;">
-                            <h4 style="margin: 0; color: #ffffff; font-weight: 600; font-size:1.2rem;">{hit.get('document_title')}</h4>
+                            <h4 style="margin: 0; color: #ffffff; font-weight: 600; font-size:1.2rem;">{highlighted_title}</h4>
                             <span class="badge badge-category">{hit.get('group')}</span>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <span class="badge badge-type">📄 {hit.get('type')}</span>
-                            <span class="badge badge-lang">🌐 {hit.get('language').upper()}</span>
+                            <span class="badge badge-lang">🌐 {str(hit.get('language')).upper()}</span>
                             <span style="font-size: 0.9rem; color: #9fb3c8; margin-left: 10px;"><b>Section:</b> {hit.get('path', 'Article')}</span>
                         </div>
                     """
