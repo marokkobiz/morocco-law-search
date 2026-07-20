@@ -93,49 +93,73 @@ def process_pdf_folder(input_folder, output_folder):
         print(f"No PDFs found in '{input_folder}'.")
         return
 
-    print(f"Found {len(pdf_files)} PDF(s) to process.\n" + "-"*40)
+    # Categorize files before processing
+    existing_files = []
+    new_files = []
 
     for pdf_file in pdf_files:
-        pdf_path = os.path.join(input_folder, pdf_file)
         txt_filename = os.path.splitext(pdf_file)[0] + ".txt"
         txt_path = os.path.join(output_folder, txt_filename)
-
-        # Skip if already parsed
-        if os.path.exists(txt_path):
-            continue
-
-        # Check if the crawler is still writing the file
-        if not is_pdf_complete(pdf_path):
-            print(f"⏳ Skipping incomplete/downloading file: {pdf_file}")
-            continue
-
-        print(f"Processing: {pdf_file}...")
         
-        try:
-            extracted_content = []
-            with pdfplumber.open(pdf_path) as pdf:
-                for i, page in enumerate(pdf.pages, start=1):
-                    text = page.extract_text() or ""
-                    extracted_content.append(f"\n--- PAGE {i} ---\n" + text)
-            
-            raw_document_text = "".join(extracted_content)
-            
-            if contains_arabic(raw_document_text):
-                print(f"   Detected digital Arabic layer. Reversing character layouts...")
-                full_text = fix_extracted_arabic(raw_document_text)
-            elif not raw_document_text.strip():
-                full_text = process_with_ocr(pdf_path)
-            else:
-                print(f"   📄 Standard Western document layout detected.")
-                full_text = raw_document_text
+        if os.path.exists(txt_path):
+            existing_files.append(pdf_file)
+        else:
+            new_files.append(pdf_file)
 
-            if full_text:
-                with open(txt_path, "w", encoding="utf-8") as f:
-                    f.write(full_text)
-                print(f"   💾 Saved clean text to: {txt_filename}\n")
+    # Print Summary Header
+    print(f"📊 PDF Batch Status: {len(pdf_files)} Total | ⏭️ {len(existing_files)} Already Processed | 🆕 {len(new_files)} New")
+    print("=" * 60)
 
-        except Exception as e:
-            print(f"   ❌ Error processing {pdf_file}: {e}\n")
+    # List Already Existing Files
+    if existing_files:
+        print("\n⏭️  Skipping Already Processed Files:")
+        for f in existing_files:
+            print(f"   ✓ {f}")
+
+    # Process New Files
+    if new_files:
+        print(f"\n⚙️  Processing {len(new_files)} New PDF(s):")
+        print("-" * 40)
+
+        for pdf_file in new_files:
+            pdf_path = os.path.join(input_folder, pdf_file)
+            txt_filename = os.path.splitext(pdf_file)[0] + ".txt"
+            txt_path = os.path.join(output_folder, txt_filename)
+
+            # Check if the crawler is still writing the file
+            if not is_pdf_complete(pdf_path):
+                print(f"⏳ Skipping incomplete/downloading file: {pdf_file}")
+                continue
+
+            print(f"Processing: {pdf_file}...")
+            
+            try:
+                extracted_content = []
+                with pdfplumber.open(pdf_path) as pdf:
+                    for i, page in enumerate(pdf.pages, start=1):
+                        text = page.extract_text() or ""
+                        extracted_content.append(f"\n--- PAGE {i} ---\n" + text)
+                
+                raw_document_text = "".join(extracted_content)
+                
+                if contains_arabic(raw_document_text):
+                    print(f"   Detected digital Arabic layer. Reversing character layouts...")
+                    full_text = fix_extracted_arabic(raw_document_text)
+                elif not raw_document_text.strip():
+                    full_text = process_with_ocr(pdf_path)
+                else:
+                    print(f"   📄 Standard Western document layout detected.")
+                    full_text = raw_document_text
+
+                if full_text:
+                    with open(txt_path, "w", encoding="utf-8") as f:
+                        f.write(full_text)
+                    print(f"   💾 Saved clean text to: {txt_filename}\n")
+
+            except Exception as e:
+                print(f"   ❌ Error processing {pdf_file}: {e}\n")
+    else:
+        print("\n✨ All PDF files in this folder have already been processed!")
 
 if __name__ == "__main__":
     INPUT_DIR = "./downloaded_laws/"  # Folder where you drop your Adala PDFs
