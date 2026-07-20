@@ -102,7 +102,12 @@ docker-compose up --build
 ```bash
 cp .env.example .env
 
-```
+## 👤 Author & Acknowledgments
+
+* **Lead Developer:** [Adam Akhaddar](https://github.com/AdamAkhaddar)
+* **Branch:** `experiment`
+
+
 
 
 2. Open `.env` and fill in any required environment variables (API keys, database URLs, port settings, etc.).
