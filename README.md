@@ -38,7 +38,7 @@ NB: Take a look at the requirements.txt file to make sure ALL pre-requisites are
 The project follows a **5-step data pipeline** from initial scraping to web display:
 
 ```
-[1. Scrape & Download] ➔ [2. Text Extraction] ➔ [3. Parsing & Categorization] ➔ [4. Chunking] ➔ [5. Search Interface]
+[1. Scrape & Download] ➔ [2. Text Extraction]➔ [3. Chunking]  ➔ [4. Parsing & Categorization]  ➔ [5. Search Interface]
 
 ```
 
@@ -50,12 +50,11 @@ The project follows a **5-step data pipeline** from initial scraping to web disp
 * Converts downloaded documents into readable raw text format.
 
 
-3. **Parsing & Categorization (`Parser.py` & `Categorizer.py`)**
-* Extracts key metadata (articles, dates, law numbers) and organizes them into structured JSON files inside `json_laws/`.
-
-
-4. **Chunking (`Chunker.py`)**
+3. **Chunking (`Chunker.py`)**
 * Breaks long legal texts into smaller, semantically coherent segments suitable for accurate searching and indexing.
+
+4.   **Parsing & Categorization (`Parser.py` & `Categorizer.py`)**
+* Extracts key metadata (articles, dates, law numbers) and organizes them into structured JSON files inside `json_laws/`.
 
 
 5. **Web Interface (`Website.py`)**
