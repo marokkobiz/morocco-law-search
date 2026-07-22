@@ -24,15 +24,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'email',
         'bar',
-        'referral_code_used',
         'referral_code',
         'referred_by',
         'role',
         'password',
         'access_status',
-        'stripe_customer_id',
-        'stripe_subscription_id',
-        'trial_ends_at',
     ];
 
     /**
@@ -55,7 +51,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'trial_ends_at' => 'datetime',
         ];
     }
 

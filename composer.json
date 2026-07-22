@@ -8,7 +8,9 @@
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
+        "laravel/scout": "*",
         "laravel/tinker": "^2.10.1",
+        "meilisearch/meilisearch-php": "*",
         "resend/resend-php": "^1.5"
     },
     "require-dev": {

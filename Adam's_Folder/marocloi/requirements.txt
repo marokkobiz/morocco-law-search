@@ -1,8 +1,0 @@
-scrapy
-Docker
-Meilisearch
-WSL
-Streamlit
-Supabase
-poppler
-tesseract

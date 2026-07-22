@@ -1,10 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\CorpusController;
 use App\Http\Controllers\Api\LawController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/corpus/status', [CorpusController::class, 'status']);
 Route::get('/laws/overview', [LawController::class, 'overview']);
 
 Route::prefix('laws')->middleware(['web', 'auth', 'throttle:240,1'])->group(function (): void {
@@ -12,3 +10,6 @@ Route::prefix('laws')->middleware(['web', 'auth', 'throttle:240,1'])->group(func
     Route::get('/search', [LawController::class, 'search']);
     Route::get('/{law}/translate', [LawController::class, 'translate']);
 });
+
+Route::post('/laws/sync', [LawController::class, 'sync'])
+    ->middleware('web');

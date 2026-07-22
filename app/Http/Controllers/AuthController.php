@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
-class AuthController extends Controller
+class AuthController
 {
     private const CUSTOM_BAR_VALUE = '__custom_bar__';
 

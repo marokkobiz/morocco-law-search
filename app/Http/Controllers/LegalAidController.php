@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\View\View;
 
-class LegalAidController extends Controller
+class LegalAidController
 {
     public function index()
     {

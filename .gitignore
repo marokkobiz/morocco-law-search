@@ -22,22 +22,5 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
-
-/storage/framework/
-/bin
-/bootstrap/cache
-
-downloaded_laws/
-dowloaded_laws_ar/
-results.csv
-page_dump.html
-__pycache__/
-Ubuntu Accounts.txt
-Brevo.txt
-test_law.json
-extracted_laws/
-adalajustice_pdfs/
-json_laws/
-Session Initializer.txt
-node_modules
-/database/*.sqlite
+/bin/*
+PYTHON_INTEGRATION.md
