@@ -44,8 +44,8 @@ def classify_law(title: str, text: str) -> str:
         # French
         "commerce", "commercial", "sociétés", "fiscal", "impôt", "douane", 
         "concurrence", "faillite", "redressement", "liquidation", "sarl", "sa ",
-        "registre du commerce", "chèque", "traite", "effets de commerce", "lettre de change",
-        "propriété industrielle", "brevet", "marché public", "consommation", "investissement",
+        "registre du commerce", "chèque", "traite", "effets de commerce", "lettre de change","économie"
+        "propriété industrielle", "brevet", "marché public", "consommation", "investissement","finance","economie"
         # Arabic
         "تجاري", "الشركات", "التجارة", "ضريبي", "الضرائب", "الجمارك", "المنافسة", 
         "إفلاس", "صعوبات المقاولة", "التصفية القضائية", "السجل التجاري", "شيك", 
