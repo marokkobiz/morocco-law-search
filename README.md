@@ -14,6 +14,77 @@ Morocco Law Search is a Laravel 12 application with Vite for frontend assets, SQ
 
 1. Install PHP dependencies:
 
+```
+
+---
+
+## ⚙️ How the Pipeline Works
+
+NB: Take a look at the requirements.txt file to make sure ALL pre-requisites are INSTALLED
+
+The project follows a **5-step data pipeline** from initial scraping to web display:
+
+```
+[1. Scrape & Download] ➔ [2. Text Extraction]➔ [3. Chunking]  ➔ [4. Parsing & Categorization]  ➔ [5. Search Interface]
+
+```
+
+1. **Scraping (`marocloi/` & `scrapy.cfg`)**
+* Automatically crawls official legal portals to download Moroccan laws into the `downloaded_laws/` folder.
+
+
+2. **Extraction (`extracted_laws/`)**
+* Converts downloaded documents into readable raw text format.
+
+
+3. **Chunking (`Chunker.py`)**
+* Breaks long legal texts into smaller, semantically coherent segments suitable for accurate searching and indexing.
+
+4.   **Parsing & Categorization (`Parser.py` & `Categorizer.py`)**
+* Extracts key metadata (articles, dates, law numbers) and organizes them into structured JSON files inside `json_laws/`.
+
+
+5. **Web Interface (`Website.py`)**
+* Displays the search dashboard where users can query Moroccan laws and view results.
+
+
+
+---
+
+## 🚀 How to Run the Project
+
+### Option 1: Run the Full Pipeline (Automated)
+
+To execute the entire data pipeline and launch the application, run the master orchestrator script:
+
+```bash
+python run_everything.py
+
+```
+
+### Option 2: Run the Web App Only
+
+If the law data is already processed into `json_laws/`, you can directly launch the web dashboard:
+
+```bash
+python Website.py
+
+```
+
+### Option 3: Run with Docker
+
+To run the application inside a containerized environment:
+
+```bash
+docker-compose up --build
+
+```
+
+---
+
+## ⚙️ Environment Setup
+
+1. Copy `.env.example` to create your own configuration file:
    ```bash
    composer install
    ```
