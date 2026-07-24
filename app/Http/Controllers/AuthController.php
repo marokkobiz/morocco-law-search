@@ -53,16 +53,9 @@ class AuthController
                 ->onlyInput('email');
         }
 
-        $request->session()->regenerate();
-        if (! Auth::user()->hasVerifiedEmail()) {
-            Auth::logout();
+$request->session()->regenerate();
 
-            return redirect()
-                ->route('verification.notice')
-                ->with('message', 'Please verify your email first.');
-        }
- 
-        return redirect()->intended('/dashboard');
+        return redirect()->intended(route('app.workspace'));
     }
 
     public function register(RegisterRequest $request): RedirectResponse
@@ -99,9 +92,7 @@ $user = User::create(array_merge($validated, [
         Auth::login($user);
         $request->session()->regenerate();
 
-        $user->sendEmailVerificationNotification();
-
-        return redirect()->route('verification.notice');
+        return redirect()->intended(route('app.workspace'));
     }
 
     public function logout(Request $request): RedirectResponse

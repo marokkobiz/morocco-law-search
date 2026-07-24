@@ -10,26 +10,51 @@ const api = async (url, opts = {}) => {
 
 const el = (id) => document.getElementById(id);
 
-const overviewStats = async () => {
-  try {
-    const data = await api('/api/laws/overview');
-    el('stat-articles').textContent = (data.totalArticles ?? 0).toLocaleString();
-    el('stat-sources').textContent = (data.totalSources ?? 0).toLocaleString();
-    el('stat-areas').textContent = (data.totalCategories ?? 0).toLocaleString();
-    el('category-loading')?.classList.add('hidden');
-    const list = el('category-list');
-    list.innerHTML = '';
-    (data.categories ?? []).forEach((cat) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-blue-50 hover:text-blue-700 cursor-pointer group';
-      const label = (cat.category || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-      btn.innerHTML = `<span class="font-medium text-gray-600 group-hover:text-blue-700">${label}</span><span class="text-xs font-semibold text-gray-400 group-hover:text-blue-500">${(cat.articleCount ?? 0).toLocaleString()}</span>`;
-      btn.addEventListener('click', () => doSearch(cat.category));
-      list.appendChild(btn);
-    });
-  } catch {}
+// Sidebar filters
+let activeLang = 'all';
+let activeGroup = 'all';
+
+const applyFilters = () => {
+  const cards = document.querySelectorAll('.doc-card');
+  let visible = 0;
+  cards.forEach((card) => {
+    const langMatch = activeLang === 'all' || card.dataset.lang === activeLang;
+    const groupMatch = activeGroup === 'all' || card.dataset.group === activeGroup;
+    const show = langMatch && groupMatch;
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const emptyMsg = el('documents-empty');
+  const grid = el('documents-grid');
+  if (emptyMsg) emptyMsg.classList.toggle('hidden', visible > 0);
+  if (grid) grid.classList.toggle('hidden', visible === 0);
 };
+
+const setActiveBtn = (selector, value, attr) => {
+  document.querySelectorAll(selector).forEach((btn) => {
+    const isActive = btn.getAttribute(attr) === value;
+    btn.classList.toggle('bg-blue-50', isActive);
+    btn.classList.toggle('text-blue-700', isActive);
+    btn.classList.toggle('border', isActive);
+    btn.classList.toggle('border-blue-200', isActive);
+  });
+};
+
+document.querySelectorAll('.filter-lang-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    activeLang = btn.dataset.filterLang;
+    setActiveBtn('.filter-lang-btn', activeLang, 'data-filter-lang');
+    applyFilters();
+  });
+});
+
+document.querySelectorAll('.filter-group-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    activeGroup = btn.dataset.filterGroup;
+    setActiveBtn('.filter-group-btn', activeGroup, 'data-filter-group');
+    applyFilters();
+  });
+});
 
 const showState = (state) => {
   const isResults = state === 'results';
@@ -76,6 +101,13 @@ const buildResultCard = (r) => {
   const title = document.createElement('h3');
   title.className = 'text-base font-bold text-gray-900 leading-snug';
   title.textContent = r.title || r.document_title || '';
+  if (r.document_id) {
+    const link = document.createElement('a');
+    link.href = `/app/laws/${r.document_id}`;
+    link.className = 'text-base font-bold text-gray-900 leading-snug hover:text-blue-700 transition-colors no-underline';
+    link.textContent = r.title || r.document_title || '';
+    title.replaceWith(link);
+  }
   card.appendChild(title);
 
   const preview = document.createElement('p');
@@ -101,13 +133,12 @@ const buildResultCard = (r) => {
   srcLeft.className = 'flex items-center gap-2 text-xs';
   srcLeft.innerHTML = `<span class="font-medium text-gray-400">Source:</span><span class="font-semibold text-gray-700">${r.source_name || ''}</span>`;
   srcRow.appendChild(srcLeft);
-  if (r.source_url) {
-    const a = document.createElement('a');
-    a.href = r.source_url;
-    a.target = '_blank';
-    a.className = 'text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline';
-    a.textContent = `Open source \u2192`;
-    srcRow.appendChild(a);
+  if (r.source_file) {
+    const span = document.createElement('span');
+    span.className = 'text-[10px] text-gray-400 truncate max-w-[140px] ml-auto';
+    span.title = r.source_file;
+    span.textContent = r.source_file.split('/').pop().replace(/\.[^.]+$/, '');
+    srcRow.appendChild(span);
   }
   card.appendChild(srcRow);
 
@@ -192,7 +223,8 @@ el('search-input').addEventListener('input', () => {
         const label = s.label || s.text || s;
         const type = s.type || '';
         btn.innerHTML = `<span class="text-sm text-gray-900 flex-1">${label}</span>${type ? `<span class="px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-600">${type}</span>` : ''}`;
-        btn.addEventListener('click', () => doSearch(label));
+        btn.addEventListener('mousedown', (e) => { e.preventDefault(); doSearch(label); });
+        btn.addEventListener('click', (e) => { e.preventDefault(); doSearch(label); });
         panel.appendChild(btn);
       });
       panel.classList.remove('hidden');
@@ -200,8 +232,11 @@ el('search-input').addEventListener('input', () => {
   }, 300);
 });
 
-el('search-input').addEventListener('blur', () => setTimeout(() => el('suggestions-panel').classList.add('hidden'), 200));
-el('search-input').addEventListener('focus', () => { if (el('suggestions-panel').children.length) el('suggestions-panel').classList.remove('hidden'); });
+el('search-input').addEventListener('blur', () => setTimeout(() => el('suggestions-panel').classList.add('hidden'), 250));
+el('search-input').addEventListener('focus', () => {
+  const panel = el('suggestions-panel');
+  if (panel && panel.children.length) panel.classList.remove('hidden');
+});
 
 el('search-form').addEventListener('submit', (e) => { e.preventDefault(); doSearch(el('search-input').value); });
 
@@ -308,5 +343,3 @@ clearBtn?.addEventListener('click', () => {
 });
 
 el('clear-header-search')?.addEventListener('click', resetWorkspace);
-
-overviewStats();

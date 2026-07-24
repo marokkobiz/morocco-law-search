@@ -41,35 +41,85 @@
                 class="hidden m-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800"></div>
 
             {{-- Initial State --}}
-            <div id="results-initial" class="grow flex flex-col items-center justify-center px-8 py-8">
+            <div id="results-initial" class="grow overflow-y-auto px-4 sm:px-8 py-6 sm:py-8">
 
-                <div class="w-24 h-24 rounded-3xl border border-indigo-400 shadow-sm flex items-center justify-center">
-                    <svg class="w-11 h-11 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+                <div class="text-center mb-8">
+                    <div class="w-20 h-20 rounded-3xl border border-indigo-400 shadow-sm flex items-center justify-center mx-auto">
+                        <svg class="w-10 h-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <h1 class="mt-6 text-2xl sm:text-3xl font-bold text-gray-900 text-center">
+                        {{ $c('Moroccan Legal Research', 'Recherche Juridique Marocaine', 'البحث القانوني المغربي') }}
+                    </h1>
+                    <p class="mt-3 max-w-xl text-center text-sm text-gray-500 leading-relaxed">
+                        {{ $c(
+                            'Search through Moroccan laws, regulations and legal articles using natural language.',
+                            'Recherchez dans les lois, règlements et articles juridiques marocains en langage naturel.',
+                            'ابحث في القوانين والأنظمة والمقالات القانونية المغربية باستخدام اللغة الطبيعية.',
+                        ) }}
+                    </p>
                 </div>
 
-                <h1 class="mt-8 text-3xl font-bold text-gray-900 text-center">
-                    {{ $c('Moroccan Legal Research', 'Recherche Juridique Marocaine', 'البحث القانوني المغربي') }}
-                </h1>
-
-                <p class="mt-4 max-w-2xl text-center text-gray-500 leading-relaxed">
-                    {{ $c(
-                        'Search through Moroccan laws, regulations, court decisions and legal articles using natural language.',
-                        'Recherchez dans les lois, règlements, décisions judiciaires et articles juridiques marocains en langage naturel.',
-                        'ابحث في القوانين والأنظمة والأحكام القضائية والمقالات القانونية المغربية باستخدام اللغة الطبيعية.',
-                    ) }}
-                </p>
-
                 {{-- Quick Categories --}}
-                <div class="flex flex-wrap items-center justify-center gap-3 mt-10">
+                {{--  <div class="flex flex-wrap items-center justify-center gap-2.5 mb-8">
                     @foreach ([['q' => 'immobilier', 'label' => $c('Immobilier', 'Immobilier', 'عقار')], ['q' => 'travail', 'label' => $c('Travail', 'Travail', 'شغل')], ['q' => 'commerce', 'label' => $c('Commerce', 'Commerce', 'تجارة')], ['q' => 'famille', 'label' => $c('Famille', 'Famille', 'أسرة')], ['q' => 'fiscalite', 'label' => $c('Fiscalité', 'Fiscalité', 'ضرائب')]] as $cat)
                         <button type="button" data-quick="{{ $cat['q'] }}"
-                            class="quick-btn px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 cursor-pointer shadow-sm">
+                            class="quick-btn px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 cursor-pointer shadow-sm">
                             {{ $cat['label'] }}
                         </button>
                     @endforeach
+                </div> --}}
+
+                {{-- Documents List --}}
+                <div id="documents-section">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                        {{ $c('Available Documents', 'Documents disponibles', 'المستندات المتاحة') }}</h3>
+
+                    @if($documents->isEmpty())
+                        <div class="text-center py-12 bg-gray-50 rounded-xl border border-gray-100">
+                            <p class="text-sm text-gray-400">
+                                {{ $c('No documents imported yet. Documents added by the crawler will appear here.', 'Aucun document importé. Les documents ajoutés par le crawler apparaîtront ici.', 'لم يتم استيراد مستندات بعد.')}}
+                            </p>
+                        </div>
+                    @else
+                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" id="documents-grid">
+                            @foreach($documents as $doc)
+                                <a href="{{ route('app.law.show', $doc) }}" data-lang="{{ $doc->language }}" data-group="{{ $doc->group ?? '' }}" class="doc-card group p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all bg-white cursor-pointer no-underline block">
+                                    <div class="flex items-start justify-between gap-2 mb-2">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide {{ $doc->language === 'ar' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-blue-50 text-blue-700 border border-blue-100' }}">
+                                            {{ strtoupper($doc->language) }}
+                                        </span>
+                                        <span class="text-[10px] font-semibold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-md">
+                                            {{ $doc->type }}
+                                        </span>
+                                    </div>
+                                    <h4 class="text-sm font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
+                                        {{ $doc->title }}
+                                    </h4>
+                                    <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-50">
+                                        <span class="text-[11px] font-semibold text-gray-400">
+                                            {{ $doc->articles_count }} {{ $c('articles', 'articles', 'مادة') }}
+                                        </span>
+                                        @if($doc->source_file)
+                                            <span class="text-[10px] text-gray-300 truncate max-w-[120px]" title="{{ $doc->source_file }}">
+                                                {{ basename($doc->source_file, '.' . pathinfo($doc->source_file, PATHINFO_EXTENSION)) }}
+                                            </span>
+                                        @endif
+                                        <span class="ml-auto text-[10px] font-semibold text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {{ $c('View', 'Voir', 'عرض') }} &rarr;
+                                        </span>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                        <div id="documents-empty" class="hidden text-center py-12 bg-gray-50 rounded-xl border border-gray-100">
+                            <p class="text-sm text-gray-400">
+                                {{ $c('No documents match the selected filters.', 'Aucun document ne correspond aux filtres sélectionnés.', 'لا توجد مستندات تطابق الفلاتر المحددة.')}}
+                            </p>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -85,22 +135,19 @@
 
             {{-- Empty --}}
             <div id="results-empty" class="hidden grow flex flex-col items-center justify-center">
-
                 <div class="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto">
                     <svg class="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-
                 <p class="mt-5 text-gray-500">
                     {{ $c('No results found', 'Aucun résultat trouvé', 'لم يتم العثور على نتائج') }}
                 </p>
-
             </div>
 
             {{-- Results --}}
-            <div id="results-list" class="hidden grow overflow-y-auto space-y-4 p-8"></div>
+            <div id="results-list" class="hidden grow overflow-y-auto space-y-4 p-4 sm:p-8"></div>
 
         </div>
     </main>
@@ -113,38 +160,66 @@
         class="flex flex-col w-80 shrink-0 border-l border-gray-200 bg-white overflow-hidden fixed lg:sticky inset-y-0 ltr:right-0 rtl:left-0 z-50 lg:z-auto shadow-2xl lg:shadow-none hidden lg:flex"
         style="height: calc(100vh - 3.5rem); top: 3.5rem;">
 
-        <div class="p-5 border border-gray-200 shrink-0">
+        <div class="p-5 border-b border-gray-100">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
                 {{ $c('Corpus Overview', 'Aperçu du corpus', 'نظرة عامة على المعطيات') }}</h3>
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-2 gap-3">
                 <div class="text-center p-3 rounded-xl bg-linear-to-b from-gray-50 to-white border border-gray-100">
-                    <strong class="block text-xl font-bold text-gray-900" id="stat-articles">—</strong>
-                    <span
-                        class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Articles', 'Articles', 'مواد') }}</span>
+                    <strong class="block text-xl font-bold text-gray-900">{{ number_format($stats['total_articles']) }}</strong>
+                    <span class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Articles', 'Articles', 'مواد') }}</span>
                 </div>
                 <div class="text-center p-3 rounded-xl bg-linear-to-b from-gray-50 to-white border border-gray-100">
-                    <strong class="block text-xl font-bold text-gray-900" id="stat-sources">—</strong>
-                    <span
-                        class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Sources', 'Sources', 'مصادر') }}</span>
-                </div>
-                <div class="text-center p-3 rounded-xl bg-linear-to-b from-gray-50 to-white border border-gray-100">
-                    <strong class="block text-xl font-bold text-gray-900" id="stat-areas">—</strong>
-                    <span
-                        class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Areas', 'Domaines', 'مجالات') }}</span>
+                    <strong class="block text-xl font-bold text-gray-900">{{ number_format($stats['total_documents']) }}</strong>
+                    <span class="block mt-1 text-[10px] font-semibold text-gray-400 uppercase">{{ $c('Sources', 'Sources', 'مصادر') }}</span>
                 </div>
             </div>
         </div>
 
-        <div class="p-5 border border-gray-200 min-h-0 flex-1 overflow-y-auto">
+        <div class="p-5 min-h-0 flex-1 overflow-y-auto">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                {{ $c('Browse Categories', 'Parcourir catégories', 'تصفح التصنيفات') }}</h3>
-            <div id="category-loading" class="flex items-center justify-center gap-2 py-4">
-                <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <span class="text-xs text-gray-400">{{ $c('Loading...', 'Chargement...', 'جار التحميل...') }}</span>
+                {{ $c('Browse by Language', 'Parcourir par langue', 'تصفح حسب اللغة') }}</h3>
+            <div class="space-y-1">
+                @php
+                    $langCounts = $documents->groupBy('language')->map(fn($docs) => $docs->count());
+                @endphp
+                @foreach(['fr' => 'Français', 'ar' => 'العربية', 'en' => 'English'] as $code => $label)
+                    @if(isset($langCounts[$code]) && $langCounts[$code] > 0)
+                        <button type="button" data-filter-lang="{{ $code }}"
+                            class="filter-lang-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-blue-50 hover:text-blue-700 cursor-pointer group">
+                            <span class="font-medium text-gray-600 group-hover:text-blue-700">{{ $label }}</span>
+                            <span class="text-xs font-semibold text-gray-400 group-hover:text-blue-500">{{ $langCounts[$code] }} {{ $c('docs', 'docs', 'مستند') }}</span>
+                        </button>
+                    @endif
+                @endforeach
+                <button type="button" data-filter-lang="all"
+                    class="filter-lang-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-blue-50 hover:text-blue-700 cursor-pointer group">
+                    <span class="font-medium text-gray-600 group-hover:text-blue-700">{{ $c('All Languages', 'Toutes les langues', 'جميع اللغات') }}</span>
+                </button>
             </div>
-            <div id="category-list" class="space-y-0.5"></div>
-        </div>
 
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 mt-6">
+                {{ $c('Browse Categories', 'Parcourir catégories', 'تصفح التصنيفات') }}</h3>
+            <div class="space-y-1">
+                @php
+                    $groupCounts = $documents->where('group', '!=', null)->groupBy('group')->map(fn($docs) => $docs->count());
+                @endphp
+                @forelse($groupCounts as $group => $count)
+                    <button type="button" data-filter-group="{{ $group }}"
+                        class="filter-group-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-blue-50 hover:text-blue-700 cursor-pointer group">
+                        <span class="font-medium text-gray-600 group-hover:text-blue-700">{{ $group }}</span>
+                        <span class="text-xs font-semibold text-gray-400 group-hover:text-blue-500">{{ $count }}</span>
+                    </button>
+                @empty
+                    <p class="text-xs text-gray-400 py-2">{{ $c('No categories yet', 'Aucune catégorie', 'لا توجد تصنيفات بعد') }}</p>
+                @endforelse
+                @if($groupCounts->count() > 0)
+                    <button type="button" data-filter-group="all"
+                        class="filter-group-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-blue-50 hover:text-blue-700 cursor-pointer group">
+                        <span class="font-medium text-gray-600 group-hover:text-blue-700">{{ $c('All Categories', 'Toutes les catégories', 'جميع التصنيفات') }}</span>
+                    </button>
+                @endif
+            </div>
+        </div>
     </aside>
 
     {{-- Floating assistant popup --}}

@@ -69,7 +69,7 @@
                     </button>
                 </form>
                 <div id="suggestions-panel"
-                    class="hidden absolute top-full ltr:left-0 rtl:right-0 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-xl overflow-hidden z-50">
+                    class="hidden absolute top-full ltr:left-0 rtl:right-0 mt-1 w-full max-h-80 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-xl z-50">
                 </div>
             </div>
 
