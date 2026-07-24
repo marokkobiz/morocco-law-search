@@ -86,7 +86,7 @@
                     @else
                         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" id="documents-grid">
                             @foreach($documents as $doc)
-                                <a href="{{ route('app.law.show', $doc) }}" data-lang="{{ $doc->language }}" data-group="{{ $doc->group ?? '' }}" class="doc-card group p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all bg-white cursor-pointer no-underline block">
+                                <a href="{{ route('app.law.show', $doc) }}" class="group p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all bg-white cursor-pointer no-underline block">
                                     <div class="flex items-start justify-between gap-2 mb-2">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide {{ $doc->language === 'ar' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-blue-50 text-blue-700 border border-blue-100' }}">
                                             {{ strtoupper($doc->language) }}
@@ -114,11 +114,12 @@
                                 </a>
                             @endforeach
                         </div>
-                        <div id="documents-empty" class="hidden text-center py-12 bg-gray-50 rounded-xl border border-gray-100">
-                            <p class="text-sm text-gray-400">
-                                {{ $c('No documents match the selected filters.', 'Aucun document ne correspond aux filtres sélectionnés.', 'لا توجد مستندات تطابق الفلاتر المحددة.')}}
-                            </p>
-                        </div>
+
+                        @if($documents->hasPages())
+                            <div class="mt-6">
+                                {{ $documents->links() }}
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -179,44 +180,38 @@
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
                 {{ $c('Browse by Language', 'Parcourir par langue', 'تصفح حسب اللغة') }}</h3>
             <div class="space-y-1">
-                @php
-                    $langCounts = $documents->groupBy('language')->map(fn($docs) => $docs->count());
-                @endphp
                 @foreach(['fr' => 'Français', 'ar' => 'العربية', 'en' => 'English'] as $code => $label)
                     @if(isset($langCounts[$code]) && $langCounts[$code] > 0)
-                        <button type="button" data-filter-lang="{{ $code }}"
-                            class="filter-lang-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-blue-50 hover:text-blue-700 cursor-pointer group">
+                        <a href="{{ route('app.workspace', array_merge(request()->except(['language', 'page']), ['language' => $code])) }}"
+                            class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all cursor-pointer group no-underline {{ $language === $code ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'hover:bg-blue-50 hover:text-blue-700 border border-transparent' }}">
                             <span class="font-medium text-gray-600 group-hover:text-blue-700">{{ $label }}</span>
                             <span class="text-xs font-semibold text-gray-400 group-hover:text-blue-500">{{ $langCounts[$code] }} {{ $c('docs', 'docs', 'مستند') }}</span>
-                        </button>
+                        </a>
                     @endif
                 @endforeach
-                <button type="button" data-filter-lang="all"
-                    class="filter-lang-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-blue-50 hover:text-blue-700 cursor-pointer group">
+                <a href="{{ route('app.workspace', request()->except(['language', 'group', 'page'])) }}"
+                    class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all cursor-pointer group no-underline {{ !$language ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'hover:bg-blue-50 hover:text-blue-700 border border-transparent' }}">
                     <span class="font-medium text-gray-600 group-hover:text-blue-700">{{ $c('All Languages', 'Toutes les langues', 'جميع اللغات') }}</span>
-                </button>
+                </a>
             </div>
 
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 mt-6">
                 {{ $c('Browse Categories', 'Parcourir catégories', 'تصفح التصنيفات') }}</h3>
             <div class="space-y-1">
-                @php
-                    $groupCounts = $documents->where('group', '!=', null)->groupBy('group')->map(fn($docs) => $docs->count());
-                @endphp
-                @forelse($groupCounts as $group => $count)
-                    <button type="button" data-filter-group="{{ $group }}"
-                        class="filter-group-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-blue-50 hover:text-blue-700 cursor-pointer group">
-                        <span class="font-medium text-gray-600 group-hover:text-blue-700">{{ $group }}</span>
+                @forelse($groupCounts as $grp => $count)
+                    <a href="{{ route('app.workspace', array_merge(request()->except(['group', 'page']), ['group' => $grp])) }}"
+                        class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all cursor-pointer group no-underline {{ $group === $grp ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'hover:bg-blue-50 hover:text-blue-700 border border-transparent' }}">
+                        <span class="font-medium text-gray-600 group-hover:text-blue-700">{{ $grp }}</span>
                         <span class="text-xs font-semibold text-gray-400 group-hover:text-blue-500">{{ $count }}</span>
-                    </button>
+                    </a>
                 @empty
                     <p class="text-xs text-gray-400 py-2">{{ $c('No categories yet', 'Aucune catégorie', 'لا توجد تصنيفات بعد') }}</p>
                 @endforelse
                 @if($groupCounts->count() > 0)
-                    <button type="button" data-filter-group="all"
-                        class="filter-group-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-blue-50 hover:text-blue-700 cursor-pointer group">
+                    <a href="{{ route('app.workspace', request()->except(['group', 'page'])) }}"
+                        class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all cursor-pointer group no-underline {{ !$group ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'hover:bg-blue-50 hover:text-blue-700 border border-transparent' }}">
                         <span class="font-medium text-gray-600 group-hover:text-blue-700">{{ $c('All Categories', 'Toutes les catégories', 'جميع التصنيفات') }}</span>
-                    </button>
+                    </a>
                 @endif
             </div>
         </div>

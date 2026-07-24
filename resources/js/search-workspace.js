@@ -10,52 +10,6 @@ const api = async (url, opts = {}) => {
 
 const el = (id) => document.getElementById(id);
 
-// Sidebar filters
-let activeLang = 'all';
-let activeGroup = 'all';
-
-const applyFilters = () => {
-  const cards = document.querySelectorAll('.doc-card');
-  let visible = 0;
-  cards.forEach((card) => {
-    const langMatch = activeLang === 'all' || card.dataset.lang === activeLang;
-    const groupMatch = activeGroup === 'all' || card.dataset.group === activeGroup;
-    const show = langMatch && groupMatch;
-    card.style.display = show ? '' : 'none';
-    if (show) visible++;
-  });
-  const emptyMsg = el('documents-empty');
-  const grid = el('documents-grid');
-  if (emptyMsg) emptyMsg.classList.toggle('hidden', visible > 0);
-  if (grid) grid.classList.toggle('hidden', visible === 0);
-};
-
-const setActiveBtn = (selector, value, attr) => {
-  document.querySelectorAll(selector).forEach((btn) => {
-    const isActive = btn.getAttribute(attr) === value;
-    btn.classList.toggle('bg-blue-50', isActive);
-    btn.classList.toggle('text-blue-700', isActive);
-    btn.classList.toggle('border', isActive);
-    btn.classList.toggle('border-blue-200', isActive);
-  });
-};
-
-document.querySelectorAll('.filter-lang-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    activeLang = btn.dataset.filterLang;
-    setActiveBtn('.filter-lang-btn', activeLang, 'data-filter-lang');
-    applyFilters();
-  });
-});
-
-document.querySelectorAll('.filter-group-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    activeGroup = btn.dataset.filterGroup;
-    setActiveBtn('.filter-group-btn', activeGroup, 'data-filter-group');
-    applyFilters();
-  });
-});
-
 const showState = (state) => {
   const isResults = state === 'results';
   ['initial', 'loading', 'empty'].forEach((s) => el(`results-${s}`)?.classList.toggle('hidden', s !== state));
