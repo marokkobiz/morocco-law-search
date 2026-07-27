@@ -6,21 +6,24 @@ use App\Models\Article;
 use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class LawController
 {
+    private const CACHE_TTL = 300;
+
     public function overview()
     {
-        $totalArticles = Article::count();
-        $totalDocuments = Document::count();
+        $totalArticles = Cache::remember('total_articles', self::CACHE_TTL, fn () => Article::count());
+        $totalDocuments = Cache::remember('total_documents', self::CACHE_TTL, fn () => Document::count());
 
-        $categories = Document::select('group')
-            ->whereNotNull('group')
-            ->groupBy('group')
-            ->selectRaw('`group` as category, COUNT(DISTINCT articles.id) as articleCount')
-            ->join('articles', 'articles.document_id', '=', 'documents.id')
-            ->get();
+        $categories = Cache::remember('doc_group_counts', self::CACHE_TTL, fn () =>
+            Document::whereNotNull('group')
+                ->select('group as category', DB::raw('COUNT(*) as docCount'))
+                ->groupBy('group')
+                ->get()
+        );
 
         return response()->json([
             'totalArticles' => $totalArticles,
@@ -47,9 +50,8 @@ class LawController
                 'documents.type as doc_type'
             )
             ->where(function ($q) use ($query) {
-                $q->where('articles.text', 'LIKE', "%{$query}%")
-                    ->orWhere('articles.article_number', 'LIKE', "%{$query}%")
-                    ->orWhere('documents.title', 'LIKE', "%{$query}%");
+                $q->where('documents.title', 'LIKE', "%{$query}%")
+                    ->orWhere('articles.article_number', 'LIKE', "%{$query}%");
             })
             ->take(10)
             ->get();

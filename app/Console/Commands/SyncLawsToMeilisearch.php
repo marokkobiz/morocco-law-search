@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Article;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class SyncLawsToMeilisearch extends Command
 {
@@ -41,7 +42,13 @@ class SyncLawsToMeilisearch extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->info('Sync complete.');
+
+        Cache::forget('total_articles');
+        Cache::forget('total_documents');
+        Cache::forget('doc_lang_counts');
+        Cache::forget('doc_group_counts');
+
+        $this->info('Sync complete. Cache cleared.');
 
         return Command::SUCCESS;
     }
