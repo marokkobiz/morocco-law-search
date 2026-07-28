@@ -33,6 +33,11 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // Email Verification Routes
+    Route::get('/email/verify', [AuthController::class, 'showVerifyEmailNotice'])->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware('signed')->name('verification.verify');
+    Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail'])->middleware('throttle:6,1')->name('verification.send');
+
     // Workspace
     Route::prefix('app')->name('app.')->group(function () {
         Route::get('/dashboard', [WorkspaceController::class, 'index'])->name('workspace');
@@ -41,8 +46,8 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-// Admin routes
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+// Admin routes (Protected by auth + admin middleware)
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users/{user}/toggle-agent', [UserController::class, 'toggleAgent'])->name('users.toggle-agent');
