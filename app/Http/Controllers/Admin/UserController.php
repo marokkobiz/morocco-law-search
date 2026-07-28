@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 
-class UserController
+class UserController extends Controller
 {
     public function index(): View
     {

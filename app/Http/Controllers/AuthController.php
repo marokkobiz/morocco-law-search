@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
-class AuthController
+class AuthController extends Controller
 {
     private const CUSTOM_BAR_VALUE = '__custom_bar__';
 
@@ -53,9 +53,16 @@ class AuthController
                 ->onlyInput('email');
         }
 
-$request->session()->regenerate();
+        $request->session()->regenerate();
+        if (! Auth::user()->hasVerifiedEmail()) {
+            Auth::logout();
 
-        return redirect()->intended(route('app.workspace'));
+            return redirect()
+                ->route('verification.notice')
+                ->with('message', 'Please verify your email first.');
+        }
+ 
+        return redirect()->intended('/dashboard');
     }
 
     public function register(RegisterRequest $request): RedirectResponse
@@ -86,13 +93,21 @@ $user = User::create(array_merge($validated, [
 
     'referred_by' => $agent?->id,
 
-    'access_status' => 'active',
+    'access_status' => config('billing.require_payment')
+        ? 'pending_payment'
+        : 'active',
+
+    'trial_ends_at' => config('billing.default_trial_days') > 0
+        ? now()->addDays(config('billing.default_trial_days'))
+        : null,
 ]));
 
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('app.workspace'));
+        $user->sendEmailVerificationNotification();
+
+        return redirect()->route('verification.notice');
     }
 
     public function logout(Request $request): RedirectResponse
