@@ -37,7 +37,7 @@
 
                     <form
                         class="flex items-center gap-2 p-2 mt-8 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl shadow-blue-500/10 max-w-2xl"
-                        action="/login" method="get">
+                        action="{{ auth()->check() ? route('app.search') : route('login') }}" method="get">
                         <div class="flex items-center gap-3 flex-1 px-4">
                             <svg class="w-5 h-5 text-blue-300 shrink-0" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -215,10 +215,6 @@
                     <h2 class="section-title mt-4">{{ __('landing.database_title') }}</h2>
                     <p class="section-desc">{{ __('landing.database_desc') }}</p>
                 </div>
-                {{-- <div class="hidden lg:block shrink-0" data-animate="fade-in" style="--delay: 0.1s">
-                    <img src="https://placehold.co/200x200/2563eb/dbeafe?text=Legal+DB" alt="Database"
-                        class="img-elevate rounded-xl shadow-lg shadow-blue-500/10 ring-1 ring-blue-100/50">
-                </div> --}}
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-12">
@@ -280,14 +276,24 @@
             </h2>
             <p class="mt-4 text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">{{ __('landing.cta_desc') }}</p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-                <a href="{{ route('register') }}"
-                    class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-blue-700 bg-white hover:bg-blue-50 shadow-2xl shadow-blue-900/30 transition-all duration-200 no-underline">
-                    {{ __('landing.cta_create') }}
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                </a>
+                @guest
+                    <a href="{{ route('register') }}"
+                        class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-blue-700 bg-white hover:bg-blue-50 shadow-2xl shadow-blue-900/30 transition-all duration-200 no-underline">
+                        {{ __('landing.cta_create') }}
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                    </a>
+                @endguest
+
+                @auth
+                    <a href="{{ route('app.workspace') }}"
+                        class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-blue-700 bg-white hover:bg-blue-50 shadow-2xl shadow-blue-900/30 transition-all duration-200 no-underline">
+                        Dashboard &rarr;
+                    </a>
+                @endauth
+
                 <a href="https://www.marokkobiz.com/"
                     class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-white border border-white/30 hover:bg-white/10 transition-all duration-200 no-underline">
                     {{ __('landing.cta_learn') }}

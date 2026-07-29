@@ -47,14 +47,14 @@
                     class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('sources') }}</a>
                 <a href="/#coverage"
                     class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('coverage') }}</a>
-                    @if (Route::is('test') || Route::is('legal-aid'))
+                @if (Route::is('test') || Route::is('legal-aid'))
                     <a href="{{ route('legal-aid') }}"
                         class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('legal_aid') }}</a>
-                    @endif
-
+                @endif
             </div>
 
             <div class="flex items-center gap-3 shrink-0">
+                {{-- Language Switcher --}}
                 <details class="relative">
                     <summary
                         class="list-none cursor-pointer rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-bold text-gray-300 transition-colors hover:border-gray-600 hover:text-white [&::-webkit-details-marker]:hidden">
@@ -83,55 +83,41 @@
                         @endforeach
                     </div>
                 </details>
+
                 @auth
+                    {{-- Admin Panel Button (visible only to admins) --}}
+                    @if (Auth::user()->is_admin || Auth::user()->role === 'admin' || (method_exists(Auth::user(), 'isAdmin') && Auth::user()->isAdmin()))
+                        <a href="/admin"
+                            class="h-8 flex items-center px-3.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition-colors no-underline gap-1.5 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            {{ $c('Admin Panel', 'Panneau Admin', 'لوحة الإدارة') }}
+                        </a>
+                    @endif
+
                     <a href="{{ route('app.workspace') }}"
                         class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $locale === 'fr' ? 'Dashboard' : ($locale === 'ar' ? 'لوحة التحكم' : 'Dashboard') }}</a>
+
+                    {{-- Logout Button --}}
+                    <a href="{{ route('logout') }}"
+                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                        class="h-8 flex items-center px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-semibold rounded-lg transition-colors no-underline"
+                        title="{{ $c('Logout', 'Déconnexion', 'تسجيل الخروج') }}">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </a>
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+                        @csrf
+                    </form>
                 @else
                     <a href="{{ route('login') }}"
                         class="inline-flex items-center text-xs h-8 px-4 py-1.5 rounded-lg font-semibold text-white border border-white/30 hover:bg-white/10 transition-all duration-200 no-underline">{{ $layoutCopy('login') }}</a>
                     <a href="{{ route('register') }}"
                         class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $layoutCopy('start') }}</a>
-                @endauth
-            </div>
-
-            <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-                @auth
-                    <details class="relative">
-                        <summary
-                            class="list-none cursor-pointer w-8 h-8 rounded-md bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-300 hover:bg-gray-600 transition-colors [&::-webkit-details-marker]:hidden">
-                            {{ substr(Auth::user()->name ?? Auth::user()->email, 0, 1) }}
-                        </summary>
-                        <div
-                            class="absolute ltr:right-0 rtl:left-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-2 shadow-xl">
-                            <div class="px-4 py-2.5 border-b border-gray-100">
-                                <p class="text-sm font-semibold text-gray-900 truncate">{{ Auth::user()->name ?? '' }}</p>
-                                <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
-                            </div>
-                            <div class="lg:hidden px-4 py-2 border-b border-gray-100">
-                                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                                    {{ $c('Language', 'Langue', 'اللغة') }}</p>
-                                <div class="flex gap-1">
-                                    @foreach ($localeOptions as $localeOption => $localeMeta)
-                                        <a href="{{ route('locale.switch', $localeOption) }}"
-                                            class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold no-underline transition-colors {{ $activeLocale === $localeOption ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'text-gray-500 hover:bg-gray-100' }}">
-                                            <span>{{ $localeMeta['code'] }}</span>
-                                        </a>
-                                    @endforeach
-                                </div>
-                            </div>
-                            <a href="{{ route('logout') }}"
-                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                                class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors no-underline">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                                {{ $c('Logout', 'Déconnexion', 'تسجيل الخروج') }}
-                            </a>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">@csrf
-                            </form>
-                        </div>
-                    </details>
                 @endauth
             </div>
         </div>
