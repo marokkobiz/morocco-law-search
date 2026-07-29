@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Scout\Searchable;
 
 class Article extends Model
@@ -22,6 +23,12 @@ class Article extends Model
         'page',
         'footnotes',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(fn () => Cache::forget('total_articles'));
+        static::deleted(fn () => Cache::forget('total_articles'));
+    }
 
     protected function casts(): array
     {

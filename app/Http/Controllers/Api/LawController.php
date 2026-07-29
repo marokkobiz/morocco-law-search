@@ -6,24 +6,19 @@ use App\Models\Article;
 use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class LawController
 {
-    private const CACHE_TTL = 300;
-
     public function overview()
     {
-        $totalArticles = Cache::remember('total_articles', self::CACHE_TTL, fn () => Article::count());
-        $totalDocuments = Cache::remember('total_documents', self::CACHE_TTL, fn () => Document::count());
+        $totalArticles = Article::count();
+        $totalDocuments = Document::count();
 
-        $categories = Cache::remember('doc_group_counts', self::CACHE_TTL, fn () =>
-            Document::whereNotNull('group')
-                ->select('group as category', DB::raw('COUNT(*) as docCount'))
-                ->groupBy('group')
-                ->get()
-        );
+        $categories = Document::whereNotNull('group')
+            ->select('group as category', DB::raw('COUNT(*) as docCount'))
+            ->groupBy('group')
+            ->get();
 
         return response()->json([
             'totalArticles' => $totalArticles,

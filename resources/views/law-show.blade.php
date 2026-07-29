@@ -185,11 +185,12 @@
                     @if(trim($sidebarText) === '') @continue @endif
                     <a href="#article-{{ $article->id }}"
                         class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[13px] transition-colors hover:bg-gray-50 no-underline group {{ $article->article_number ? 'text-gray-600' : 'text-gray-900 font-semibold' }} {{ $isRtl ? 'flex-row-reverse text-right' : '' }}">
-                        @if($article->article_number)
+                        @if($article->article_number != "Preamble")
                             <span class="shrink-0 w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-50">
                                 {{ $article->article_number }}
                             </span>
                         @endif
+
                         <span class="truncate group-hover:text-blue-700" dir="auto">{{ $sidebarText }}</span>
                     </a>
                 @empty
