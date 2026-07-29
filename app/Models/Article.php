@@ -65,8 +65,8 @@ class Article extends Model
     {
         $text = $this->text;
 
-        // Strip page markers: --- PAGE X --- (French) or --- X EGAP --- (Arabic) or ---PAGE1--- (no spaces)
-        $text = preg_replace('/---\s*(?:\d+\s*(?:PAGE|EGAP)|(?:PAGE|EGAP)\s*\d+)\s*---/i', '', $text);
+        // Strip page markers: --- PAGE X --- (French), --- X EGAP --- (Arabic), -- 1 PAGE --, ---PAGE1--- (no spaces)
+        $text = preg_replace('/--+\s*(?:\d+\s*(?:PAGE|EGAP)|(?:PAGE|EGAP)\s*\d+)\s*--+/i', '', $text);
 
         // Strip any remaining bare --- lines
         $text = preg_replace('/^---+$/m', '', $text);
