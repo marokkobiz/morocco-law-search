@@ -1,11 +1,12 @@
 <?php
 
-use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LegalAidController;
 use App\Http\Controllers\WorkspaceController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -29,14 +30,28 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-// Authenticated routes
+// Email Verification Routes
 Route::middleware('auth')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/email/verify', function () {
+        return view('auth.verify-email');
+    })->name('verification.notice');
 
-    // Email Verification Routes
-    Route::get('/email/verify', [AuthController::class, 'showVerifyEmailNotice'])->name('verification.notice');
-    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware('signed')->name('verification.verify');
-    Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail'])->middleware('throttle:6,1')->name('verification.send');
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $request->fulfill();
+
+        return redirect()->route('app.workspace');
+    })->middleware('signed')->name('verification.verify');
+
+    Route::post('/email/verification-notification', function (Request $request) {
+        $request->user()->sendEmailVerificationNotification();
+
+        return back()->with('status', 'Verification link sent!');
+    })->middleware('throttle:6,1')->name('verification.send');
+});
+
+// Authenticated routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Workspace
     Route::prefix('app')->name('app.')->group(function () {
@@ -46,9 +61,13 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-// Admin routes (Protected by auth + admin middleware)
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::post('/users/{user}/toggle-agent', [UserController::class, 'toggleAgent'])->name('users.toggle-agent');
-});
+// Admin routes (Secured with auth and admin middleware)
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [UserController::class, 'index']);
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::post('/users/{user}/toggle-agent', [UserController::class, 'toggleAgent'])->name('users.toggle-agent');
+    });

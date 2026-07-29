@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
-class AuthController extends Controller
+class AuthController
 {
     private const CUSTOM_BAR_VALUE = '__custom_bar__';
 
@@ -33,7 +33,7 @@ class AuthController extends Controller
             'courts' => $this->courts($lang),
             'customBarValue' => self::CUSTOM_BAR_VALUE,
             'referralCode' => request('ref'),
-]);
+        ]);
     }
 
     public function passwordForm(): View
@@ -54,27 +54,24 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
-        if (! Auth::user()->hasVerifiedEmail()) {
-            Auth::logout();
 
-            return redirect()
-                ->route('verification.notice')
-                ->with('message', 'Please verify your email first.');
+        if (! Auth::user()->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
         }
- 
-        return redirect()->intended('/dashboard');
+
+        return redirect()->intended(route('app.workspace'));
     }
 
     public function register(RegisterRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
-$referralCode = $validated['referral_code'] ?? null;
+        $referralCode = $validated['referral_code'] ?? null;
 
-unset(
-    $validated['password_confirmation'],
-    $validated['referral_code']
-);
+        unset(
+            $validated['password_confirmation'],
+            $validated['referral_code']
+        );
 
         $validated['bar'] = trim($validated['bar'] === self::CUSTOM_BAR_VALUE
             ? (string) $validated['custom_bar']
@@ -83,28 +80,20 @@ unset(
 
         $agent = null;
 
-if ($referralCode) {
-    $agent = User::where('referral_code', $referralCode)->first();
-}
+        if ($referralCode) {
+            $agent = User::where('referral_code', $referralCode)->first();
+        }
 
-$user = User::create(array_merge($validated, [
-
-    'referral_code' => $this->generateReferralCode(),
-
-    'referred_by' => $agent?->id,
-
-    'access_status' => config('billing.require_payment')
-        ? 'pending_payment'
-        : 'active',
-
-    'trial_ends_at' => config('billing.default_trial_days') > 0
-        ? now()->addDays(config('billing.default_trial_days'))
-        : null,
-]));
+        $user = User::create(array_merge($validated, [
+            'referral_code' => $this->generateReferralCode(),
+            'referred_by' => $agent?->id,
+            'access_status' => 'active',
+        ]));
 
         Auth::login($user);
         $request->session()->regenerate();
 
+        // Send email verification and redirect to verify screen
         $user->sendEmailVerificationNotification();
 
         return redirect()->route('verification.notice');
@@ -177,15 +166,14 @@ $user = User::create(array_merge($validated, [
         };
     }
 
-private function generateReferralCode(): string
-{
-    do {
-        $code = strtoupper(Str::random(8));
-    } while (
-        User::where('referral_code', $code)->exists()
-    );
+    private function generateReferralCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(8));
+        } while (
+            User::where('referral_code', $code)->exists()
+        );
 
-    return $code;
-}
-
+        return $code;
+    }
 }
