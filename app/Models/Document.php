@@ -16,6 +16,8 @@ class Document extends Model
         'language',
         'type',
         'source_file',
+        'source_url',
+        'official_url',
         'group',
     ];
 

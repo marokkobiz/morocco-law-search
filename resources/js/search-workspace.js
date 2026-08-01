@@ -36,6 +36,14 @@ const buildResultCard = (r) => {
   card.className = 'card p-6 hover:shadow-md transition-shadow';
   card.dataset.resultId = r.id;
 
+  if (r.document_id) {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('button') || e.target.closest('a')) return;
+      window.location.href = `/app/laws/${r.document_id}`;
+    });
+  }
+
   const topRow = document.createElement('div');
   topRow.className = 'flex items-center gap-2 mb-3 flex-wrap';
   if (r.category) {

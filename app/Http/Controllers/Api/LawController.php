@@ -91,6 +91,12 @@ class LawController
                     ->orWhere('articles.article_number', 'LIKE', "%{$query}%")
                     ->orWhere('articles.chapter', 'LIKE', "%{$query}%")
                     ->orWhere('documents.title', 'LIKE', "%{$query}%");
+
+                // Suggestions format labels as "title — article_number"; search by title alone
+                if (str_contains($query, ' — ')) {
+                    $titlePart = explode(' — ', $query, 2)[0];
+                    $q->orWhere('documents.title', 'LIKE', "%{$titlePart}%");
+                }
             });
 
         if ($language) {

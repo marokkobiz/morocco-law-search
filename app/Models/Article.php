@@ -77,6 +77,9 @@ class Article extends Model
         // Strip trailing footnote reference digits at end of lines (e.g. "Tunisie1." -> "Tunisie.")
         $text = preg_replace('/(\S)\d{1,2}\s*$/m', '$1', $text);
 
+        // Strip private use area glyphs from PDF extraction (e.g. U+F06D used as em-dash/non-breaking hyphen)
+        $text = preg_replace('/[\x{F000}-\x{F8FF}]/u', '', $text);
+
         // Collapse multiple blank lines into at most two
         $text = preg_replace('/\n{3,}/', "\n\n", $text);
 
