@@ -2,7 +2,7 @@
 
 Morocco Law Search is a Laravel 12 application with Vite for frontend assets, SQLite for local development, and database-backed queues.
 
-## Requirements
+## Requirementss
 
 - PHP 8.2 or newer
 - Composer
