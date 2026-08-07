@@ -122,17 +122,6 @@ Monitor agents and referral performance.
                                                         <div class="font-semibold text-xs text-slate-900">{{ $user->name }}</div>
                                                         <div class="text-[11px] text-slate-500">{{ $user->email }}</div>
                                                     </div>
-                                                    <div>
-                                                        @if($user->email_verified_at)
-                                                            <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                                                ✓ Verified
-                                                            </span>
-                                                        @else
-                                                            <span class="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                                                                Pending
-                                                            </span>
-                                                        @endif
-                                                    </div>
                                                 </div>
                                             @empty
                                                 <p class="text-xs text-slate-400 italic">No users registered under this referral link yet.</p>

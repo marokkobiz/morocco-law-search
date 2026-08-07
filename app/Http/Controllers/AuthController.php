@@ -55,10 +55,6 @@ class AuthController
 
         $request->session()->regenerate();
 
-        if (! Auth::user()->hasVerifiedEmail()) {
-            return redirect()->route('verification.notice');
-        }
-
         return redirect()->intended(route('app.workspace'));
     }
 
@@ -93,10 +89,7 @@ class AuthController
         Auth::login($user);
         $request->session()->regenerate();
 
-        // Send email verification and redirect to verify screen
-        $user->sendEmailVerificationNotification();
-
-        return redirect()->route('verification.notice');
+        return redirect()->route('app.workspace');
     }
 
     public function logout(Request $request): RedirectResponse
