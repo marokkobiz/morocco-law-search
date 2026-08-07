@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
@@ -10,6 +11,9 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/test/beta/legal-aid', [LegalAidController::class, 'index'])->name('legal-aid');
+Route::post('/test/beta/legal-aid', [LegalAidController::class, 'store'])->name('legal-aid.store');
+Route::get('/legal-aid/payment/{ticket}', [LegalAidController::class, 'payment'])->name('legal-aid.payment');
+Route::post('/legal-aid/payment/{ticket}/receipt', [LegalAidController::class, 'uploadReceipt'])->name('legal-aid.receipt');
 
 Route::get('/locale/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'fr', 'ar'])) {
@@ -45,8 +49,11 @@ Route::middleware(['auth', 'admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::get('/', [UserController::class, 'index'])->name('dashboard');
-        Route::get('/dashboard', [UserController::class, 'index']);
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index']);
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::post('/users/{user}/toggle-agent', [UserController::class, 'toggleAgent'])->name('users.toggle-agent');
+        Route::post('/users/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::get('/legal-aid', [LegalAidController::class, 'adminIndex'])->name('legal-aid.index');
+        Route::post('/legal-aid/{legalAidRequest}/confirm', [LegalAidController::class, 'confirm'])->name('legal-aid.confirm');
     });

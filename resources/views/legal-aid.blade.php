@@ -57,23 +57,46 @@
             <div class="card p-8" data-animate="fade-up" style="--delay:.2s">
                 <h2 class="text-xl font-bold text-gray-900 text-center mb-1">{{ __('legal_aid.form_title') }}</h2>
                 <p class="text-sm text-gray-500 text-center mb-6">{{ __('legal_aid.form_desc') }}</p>
-                <form class="space-y-4">
+                @if (session('ticket'))
+                    <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                        {{ __('legal_aid.success_ticket', ['ticket' => session('ticket')]) }}
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                        <ul class="list-disc list-inside space-y-1">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form class="space-y-4" action="{{ route('legal-aid.store') }}" method="POST">
+                    @csrf
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ __('legal_aid.field_name') }}</label>
-                        <input type="text" name="full_name" required
+                        <input type="text" name="full_name" value="{{ old('full_name') }}" required
                             class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
                             placeholder="{{ __('legal_aid.field_name_placeholder') }}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ __('legal_aid.field_email') }}</label>
+                        <input type="email" name="email" value="{{ old('email') }}" required
+                            class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
+                            placeholder="{{ __('legal_aid.field_email_placeholder') }}">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ __('legal_aid.field_phone') }}</label>
-                            <input type="tel" name="phone" required
+                            <input type="tel" name="phone" value="{{ old('phone') }}" required
                                 class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
                                 placeholder="{{ __('legal_aid.field_phone_placeholder') }}">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ __('legal_aid.field_whatsapp') }}</label>
-                            <input type="tel" name="whatsapp"
+                            <input type="tel" name="whatsapp" value="{{ old('whatsapp') }}"
                                 class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
                                 placeholder="{{ __('legal_aid.field_whatsapp_placeholder') }}">
                         </div>
@@ -82,7 +105,7 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ __('legal_aid.field_case') }}</label>
                         <textarea name="case_description" rows="4" required
                             class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors resize-none"
-                            placeholder="{{ __('legal_aid.field_case_placeholder') }}"></textarea>
+                            placeholder="{{ __('legal_aid.field_case_placeholder') }}">{{ old('case_description') }}</textarea>
                     </div>
                     <button type="submit" class="btn-primary w-full">
                         {{ __('legal_aid.submit') }}

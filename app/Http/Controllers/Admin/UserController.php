@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class UserController extends Controller
 {
@@ -16,19 +16,26 @@ class UserController extends Controller
         ]);
     }
 
-    public function toggleAgent(User $user): RedirectResponse
+    public function toggleAdmin(User $user): RedirectResponse
     {
-        // Safety check to ensure we never modify an admin's role
-        if ($user->role === 'admin') {
-            return back()->with('error', 'Cannot change the role of an administrator.');
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'You cannot change your own role.');
         }
 
-        // Toggle role between user and agent
-        $newRole = $user->role === 'agent' ? 'user' : 'agent';
-        
-        $user->forceFill([
-            'role' => $newRole
-        ])->save();
+        $newRole = $user->role === 'admin' ? 'user' : 'admin';
+
+        $user->forceFill(['role' => $newRole])->save();
+
+        return back();
+    }
+
+    public function destroy(User $user): RedirectResponse
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'You cannot delete your own account.');
+        }
+
+        $user->delete();
 
         return back();
     }

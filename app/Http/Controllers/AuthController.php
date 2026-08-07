@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
@@ -32,7 +30,6 @@ class AuthController
             'lang' => $lang,
             'courts' => $this->courts($lang),
             'customBarValue' => self::CUSTOM_BAR_VALUE,
-            'referralCode' => request('ref'),
         ]);
     }
 
@@ -47,7 +44,7 @@ class AuthController
     {
         $credentials = $request->validated();
 
-        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()
                 ->withErrors(['email' => 'These credentials do not match our records.'])
                 ->onlyInput('email');
@@ -62,27 +59,14 @@ class AuthController
     {
         $validated = $request->validated();
 
-        $referralCode = $validated['referral_code'] ?? null;
-
-        unset(
-            $validated['password_confirmation'],
-            $validated['referral_code']
-        );
+        unset($validated['password_confirmation']);
 
         $validated['bar'] = trim($validated['bar'] === self::CUSTOM_BAR_VALUE
             ? (string) $validated['custom_bar']
             : (string) $validated['bar']);
         unset($validated['custom_bar']);
 
-        $agent = null;
-
-        if ($referralCode) {
-            $agent = User::where('referral_code', $referralCode)->first();
-        }
-
         $user = User::create(array_merge($validated, [
-            'referral_code' => $this->generateReferralCode(),
-            'referred_by' => $agent?->id,
             'access_status' => 'active',
         ]));
 
@@ -157,16 +141,5 @@ class AuthController
                 'Agadir Bar',
             ],
         };
-    }
-
-    private function generateReferralCode(): string
-    {
-        do {
-            $code = strtoupper(Str::random(8));
-        } while (
-            User::where('referral_code', $code)->exists()
-        );
-
-        return $code;
     }
 }
