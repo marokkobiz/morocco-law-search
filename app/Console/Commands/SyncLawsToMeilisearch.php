@@ -16,7 +16,7 @@ class SyncLawsToMeilisearch extends Command
     {
         $query = Article::query();
 
-        if (!$this->option('force')) {
+        if (! $this->option('force')) {
             $query->whereNull('synced_at');
         }
 

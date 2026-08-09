@@ -26,6 +26,8 @@ class LegalAidRequest extends Model
 
     public const STATUS_CONFIRMED = 'confirmed';
 
+    public const STATUS_REJECTED = 'rejected';
+
     public function isPaid(): bool
     {
         return in_array($this->status, [self::STATUS_PAID, self::STATUS_CONFIRMED], true);
@@ -33,6 +35,6 @@ class LegalAidRequest extends Model
 
     public function getTicketLabelAttribute(): string
     {
-        return '#' . $this->ticket_number;
+        return '#'.$this->ticket_number;
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Mail\LegalAidAdminNotificationMail;
 use App\Mail\LegalAidConfirmationMail;
 use App\Mail\LegalAidReceiptNotificationMail;
+use App\Mail\LegalAidRejectionMail;
 use App\Mail\LegalAidTicketMail;
 use App\Models\LegalAidRequest;
 use App\Models\User;
@@ -117,6 +118,7 @@ class LegalAidFlowTest extends TestCase
             'case_description' => 'Test case',
             'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
             'locale' => 'en',
+            'receipt_path' => 'receipts/receipt.png',
         ]);
 
         $this->actingAs($admin)
@@ -132,5 +134,201 @@ class LegalAidFlowTest extends TestCase
             return $mail->hasTo('jane@example.com')
                 && $mail->request->ticket_number === $legalAidRequest->ticket_number;
         });
+    }
+
+    public function test_admin_can_resend_payment_link(): void
+    {
+        Mail::fake();
+        config(['legal_aid.payment_url' => 'https://pay.example/gpay']);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $legalAidRequest = LegalAidRequest::create([
+            'ticket_number' => '66666',
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
+            'locale' => 'en',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.legal-aid.resend', $legalAidRequest->id))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Mail::assertQueued(LegalAidTicketMail::class, function ($mail) use ($legalAidRequest) {
+            return $mail->hasTo('jane@example.com')
+                && $mail->request->ticket_number === $legalAidRequest->ticket_number
+                && $mail->paymentUrl === 'https://pay.example/gpay';
+        });
+    }
+
+    public function test_resend_payment_link_not_allowed_for_paid_requests(): void
+    {
+        Mail::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $legalAidRequest = LegalAidRequest::create([
+            'ticket_number' => '55555',
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'status' => LegalAidRequest::STATUS_CONFIRMED,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.legal-aid.resend', $legalAidRequest->id))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        Mail::assertNotQueued(LegalAidTicketMail::class);
+    }
+
+    public function test_resend_on_rejected_request_resets_to_pending_and_clears_receipt(): void
+    {
+        Mail::fake();
+        Storage::fake('public');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $receiptPath = UploadedFile::fake()->create('receipt.png', 100)->store('receipts', 'public');
+
+        $legalAidRequest = LegalAidRequest::create([
+            'ticket_number' => '77777',
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'status' => LegalAidRequest::STATUS_REJECTED,
+            'locale' => 'en',
+            'receipt_path' => $receiptPath,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.legal-aid.resend', $legalAidRequest->id))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $fresh = $legalAidRequest->fresh();
+        $this->assertEquals(LegalAidRequest::STATUS_PENDING_PAYMENT, $fresh->status);
+        $this->assertNull($fresh->receipt_path);
+        Storage::disk('public')->assertMissing($receiptPath);
+
+        Mail::assertQueued(LegalAidTicketMail::class, function ($mail) use ($legalAidRequest) {
+            return $mail->hasTo('jane@example.com')
+                && $mail->request->ticket_number === $legalAidRequest->ticket_number;
+        });
+    }
+
+    public function test_admin_can_reject_request_and_notifies_client(): void
+    {
+        Mail::fake();
+        Storage::fake('public');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $receiptPath = UploadedFile::fake()->create('receipt.png', 100)->store('receipts', 'public');
+
+        $legalAidRequest = LegalAidRequest::create([
+            'ticket_number' => '44444',
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
+            'locale' => 'fr',
+            'receipt_path' => $receiptPath,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.legal-aid.reject', $legalAidRequest->id))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $fresh = $legalAidRequest->fresh();
+        $this->assertEquals(LegalAidRequest::STATUS_PENDING_PAYMENT, $fresh->status);
+        $this->assertNull($fresh->receipt_path);
+        Storage::disk('public')->assertMissing($receiptPath);
+
+        Mail::assertQueued(LegalAidRejectionMail::class, function ($mail) use ($legalAidRequest) {
+            return $mail->hasTo('jane@example.com')
+                && $mail->request->ticket_number === $legalAidRequest->ticket_number
+                && $mail->paymentLink === route('legal-aid.payment', $legalAidRequest->ticket_number);
+        });
+    }
+
+    public function test_admin_cannot_reject_request_without_receipt(): void
+    {
+        Mail::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $legalAidRequest = LegalAidRequest::create([
+            'ticket_number' => '42424',
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.legal-aid.reject', $legalAidRequest->id))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertEquals(LegalAidRequest::STATUS_PENDING_PAYMENT, $legalAidRequest->fresh()->status);
+        Mail::assertNotQueued(LegalAidRejectionMail::class);
+    }
+
+    public function test_phone_must_be_in_international_format(): void
+    {
+        Mail::fake();
+
+        $response = $this->post(route('legal-aid.store'), [
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '6123456',
+            'case_description' => 'Test case',
+        ]);
+
+        $response->assertSessionHasErrors('phone');
+        $this->assertDatabaseCount('legal_aid_requests', 0);
+    }
+
+    public function test_phone_accepts_valid_international_format(): void
+    {
+        Mail::fake();
+
+        $response = $this->post(route('legal-aid.store'), [
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212 612345678',
+            'case_description' => 'Test case',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+    }
+
+    public function test_rejected_request_payment_page_allows_retry(): void
+    {
+        $legalAidRequest = LegalAidRequest::create([
+            'ticket_number' => '33333',
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'status' => LegalAidRequest::STATUS_REJECTED,
+        ]);
+
+        $this->withSession(['locale' => 'en'])
+            ->get(route('legal-aid.payment', $legalAidRequest->ticket_number))
+            ->assertOk()
+            ->assertSee('Payment not verified')
+            ->assertSee('Upload Receipt');
     }
 }

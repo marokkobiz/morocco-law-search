@@ -7,6 +7,7 @@ return [
     'legal_aid_admin_subject' => 'Nouvelle demande d\'aide juridique :ticket',
     'legal_aid_confirmation_subject' => 'Votre dossier est confirmé — Ticket :ticket',
     'legal_aid_receipt_subject' => 'Reçu de paiement téléversé :ticket',
+    'legal_aid_rejection_subject' => 'Paiement non vérifié — Ticket :ticket',
 
     'ticket_hello' => 'Bonjour :name,',
     'ticket_intro' => 'Nous avons bien reçu votre demande d\'aide juridique. Voici votre numéro de ticket — conservez-le, il vous sera demandé pour toute communication concernant votre dossier.',
@@ -38,4 +39,10 @@ return [
     'receipt_intro_from' => 'soumis par :name a été téléversé et est joint à cet e-mail.',
     'receipt_attached' => 'Veuillez vérifier le reçu et confirmer le dossier lorsque le paiement est validé.',
     'receipt_note' => 'Confirmer le dossier envoie automatiquement un e-mail de confirmation au client.',
+
+    'reject_hello' => 'Bonjour :name,',
+    'reject_intro' => 'Nous n\'avons pas pu vérifier votre paiement pour le ticket suivant :',
+    'reject_body' => 'Cela ne signifie pas que votre dossier est clos — veuillez répondre à cet e-mail avec votre numéro de ticket si vous pensez qu\'il s\'agit d\'une erreur, ou utilisez le bouton ci-dessous pour réessayer votre paiement. Notre équipe est prête à vous aider.',
+    'reject_pay_button' => 'Réessayer le paiement',
+    'reject_note' => 'Merci de votre patience. — L\'équipe MarocLoi',
 ];

@@ -89,13 +89,33 @@
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ __('legal_aid.field_phone') }}</label>
+                            <label class="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-1.5">
+                                {{ __('legal_aid.field_phone') }}
+                                <span class="relative inline-flex group">
+                                    <svg class="h-4 w-4 text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 z-20 mb-2 hidden w-64 rounded-lg bg-gray-900 px-3 py-2 text-xs font-normal leading-relaxed text-white shadow-lg group-hover:block">
+                                        {{ __('legal_aid.field_phone_help') }}
+                                    </span>
+                                </span>
+                            </label>
                             <input type="tel" name="phone" value="{{ old('phone') }}" required
                                 class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
                                 placeholder="{{ __('legal_aid.field_phone_placeholder') }}">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ __('legal_aid.field_whatsapp') }}</label>
+                            <label class="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-1.5">
+                                {{ __('legal_aid.field_whatsapp') }}
+                                <span class="relative inline-flex group">
+                                    <svg class="h-4 w-4 text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 z-20 mb-2 hidden w-64 rounded-lg bg-gray-900 px-3 py-2 text-xs font-normal leading-relaxed text-white shadow-lg group-hover:block">
+                                        {{ __('legal_aid.field_whatsapp_help') }}
+                                    </span>
+                                </span>
+                            </label>
                             <input type="tel" name="whatsapp" value="{{ old('whatsapp') }}"
                                 class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
                                 placeholder="{{ __('legal_aid.field_whatsapp_placeholder') }}">

@@ -27,6 +27,13 @@
                     <a href="{{ route('legal-aid') }}" class="btn-primary inline-flex">{{ __('legal_aid.back_home') }}</a>
                 </div>
             @else
+                @if ($request->status === \App\Models\LegalAidRequest::STATUS_REJECTED)
+                    <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                        <strong class="block font-semibold mb-1">{{ __('legal_aid.payment_rejected') }}</strong>
+                        {{ __('legal_aid.payment_rejected_retry') }}
+                    </div>
+                @endif
+
                 @if (session('status'))
                     <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
                         {{ session('status') }}

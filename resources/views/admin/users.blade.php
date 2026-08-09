@@ -15,7 +15,7 @@ View all registered platform users.
 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 
     <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+        <table class="w-full text-left border-collapse min-w-[640px]">
             <thead class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider font-semibold border-b border-slate-200">
                 <tr>
                     <th class="px-6 py-4">User Details</th>

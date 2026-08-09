@@ -55,5 +55,8 @@ Route::middleware(['auth', 'admin'])
         Route::post('/users/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::get('/legal-aid', [LegalAidController::class, 'adminIndex'])->name('legal-aid.index');
+        Route::get('/legal-aid/{legalAidRequest}', [LegalAidController::class, 'show'])->name('legal-aid.show');
         Route::post('/legal-aid/{legalAidRequest}/confirm', [LegalAidController::class, 'confirm'])->name('legal-aid.confirm');
+        Route::post('/legal-aid/{legalAidRequest}/resend', [LegalAidController::class, 'resendPaymentLink'])->name('legal-aid.resend');
+        Route::post('/legal-aid/{legalAidRequest}/reject', [LegalAidController::class, 'reject'])->name('legal-aid.reject');
     });

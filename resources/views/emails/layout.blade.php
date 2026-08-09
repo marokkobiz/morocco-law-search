@@ -23,7 +23,7 @@
                     <tr>
                         <td align="center" style="padding-top:20px;color:#9ca3af;font-size:12px;line-height:1.6;">
                             {{ __('emails.footer_line') }}<br>
-                            contact@marocloi.com
+                            {{ env('LEGAL_AID_CONTACT_EMAIL') }}
                         </td>
                     </tr>
                 </table>

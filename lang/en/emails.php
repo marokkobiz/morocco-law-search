@@ -7,6 +7,7 @@ return [
     'legal_aid_admin_subject' => 'New Legal Aid Request :ticket',
     'legal_aid_confirmation_subject' => 'Your Case is Confirmed — Ticket :ticket',
     'legal_aid_receipt_subject' => 'Payment Receipt Uploaded :ticket',
+    'legal_aid_rejection_subject' => 'Payment Not Verified — Ticket :ticket',
 
     'ticket_hello' => 'Hello :name,',
     'ticket_intro' => 'We have received your legal aid request. Here is your ticket number — keep it, you will need it for all communication about your case.',
@@ -38,4 +39,10 @@ return [
     'receipt_intro_from' => 'submitted by :name has been uploaded and is attached to this email.',
     'receipt_attached' => 'Please review the receipt and confirm the case when the payment is verified.',
     'receipt_note' => 'Confirming the case automatically sends the client a confirmation email.',
+
+    'reject_hello' => 'Hello :name,',
+    'reject_intro' => 'We were unable to verify your payment for the following ticket:',
+    'reject_body' => 'This does not mean your case is closed — please reply to this email with your ticket number if you believe this is a mistake, or use the button below to retry your payment. Our team is ready to help.',
+    'reject_pay_button' => 'Retry Payment',
+    'reject_note' => 'Thank you for your patience. — The MarocLoi Team',
 ];

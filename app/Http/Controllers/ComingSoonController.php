@@ -6,7 +6,7 @@ use Illuminate\View\View;
 
 class ComingSoonController
 {
-    public function index (): View
+    public function index(): View
     {
         return view('coming-soon');
     }

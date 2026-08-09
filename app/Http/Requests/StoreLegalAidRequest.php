@@ -16,9 +16,34 @@ class StoreLegalAidRequest extends FormRequest
         return [
             'full_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
-            'phone' => ['required', 'string', 'max:40'],
-            'whatsapp' => ['nullable', 'string', 'max:40'],
+            'phone' => ['required', 'string', 'regex:/^\+?[1-9][0-9]{8,14}$/'],
+            'whatsapp' => ['nullable', 'string', 'regex:/^\+?[1-9][0-9]{8,14}$/'],
             'case_description' => ['required', 'string', 'max:5000'],
+        ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'phone' => $this->normalizePhone($this->input('phone')),
+            'whatsapp' => $this->normalizePhone($this->input('whatsapp')),
+        ]);
+    }
+
+    private function normalizePhone(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return preg_replace('/[^0-9+]/', '', trim($value));
+    }
+
+    public function messages(): array
+    {
+        return [
+            'phone.regex' => __('legal_aid.phone_invalid'),
+            'whatsapp.regex' => __('legal_aid.whatsapp_invalid'),
         ];
     }
 

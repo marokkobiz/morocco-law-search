@@ -16,10 +16,19 @@
 
 <body class="bg-slate-50 text-slate-800 antialiased font-sans transition-colors duration-200">
 
-<div class="flex min-h-screen">
+<div x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false" class="min-h-screen lg:flex">
+
+    <!-- Mobile overlay -->
+    <div x-show="sidebarOpen"
+         x-transition.opacity
+         @click="sidebarOpen = false"
+         class="fixed inset-0 z-30 bg-slate-900/50 lg:hidden"
+         style="display: none;"></div>
 
     <!-- Sidebar -->
-    <aside class="w-64 text-slate-900 flex flex-col justify-between border-r border-slate-200">
+    <aside
+        class="fixed inset-y-0 left-0 z-40 w-64 text-slate-900 flex flex-col justify-between border-r border-slate-200 bg-white overflow-y-auto transition-transform duration-200 ease-in-out lg:static lg:translate-x-0"
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
         <div>
             <!-- Brand Header -->
             <div class="px-6 py-3.5 border-b border-slate-200 flex items-center justify-between">
@@ -29,7 +38,7 @@
                     </h1>
                     <p class="text-xs font-medium text-slate-500 mt-0.5">Administration Portal</p>
                 </div>
-                <span class="bg-blue-50 text-blue-600 text-[10px] font-semibold px-2 py-0.5 rounded border border-blue-200">v1.0</span>
+
             </div>
 
             <!-- Navigation Links -->
@@ -55,12 +64,12 @@
         </div>
 
         <!-- System Status Footer -->
-        <div class="p-4 border-t border-slate-200">
+        {{-- <div class="p-4 border-t border-slate-200">
             <div class="flex items-center gap-2 text-xs text-slate-500">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Environment: Local (Mailpit)</span>
             </div>
-        </div>
+        </div> --}}
     </aside>
 
     <!-- Main Content Area -->
@@ -68,19 +77,26 @@
 
         <!-- Header -->
         <header class="bg-white border-b border-slate-200 sticky top-0 z-20">
-            <div class="px-8 py-3.5 flex justify-between items-center">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-900 tracking-tight">
-                        @yield('page-title')
-                    </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">
-                        @yield('page-description')
-                    </p>
+            <div class="px-4 lg:px-8 py-3.5 flex justify-between items-center">
+                <div class="flex items-center gap-3 min-w-0">
+                    <button @click="sidebarOpen = !sidebarOpen"
+                            class="lg:hidden flex items-center justify-center w-9 h-9 shrink-0 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                            aria-label="Toggle navigation">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
+                    <div class="min-w-0">
+                        <h2 class="text-lg lg:text-xl font-bold text-slate-900 tracking-tight truncate">
+                            @yield('page-title')
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5 truncate">
+                            @yield('page-description')
+                        </p>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 shrink-0">
                     <a href="{{ route('app.workspace') }}"
-                       class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-xs font-semibold transition hover:bg-slate-100 shadow-sm">
+                       class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-xs font-semibold transition hover:bg-slate-100 shadow-sm">
                         <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         <span>{{ __('Back to Law Search') }}</span>
                     </a>
@@ -146,14 +162,14 @@
 
         <!-- Flash Messages -->
         @if(session('success'))
-            <div class="mx-8 mt-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-2">
-                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <div class="mx-4 lg:mx-8 mt-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-2">
+                <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 {{ session('success') }}
             </div>
         @endif
 
         <!-- Body Content -->
-        <section class="p-8">
+        <section class="p-4 lg:p-8">
             @yield('content')
         </section>
     </main>

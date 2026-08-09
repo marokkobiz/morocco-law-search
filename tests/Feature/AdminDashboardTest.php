@@ -56,6 +56,7 @@ class AdminDashboardTest extends TestCase
             'case_description' => 'Test case',
             'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
             'locale' => 'en',
+            'receipt_path' => 'receipts/receipt.png',
         ]);
 
         $this->actingAs($admin)
@@ -66,6 +67,58 @@ class AdminDashboardTest extends TestCase
             LegalAidRequest::STATUS_CONFIRMED,
             $legalAidRequest->fresh()->status,
         );
+    }
+
+    public function test_admin_cannot_confirm_request_without_receipt(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $legalAidRequest = LegalAidRequest::create([
+            'ticket_number' => '12121',
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.legal-aid.confirm', $legalAidRequest->id))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertEquals(
+            LegalAidRequest::STATUS_PENDING_PAYMENT,
+            $legalAidRequest->fresh()->status,
+        );
+    }
+
+    public function test_admin_can_view_request_details_page(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $legalAidRequest = LegalAidRequest::create([
+            'ticket_number' => '33333',
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'whatsapp' => '+212600000001',
+            'case_description' => 'A long case description that should appear in full on the detail page.',
+            'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
+            'locale' => 'en',
+            'receipt_path' => 'receipts/receipt.png',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.legal-aid.show', $legalAidRequest->id))
+            ->assertOk()
+            ->assertSee('#33333')
+            ->assertSee('Jane Doe')
+            ->assertSee('jane@example.com')
+            ->assertSee('+212600000000')
+            ->assertSee('A long case description that should appear in full on the detail page.')
+            ->assertSee('Confirm Payment')
+            ->assertSee('Resend Link');
     }
 
     public function test_admin_can_toggle_user_role(): void
