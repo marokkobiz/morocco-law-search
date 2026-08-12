@@ -30,7 +30,7 @@
         </tr>
     </table>
 
-    <p style="margin:0 0 8px;font-size:14px;color:#4b5563;line-height:1.7;">
+    {{-- <p style="margin:0 0 8px;font-size:14px;color:#4b5563;line-height:1.7;">
         {{ __('emails.admin_payment_url') }}
     </p>
     @if ($paymentUrl)
@@ -42,7 +42,7 @@
     <p style="margin:0 0 16px;font-size:14px;color:#4b5563;line-height:1.7;">
         {{ __('emails.admin_upload_url') }}
         <a href="{{ $paymentLink }}" style="color:#2563eb;font-weight:600;text-decoration:underline;">{{ $paymentLink }}</a>
-    </p>
+    </p> --}}
 
     <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7;">{{ __('emails.admin_note') }}</p>
 @endsection
