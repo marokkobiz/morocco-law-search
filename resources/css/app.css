@@ -15,7 +15,7 @@ input[type="search"]::-ms-clear {
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
     --font-serif: 'Playfair Display', ui-serif, Georgia, serif;
     --font-display: 'Playfair Display', ui-serif, Georgia, serif;

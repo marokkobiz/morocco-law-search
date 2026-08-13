@@ -37,7 +37,7 @@ return [
     'cta_learn' => 'معرفة المزيد',
     'source_bulletin' => 'النشرة الرسمية',
     'source_work_code' => 'مدونة الشغل',
-    'source_penal_code' => 'القانون الجنائي',
+    'source_penal_law' => 'القانون الجنائي',
     'source_family_code' => 'مدونة الأسرة',
     'source_doc' => 'الوثائق القانونية',
     'source_real_estate' => 'العقار',

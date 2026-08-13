@@ -3,16 +3,14 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
-use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, MustVerifyEmailTrait;
+    use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -25,8 +23,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'email',
         'bar',
-        'referral_code',
-        'referred_by',
         'role',
         'password',
         'access_status',
@@ -53,16 +49,6 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
-    }
-
-    public function referrals()
-    {
-        return $this->hasMany(User::class, 'referred_by');
-    }
-
-    public function referrer()
-    {
-        return $this->belongsTo(User::class, 'referred_by');
     }
 
     public function isAdmin(): bool

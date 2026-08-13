@@ -1,17 +1,21 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LegalAidController;
 use App\Http\Controllers\WorkspaceController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/test/beta/legal-aid', [LegalAidController::class, 'index'])->name('legal-aid');
+Route::post('/test/beta/legal-aid', [LegalAidController::class, 'store'])->name('legal-aid.store');
+Route::get('/legal-aid/payment/{ticket}', [LegalAidController::class, 'payment'])->name('legal-aid.payment');
+Route::get('/legal-aid/ticket/{ticket}/pdf', [LegalAidController::class, 'downloadTicketPdf'])->name('legal-aid.ticket-pdf');
+Route::post('/legal-aid/payment/{ticket}/receipt', [LegalAidController::class, 'uploadReceipt'])->name('legal-aid.receipt');
 
 Route::get('/locale/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'fr', 'ar'])) {
@@ -30,27 +34,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-// Email Verification Routes
-Route::middleware('auth')->group(function () {
-    Route::get('/email/verify', function () {
-        return view('auth.verify-email');
-    })->name('verification.notice');
-
-    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-        $request->fulfill();
-
-        return redirect()->route('app.workspace');
-    })->middleware('signed')->name('verification.verify');
-
-    Route::post('/email/verification-notification', function (Request $request) {
-        $request->user()->sendEmailVerificationNotification();
-
-        return back()->with('status', 'Verification link sent!');
-    })->middleware('throttle:6,1')->name('verification.send');
-});
-
 // Authenticated routes
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Workspace
@@ -66,8 +51,20 @@ Route::middleware(['auth', 'admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::get('/', [UserController::class, 'index'])->name('dashboard');
-        Route::get('/dashboard', [UserController::class, 'index']);
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index']);
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::post('/users/{user}/toggle-agent', [UserController::class, 'toggleAgent'])->name('users.toggle-agent');
+        Route::post('/users/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
+        Route::get('/services/create', [ServiceController::class, 'create'])->name('services.create');
+        Route::post('/services', [ServiceController::class, 'store'])->name('services.store');
+        Route::get('/services/{service}/edit', [ServiceController::class, 'edit'])->name('services.edit');
+        Route::put('/services/{service}', [ServiceController::class, 'update'])->name('services.update');
+        Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+        Route::get('/legal-aid', [LegalAidController::class, 'adminIndex'])->name('legal-aid.index');
+        Route::get('/legal-aid/{legalAidRequest}', [LegalAidController::class, 'show'])->name('legal-aid.show');
+        Route::post('/legal-aid/{legalAidRequest}/confirm', [LegalAidController::class, 'confirm'])->name('legal-aid.confirm');
+        Route::post('/legal-aid/{legalAidRequest}/resend', [LegalAidController::class, 'resendPaymentLink'])->name('legal-aid.resend');
+        Route::post('/legal-aid/{legalAidRequest}/reject', [LegalAidController::class, 'reject'])->name('legal-aid.reject');
     });

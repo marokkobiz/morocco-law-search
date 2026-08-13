@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Scout\Searchable;
 
 class Document extends Model
@@ -15,8 +16,24 @@ class Document extends Model
         'language',
         'type',
         'source_file',
+        'source_url',
+        'official_url',
         'group',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            Cache::forget('doc_lang_counts');
+            Cache::forget('doc_group_counts');
+            Cache::forget('total_documents');
+        });
+        static::deleted(function () {
+            Cache::forget('doc_lang_counts');
+            Cache::forget('doc_group_counts');
+            Cache::forget('total_documents');
+        });
+    }
 
     public function articles()
     {

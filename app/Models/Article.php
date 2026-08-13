@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Scout\Searchable;
 
 class Article extends Model
@@ -22,6 +23,12 @@ class Article extends Model
         'page',
         'footnotes',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(fn () => Cache::forget('total_articles'));
+        static::deleted(fn () => Cache::forget('total_articles'));
+    }
 
     protected function casts(): array
     {
@@ -58,8 +65,8 @@ class Article extends Model
     {
         $text = $this->text;
 
-        // Strip page markers: --- PAGE X --- (French) or --- X EGAP --- (Arabic) or ---PAGE1--- (no spaces)
-        $text = preg_replace('/---\s*(?:\d+\s*(?:PAGE|EGAP)|(?:PAGE|EGAP)\s*\d+)\s*---/i', '', $text);
+        // Strip page markers: --- PAGE X --- (French), --- X EGAP --- (Arabic), -- 1 PAGE --, ---PAGE1--- (no spaces)
+        $text = preg_replace('/--+\s*(?:\d+\s*(?:PAGE|EGAP)|(?:PAGE|EGAP)\s*\d+)\s*--+/i', '', $text);
 
         // Strip any remaining bare --- lines
         $text = preg_replace('/^---+$/m', '', $text);
@@ -69,6 +76,9 @@ class Article extends Model
 
         // Strip trailing footnote reference digits at end of lines (e.g. "Tunisie1." -> "Tunisie.")
         $text = preg_replace('/(\S)\d{1,2}\s*$/m', '$1', $text);
+
+        // Strip private use area glyphs from PDF extraction (e.g. U+F06D used as em-dash/non-breaking hyphen)
+        $text = preg_replace('/[\x{F000}-\x{F8FF}]/u', '', $text);
 
         // Collapse multiple blank lines into at most two
         $text = preg_replace('/\n{3,}/', "\n\n", $text);

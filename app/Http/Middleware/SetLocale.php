@@ -21,11 +21,11 @@ class SetLocale
             }
         }
 
-        if (!$locale) {
-          $locale = session('locale', 'ar');
+        if (! $locale) {
+            $locale = session('locale', 'ar');
         }
 
-        if (!in_array($locale, self::ALLOWED, true)) {
+        if (! in_array($locale, self::ALLOWED, true)) {
             $locale = 'en';
         }
 

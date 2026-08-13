@@ -37,7 +37,7 @@ return [
     'cta_learn' => 'Learn More',
     'source_bulletin' => 'Official Bulletin',
     'source_work_code' => 'Labour Code',
-    'source_penal_code' => 'Penal Code',
+    'source_penal_law' => 'Penal Law',
     'source_family_code' => 'Family Code',
     'source_doc' => 'Legal Documents',
     'source_real_estate' => 'Real Estate',

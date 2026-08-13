@@ -15,7 +15,7 @@ return new class extends Migration
             }
 
             // Only create referral_code if base migration didn't already create it
-            if (!Schema::hasColumn('users', 'referral_code')) {
+            if (! Schema::hasColumn('users', 'referral_code')) {
                 $table->string('referral_code', 8)
                     ->nullable()
                     ->unique()
@@ -23,7 +23,7 @@ return new class extends Migration
             }
 
             // Only create referred_by if base migration didn't already create it
-            if (!Schema::hasColumn('users', 'referred_by')) {
+            if (! Schema::hasColumn('users', 'referred_by')) {
                 $table->foreignId('referred_by')
                     ->nullable()
                     ->after('referral_code')
@@ -45,7 +45,7 @@ return new class extends Migration
                 $table->dropColumn('referral_code');
             }
 
-            if (!Schema::hasColumn('users', 'referral_code_used')) {
+            if (! Schema::hasColumn('users', 'referral_code_used')) {
                 $table->string('referral_code_used')
                     ->nullable()
                     ->after('bar');
