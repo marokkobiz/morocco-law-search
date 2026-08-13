@@ -16,6 +16,8 @@ return [
     'ticket_pay_button' => 'Pay Online with Google Pay',
     'ticket_bank_intro' => 'If you prefer to pay by bank transfer, visit the link below to upload your payment receipt:',
     'ticket_note' => 'Once your payment is confirmed, you will receive a confirmation email with the details of your case.',
+    'ticket_free_intro' => 'This service is free of charge — no payment is required.',
+    'ticket_free_note' => 'Our team will contact you soon on your WhatsApp number :whatsapp to continue with your case.',
 
     'admin_hello' => 'New legal aid request received',
     'admin_intro' => 'A client has submitted a legal aid request. Details below:',
@@ -28,9 +30,11 @@ return [
     'admin_payment_url' => 'Payment link (Google Pay):',
     'admin_upload_url' => 'Receipt upload page:',
     'admin_note' => 'Confirm the case once the payment is received — the client will be notified automatically.',
+    'admin_note_free' => 'This service is free of charge — no payment required. You can confirm the case directly and the client will be notified automatically.',
 
     'confirm_hello' => 'Hello :name,',
     'confirm_intro' => 'Good news — your payment has been received and your case has been confirmed.',
+    'confirm_intro_free' => 'Good news — your case has been confirmed.',
     'confirm_body' => 'Our legal team has been assigned to your case and will contact you shortly. If you have any questions, reply to this email with your ticket number.',
     'confirm_note' => 'Thank you for trusting MarocLoi.',
 

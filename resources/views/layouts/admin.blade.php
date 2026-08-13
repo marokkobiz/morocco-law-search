@@ -27,7 +27,7 @@
 
     <!-- Sidebar -->
     <aside
-        class="fixed inset-y-0 left-0 z-40 w-64 text-slate-900 flex flex-col justify-between border-r border-slate-200 bg-white overflow-y-auto transition-transform duration-200 ease-in-out lg:static lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-40 w-64 text-slate-900 flex flex-col justify-between border-r border-slate-200 bg-white overflow-y-auto transition-transform duration-200 ease-in-out lg:translate-x-0"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
         <div>
             <!-- Brand Header -->
@@ -79,7 +79,7 @@
     </aside>
 
     <!-- Main Content Area -->
-    <main class="flex-1 flex flex-col min-w-0">
+    <main class="flex-1 flex flex-col min-w-0 lg:pl-64">
 
         <!-- Header -->
         <header class="bg-white border-b border-slate-200 sticky top-0 z-20">

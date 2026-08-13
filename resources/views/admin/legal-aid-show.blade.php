@@ -46,12 +46,19 @@ Full details for legal aid request {{ $request->ticketLabel }}.
             </span>
         @else
             <div class="flex flex-wrap items-center justify-center gap-2">
-                @if($request->receipt_path && in_array($request->status, [\App\Models\LegalAidRequest::STATUS_PENDING_PAYMENT, \App\Models\LegalAidRequest::STATUS_PAID], true))
+                @if($request->ticket_pdf_path)
+                    <a href="{{ route('legal-aid.ticket-pdf', $request->ticket_number) }}"
+                       class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition shadow-sm bg-white hover:bg-blue-50 text-blue-600 border-blue-200 hover:border-blue-300">
+                        Ticket PDF
+                    </a>
+                @endif
+
+                @if(($request->receipt_path || $request->isFree()) && in_array($request->status, [\App\Models\LegalAidRequest::STATUS_PENDING_PAYMENT, \App\Models\LegalAidRequest::STATUS_PENDING, \App\Models\LegalAidRequest::STATUS_PAID], true))
                     <form action="{{ route('admin.legal-aid.confirm', $request->id) }}" method="POST">
                         @csrf
                         <button type="submit"
                                 class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition shadow-sm bg-slate-900 hover:bg-slate-800 text-white border-transparent">
-                            Confirm Payment
+                            {{ $request->isFree() ? 'Confirm' : 'Confirm Payment' }}
                         </button>
                     </form>
                 @endif
@@ -61,7 +68,7 @@ Full details for legal aid request {{ $request->ticketLabel }}.
                         @csrf
                         <button type="submit"
                                 class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition shadow-sm bg-white hover:bg-blue-50 text-blue-600 border-blue-200 hover:border-blue-300">
-                            Resend Link
+                            {{ $request->isFree() ? 'Resend Email' : 'Resend Link' }}
                         </button>
                     </form>
                 @endif
@@ -120,8 +127,10 @@ Full details for legal aid request {{ $request->ticketLabel }}.
                 <dd>
                     @if($request->consultation_mode === 'whatsapp')
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-green-50 text-green-700 border-green-200">WhatsApp</span>
-                    @else
+                    @elseif($request->consultation_mode === 'office')
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-slate-100 text-slate-600 border-slate-200">At the office</span>
+                    @else
+                        <span class="text-slate-400">—</span>
                     @endif
                 </dd>
             </div>

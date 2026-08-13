@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Service;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreLegalAidRequest extends FormRequest
 {
@@ -20,8 +22,25 @@ class StoreLegalAidRequest extends FormRequest
             'whatsapp' => ['nullable', 'string', 'regex:/^\+?[1-9][0-9]{8,14}$/'],
             'case_description' => ['required', 'string', 'max:5000'],
             'service_id' => ['required', 'integer', 'exists:services,id'],
-            'consultation_mode' => ['required', 'in:office,whatsapp'],
+            'consultation_mode' => ['nullable', 'in:office,whatsapp'],
         ];
+    }
+
+    protected function withValidator(Validator $validator): void
+    {
+        $service = Service::find($this->input('service_id'));
+
+        if (! $service) {
+            return;
+        }
+
+        $allowed = $service->consultationModes;
+
+        if ($allowed !== []) {
+            $validator->addRules([
+                'consultation_mode' => ['required', 'in:'.implode(',', $allowed)],
+            ]);
+        }
     }
 
     protected function prepareForValidation(): void

@@ -43,6 +43,21 @@ Manage legal aid services and their prices.
                         @if($service->description)
                             <div class="text-xs text-slate-500">{{ $service->description }}</div>
                         @endif
+                        @if($service->notes)
+                            <div class="mt-0.5 text-xs text-slate-500">• {{ $service->notes }}</div>
+                        @endif
+                        @if($service->additional_notes)
+                            <div class="mt-0.5 text-xs text-slate-500">• {{ $service->additional_notes }}</div>
+                        @endif
+                        @if($service->consultationModes)
+                            <div class="mt-1.5 flex flex-wrap gap-1">
+                                @foreach($service->consultationModes as $mode)
+                                    <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full {{ $mode === 'whatsapp' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-blue-50 text-blue-700 border border-blue-200' }}">
+                                        {{ $mode === 'whatsapp' ? 'WhatsApp' : 'Office' }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
                     </td>
 
                     <!-- Price -->

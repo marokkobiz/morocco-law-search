@@ -27,7 +27,7 @@ class AdminDashboardTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Pending Payments')
+            ->assertSee('Pending Requests')
             ->assertSee('Registered Users')
             ->assertSee('#11111');
     }
@@ -91,6 +91,30 @@ class AdminDashboardTest extends TestCase
             LegalAidRequest::STATUS_PENDING_PAYMENT,
             $legalAidRequest->fresh()->status,
         );
+    }
+
+    public function test_free_request_shows_as_pending_on_dashboard(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        LegalAidRequest::create([
+            'ticket_number' => '12121',
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'base_price' => 0,
+            'status' => LegalAidRequest::STATUS_PENDING,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk();
+
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('Pending', $content);
+        $this->assertStringNotContainsString('Pending Payment', $content);
     }
 
     public function test_admin_can_view_request_details_page(): void

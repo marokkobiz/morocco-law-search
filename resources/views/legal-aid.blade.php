@@ -111,30 +111,42 @@
                                     <label
                                         class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
                                         <input type="radio" name="service_id" value="{{ $service->id }}"
-                                            class="sr-only" required
+                                            class="sr-only" required data-modes="{{ $service->consultationModesList }}"
                                             {{ old('service_id') == $service->id ? 'checked' : '' }}>
                                         <div>
                                             <p class="text-sm font-semibold text-gray-900">{{ $service->name }}</p>
-                                            <p class="mt-0.5 text-xs text-gray-500">{{ $service->description }}</p>
+                                            @if ($service->description)
+                                                <p class="mt-0.5 text-xs text-gray-500">{{ $service->description }}</p>
+                                            @endif
+                                            @if ($service->notes)
+                                                <p class="mt-0.5 text-xs text-gray-500">• {{ $service->notes }}</p>
+                                            @endif
+                                            @if ($service->additional_notes)
+                                                <p class="mt-0.5 text-xs text-gray-500">• {{ $service->additional_notes }}</p>
+                                            @endif
                                         </div>
                                         <span
                                             class="whitespace-nowrap text-sm font-bold text-blue-600">{{ $service->priceLabel }}</span>
                                     </label>
                                 @endforeach
                             </div>
+                            <div class="mt-3 space-y-1 text-xs text-gray-500">
+                                <p>{{ __('legal_aid.price_list_note') }}</p>
+                                <p>{{ __('legal_aid.price_list_asterisk') }}</p>
+                            </div>
                             @error('service_id')
                                 <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <div>
+                        <div id="consultation-section" class="{{ old('service_id') ? '' : 'hidden' }}">
                             <label
                                 class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_consultation') }}</label>
                             <div class="grid gap-2 sm:grid-cols-2">
-                                <label
+                                <label id="mode-office-wrap"
                                     class="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
                                     <input type="radio" name="consultation_mode" value="office" class="sr-only"
-                                        required {{ old('consultation_mode') === 'office' ? 'checked' : '' }}>
+                                        {{ old('consultation_mode') === 'office' ? 'checked' : '' }}>
                                     <svg class="h-5 w-5 shrink-0 text-blue-600" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -146,10 +158,10 @@
                                     </div>
                                 </label>
 
-                                <label
+                                <label id="mode-whatsapp-wrap"
                                     class="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-colors has-[:checked]:border-green-500 has-[:checked]:bg-green-50/50">
                                     <input type="radio" name="consultation_mode" value="whatsapp" class="sr-only"
-                                        required {{ old('consultation_mode') === 'whatsapp' ? 'checked' : '' }}>
+                                        {{ old('consultation_mode') === 'whatsapp' ? 'checked' : '' }}>
                                     <svg class="h-5 w-5 shrink-0 text-green-600" fill="currentColor" viewBox="0 0 24 24"
                                         aria-hidden="true">
                                         <path
@@ -175,3 +187,40 @@
         </div>
     </section>
 @endsection
+
+@push('scripts')
+    <script>
+        (function () {
+            const section = document.getElementById('consultation-section');
+            if (!section) return;
+
+            const serviceRadios = Array.from(document.querySelectorAll('input[name="service_id"]'));
+            const modeWraps = {
+                office: document.getElementById('mode-office-wrap'),
+                whatsapp: document.getElementById('mode-whatsapp-wrap'),
+            };
+            const modeRadios = Array.from(document.querySelectorAll('input[name="consultation_mode"]'));
+
+            function updateConsultationModes() {
+                const selected = serviceRadios.find((radio) => radio.checked);
+                if (!selected) {
+                    section.classList.add('hidden');
+                    return;
+                }
+
+                const allowed = (selected.dataset.modes || '').split(',').filter(Boolean);
+                section.classList.toggle('hidden', allowed.length === 0);
+
+                modeRadios.forEach((radio) => {
+                    const wrap = modeWraps[radio.value];
+                    const isAllowed = allowed.includes(radio.value);
+                    if (wrap) wrap.classList.toggle('hidden', !isAllowed);
+                    if (!isAllowed && radio.checked) radio.checked = false;
+                });
+            }
+
+            serviceRadios.forEach((radio) => radio.addEventListener('change', updateConsultationModes));
+            updateConsultationModes();
+        })();
+    </script>
+@endpush

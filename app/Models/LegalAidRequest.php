@@ -20,6 +20,7 @@ class LegalAidRequest extends Model
         'status',
         'locale',
         'receipt_path',
+        'ticket_pdf_path',
         'paid_at',
         'confirmed_at',
     ];
@@ -33,6 +34,8 @@ class LegalAidRequest extends Model
 
     public const STATUS_PENDING_PAYMENT = 'pending_payment';
 
+    public const STATUS_PENDING = 'pending';
+
     public const STATUS_PAID = 'paid';
 
     public const STATUS_CONFIRMED = 'confirmed';
@@ -42,6 +45,11 @@ class LegalAidRequest extends Model
     public function isPaid(): bool
     {
         return in_array($this->status, [self::STATUS_PAID, self::STATUS_CONFIRMED], true);
+    }
+
+    public function isFree(): bool
+    {
+        return $this->base_price !== null && (float) $this->base_price === 0.0;
     }
 
     public function getTicketLabelAttribute(): string

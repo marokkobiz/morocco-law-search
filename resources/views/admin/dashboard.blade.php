@@ -17,7 +17,7 @@ Monitor legal aid requests and confirm payments.
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center justify-between">
         <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Pending Payments</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Pending Requests</p>
             <h2 class="mt-2 text-3xl font-extrabold text-slate-900">{{ $pendingRequests }}</h2>
         </div>
         <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
@@ -113,7 +113,7 @@ Monitor legal aid requests and confirm payments.
                                 @csrf
                                 <button type="submit"
                                         class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition shadow-sm bg-slate-900 hover:bg-slate-800 text-white border-transparent">
-                                    Confirm Payment
+                                    {{ $request->isFree() ? 'Confirm' : 'Confirm Payment' }}
                                 </button>
                             </form>
                         @else

@@ -57,11 +57,13 @@ Track client requests, payments, and confirm cases.
                         @else
                             <span class="text-xs text-slate-400 italic">—</span>
                         @endif
-                        <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border
-                            @if($request->consultation_mode === 'whatsapp') bg-green-50 text-green-700 border-green-200
-                            @else bg-slate-100 text-slate-600 border-slate-200 @endif">
-                            {{ $request->consultation_mode === 'whatsapp' ? 'WhatsApp' : 'Office' }}
-                        </span>
+                        @if($request->consultation_mode)
+                            <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border
+                                @if($request->consultation_mode === 'whatsapp') bg-green-50 text-green-700 border-green-200
+                                @else bg-slate-100 text-slate-600 border-slate-200 @endif">
+                                {{ $request->consultation_mode === 'whatsapp' ? 'WhatsApp' : 'Office' }}
+                            </span>
+                        @endif
                     </td>
 
                     <!-- Status Badge -->
@@ -96,12 +98,12 @@ Track client requests, payments, and confirm cases.
                             <span class="text-xs text-emerald-600 font-semibold">✓ Confirmed</span>
                         @else
                             <div class="flex flex-wrap items-center justify-center gap-2">
-                                @if($request->receipt_path && in_array($request->status, [\App\Models\LegalAidRequest::STATUS_PENDING_PAYMENT, \App\Models\LegalAidRequest::STATUS_PAID], true))
+                                @if(($request->receipt_path || $request->isFree()) && in_array($request->status, [\App\Models\LegalAidRequest::STATUS_PENDING_PAYMENT, \App\Models\LegalAidRequest::STATUS_PENDING, \App\Models\LegalAidRequest::STATUS_PAID], true))
                                     <form action="{{ route('admin.legal-aid.confirm', $request->id) }}" method="POST">
                                         @csrf
                                         <button type="submit"
                                                 class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition shadow-sm bg-slate-900 hover:bg-slate-800 text-white border-transparent">
-                                            Confirm Payment
+                                            {{ $request->isFree() ? 'Confirm' : 'Confirm Payment' }}
                                         </button>
                                     </form>
                                 @endif
@@ -111,7 +113,7 @@ Track client requests, payments, and confirm cases.
                                         @csrf
                                         <button type="submit"
                                                 class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition shadow-sm bg-white hover:bg-blue-50 text-blue-600 border-blue-200 hover:border-blue-300">
-                                            Resend Link
+                                            {{ $request->isFree() ? 'Resend Email' : 'Resend Link' }}
                                         </button>
                                     </form>
                                 @endif

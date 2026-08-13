@@ -16,6 +16,8 @@ return [
     'ticket_pay_button' => 'Payer en ligne avec Google Pay',
     'ticket_bank_intro' => 'Si vous préférez payer par virement bancaire, cliquez sur le lien ci-dessous pour téléverser votre reçu de paiement :',
     'ticket_note' => 'Dès que votre paiement sera confirmé, vous recevrez un e-mail de confirmation avec les détails de votre dossier.',
+    'ticket_free_intro' => 'Ce service est gratuit — aucun paiement n\'est requis.',
+    'ticket_free_note' => 'Notre équipe vous contactera bientôt sur votre numéro WhatsApp :whatsapp pour continuer avec votre dossier.',
 
     'admin_hello' => 'Nouvelle demande d\'aide juridique reçue',
     'admin_intro' => 'Un client a soumis une demande d\'aide juridique. Détails ci-dessous :',
@@ -28,9 +30,11 @@ return [
     'admin_payment_url' => 'Lien de paiement (Google Pay) :',
     'admin_upload_url' => 'Page de téléversement du reçu :',
     'admin_note' => 'Confirmez le dossier dès réception du paiement — le client sera notifié automatiquement.',
+    'admin_note_free' => 'Ce service est gratuit — aucun paiement requis. Vous pouvez confirmer le dossier directement et le client sera notifié automatiquement.',
 
     'confirm_hello' => 'Bonjour :name,',
     'confirm_intro' => 'Bonne nouvelle — votre paiement a été reçu et votre dossier a été confirmé.',
+    'confirm_intro_free' => 'Bonne nouvelle — votre dossier a été confirmé.',
     'confirm_body' => 'Notre équipe juridique a été assignée à votre dossier et vous contactera prochainement. Si vous avez des questions, répondez à cet e-mail en mentionnant votre numéro de ticket.',
     'confirm_note' => 'Merci de faire confiance à MarocLoi.',
 

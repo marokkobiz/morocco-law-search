@@ -13,7 +13,10 @@ class DashboardController extends Controller
     {
         return view('admin.dashboard', [
             'totalUsers' => User::count(),
-            'pendingRequests' => LegalAidRequest::where('status', LegalAidRequest::STATUS_PENDING_PAYMENT)->count(),
+            'pendingRequests' => LegalAidRequest::whereIn('status', [
+                LegalAidRequest::STATUS_PENDING_PAYMENT,
+                LegalAidRequest::STATUS_PENDING,
+            ])->count(),
             'confirmedRequests' => LegalAidRequest::where('status', LegalAidRequest::STATUS_CONFIRMED)->count(),
             'recentRequests' => LegalAidRequest::latest()->limit(5)->get(),
         ]);

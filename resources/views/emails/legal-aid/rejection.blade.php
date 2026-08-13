@@ -16,11 +16,13 @@
 
     <p style="margin:0 0 16px;font-size:14px;color:#4b5563;line-height:1.7;">{{ __('emails.reject_body') }}</p>
 
-    <p style="margin:0 0 20px;font-size:14px;color:#4b5563;line-height:1.7;">
-        <a href="{{ $paymentLink }}" target="_blank" style="color:#2563eb;text-decoration:underline;">
-            {{ __('emails.reject_pay_button') }}
-        </a>
-    </p>
+    @unless ($request->isFree())
+        <p style="margin:0 0 20px;font-size:14px;color:#4b5563;line-height:1.7;">
+            <a href="{{ $paymentLink }}" target="_blank" style="color:#2563eb;text-decoration:underline;">
+                {{ __('emails.reject_pay_button') }}
+            </a>
+        </p>
+    @endunless
 
     <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7;">{{ __('emails.reject_note') }}</p>
 @endsection

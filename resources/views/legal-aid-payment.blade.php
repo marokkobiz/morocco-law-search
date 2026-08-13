@@ -27,12 +27,20 @@
                     <a href="{{ route('legal-aid') }}" class="btn-primary inline-flex">{{ __('legal_aid.back_home') }}</a>
                 </div>
             @else
-                @if ($request->status === \App\Models\LegalAidRequest::STATUS_REJECTED)
-                    <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                        <strong class="block font-semibold mb-1">{{ __('legal_aid.payment_rejected') }}</strong>
-                        {{ __('legal_aid.payment_rejected_retry') }}
+                @if ($request->isFree())
+                    <div class="card p-8 text-center" data-animate="fade-up">
+                        <div class="text-4xl mb-3">✓</div>
+                        <h2 class="text-lg font-bold text-gray-900 mb-2">{{ __('legal_aid.payment_free_title') }}</h2>
+                        <p class="text-sm text-gray-500 mb-6">{{ __('legal_aid.payment_free_desc', ['whatsapp' => $request->whatsapp ?: $request->phone]) }}</p>
+                        <a href="{{ route('legal-aid') }}" class="btn-primary inline-flex">{{ __('legal_aid.back_home') }}</a>
                     </div>
-                @endif
+                @else
+                    @if ($request->status === \App\Models\LegalAidRequest::STATUS_REJECTED)
+                        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                            <strong class="block font-semibold mb-1">{{ __('legal_aid.payment_rejected') }}</strong>
+                            {{ __('legal_aid.payment_rejected_retry') }}
+                        </div>
+                    @endif
 
                 @if (session('status'))
                     <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
@@ -124,6 +132,7 @@
                         </form>
                     @endif
                 </div>
+                @endif
             @endif
         </div>
     </div>

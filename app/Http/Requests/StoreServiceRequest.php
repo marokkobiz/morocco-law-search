@@ -21,6 +21,25 @@ class StoreServiceRequest extends FormRequest
             'description_fr' => ['nullable', 'string', 'max:1000'],
             'description_ar' => ['nullable', 'string', 'max:1000'],
             'price' => ['required', 'numeric', 'min:0'],
+            'price_display_en' => ['nullable', 'string', 'max:255'],
+            'price_display_fr' => ['nullable', 'string', 'max:255'],
+            'price_display_ar' => ['nullable', 'string', 'max:255'],
+            'notes_en' => ['nullable', 'string', 'max:500'],
+            'notes_fr' => ['nullable', 'string', 'max:500'],
+            'notes_ar' => ['nullable', 'string', 'max:500'],
+            'additional_notes_en' => ['nullable', 'string', 'max:500'],
+            'additional_notes_fr' => ['nullable', 'string', 'max:500'],
+            'additional_notes_ar' => ['nullable', 'string', 'max:500'],
+            'allows_office' => ['sometimes', 'boolean'],
+            'allows_whatsapp' => ['sometimes', 'boolean'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'allows_office' => $this->boolean('allows_office'),
+            'allows_whatsapp' => $this->boolean('allows_whatsapp'),
+        ]);
     }
 }

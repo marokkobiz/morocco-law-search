@@ -44,5 +44,7 @@
         <a href="{{ $paymentLink }}" style="color:#2563eb;font-weight:600;text-decoration:underline;">{{ $paymentLink }}</a>
     </p> --}}
 
-    <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7;">{{ __('emails.admin_note') }}</p>
+    <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7;">
+        {{ $request->isFree() ? __('emails.admin_note_free') : __('emails.admin_note') }}
+    </p>
 @endsection
