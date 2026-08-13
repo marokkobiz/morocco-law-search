@@ -20,6 +20,7 @@ Track client requests, payments, and confirm cases.
                 <tr>
                     <th class="px-6 py-4">Ticket</th>
                     <th class="px-6 py-4">Client</th>
+                    <th class="px-6 py-4">Service</th>
                     <th class="px-6 py-4">Status</th>
                     <th class="px-6 py-4">Receipt</th>
                     <th class="px-6 py-4 text-center">Actions</th>
@@ -46,6 +47,21 @@ Track client requests, payments, and confirm cases.
                         </a>
                         <div class="text-xs text-slate-500">{{ $request->email }}</div>
                         <div class="text-xs text-slate-500">{{ $request->phone }}@if($request->whatsapp) · WA: {{ $request->whatsapp }}@endif</div>
+                    </td>
+
+                    <!-- Service -->
+                    <td class="px-6 py-4">
+                        @if($request->service)
+                            <div class="font-semibold text-slate-900">{{ $request->service->name }}</div>
+                            <div class="text-xs text-slate-500">{{ $request->base_price ? number_format((float) $request->base_price, 0).' MAD' : '—' }}</div>
+                        @else
+                            <span class="text-xs text-slate-400 italic">—</span>
+                        @endif
+                        <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border
+                            @if($request->consultation_mode === 'whatsapp') bg-green-50 text-green-700 border-green-200
+                            @else bg-slate-100 text-slate-600 border-slate-200 @endif">
+                            {{ $request->consultation_mode === 'whatsapp' ? 'WhatsApp' : 'Office' }}
+                        </span>
                     </td>
 
                     <!-- Status Badge -->
@@ -116,7 +132,7 @@ Track client requests, payments, and confirm cases.
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="px-6 py-12 text-center text-sm text-slate-400 italic">
+                    <td colspan="6" class="px-6 py-12 text-center text-sm text-slate-400 italic">
                         No legal aid requests yet.
                     </td>
                 </tr>

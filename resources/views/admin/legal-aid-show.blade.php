@@ -116,6 +116,16 @@ Full details for legal aid request {{ $request->ticketLabel }}.
                 <dd class="text-slate-700">{{ $request->whatsapp ?: '—' }}</dd>
             </div>
             <div>
+                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Consultation Mode</dt>
+                <dd>
+                    @if($request->consultation_mode === 'whatsapp')
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-green-50 text-green-700 border-green-200">WhatsApp</span>
+                    @else
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-slate-100 text-slate-600 border-slate-200">At the office</span>
+                    @endif
+                </dd>
+            </div>
+            <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Locale</dt>
                 <dd class="text-slate-700 uppercase">{{ $request->locale ?? '—' }}</dd>
             </div>
@@ -128,6 +138,22 @@ Full details for legal aid request {{ $request->ticketLabel }}.
             <h3 class="text-sm font-bold text-slate-900">Payment</h3>
         </div>
         <dl class="p-6 space-y-4 text-sm">
+            <div>
+                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Service</dt>
+                <dd class="font-semibold text-slate-900">{{ $request->service?->name ?: '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Base Price</dt>
+                <dd class="text-slate-700">{{ $request->base_price ? number_format((float) $request->base_price, 0).' MAD' : '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Google Pay Total (−{{ config('legal_aid.online_discount_percent') }}%)</dt>
+                <dd class="text-emerald-700 font-semibold">{{ $request->onlineTotal !== null ? number_format($request->onlineTotal, 0).' MAD' : '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Bank Transfer Total (+{{ config('legal_aid.bank_admin_fee_percent') }}%)</dt>
+                <dd class="text-rose-700 font-semibold">{{ $request->bankTotal !== null ? number_format($request->bankTotal, 0).' MAD' : '—' }}</dd>
+            </div>
             <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Google Pay Link</dt>
                 <dd>

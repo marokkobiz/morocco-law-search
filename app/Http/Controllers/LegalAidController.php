@@ -10,6 +10,7 @@ use App\Mail\LegalAidReceiptNotificationMail;
 use App\Mail\LegalAidRejectionMail;
 use App\Mail\LegalAidTicketMail;
 use App\Models\LegalAidRequest;
+use App\Models\Service;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -19,14 +20,20 @@ class LegalAidController
 {
     public function index(): View
     {
-        return view('legal-aid');
+        return view('legal-aid', [
+            'services' => Service::orderBy('price')->get(),
+        ]);
     }
 
     public function store(StoreLegalAidRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
+        $service = Service::findOrFail($validated['service_id']);
+
         $legalAidRequest = LegalAidRequest::create(array_merge($validated, [
+            'service_id' => $service->id,
+            'base_price' => $service->price,
             'ticket_number' => $this->generateTicketNumber(),
             'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
             'locale' => $request->getLocale(),

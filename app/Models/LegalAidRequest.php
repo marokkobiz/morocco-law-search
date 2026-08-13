@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LegalAidRequest extends Model
 {
@@ -13,12 +14,22 @@ class LegalAidRequest extends Model
         'phone',
         'whatsapp',
         'case_description',
+        'consultation_mode',
+        'service_id',
+        'base_price',
         'status',
         'locale',
         'receipt_path',
         'paid_at',
         'confirmed_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'base_price' => 'decimal:2',
+        ];
+    }
 
     public const STATUS_PENDING_PAYMENT = 'pending_payment';
 
@@ -36,5 +47,32 @@ class LegalAidRequest extends Model
     public function getTicketLabelAttribute(): string
     {
         return '#'.$this->ticket_number;
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
+    }
+
+    public function getOnlineTotalAttribute(): ?float
+    {
+        if ($this->base_price === null) {
+            return null;
+        }
+
+        $discount = (float) config('legal_aid.online_discount_percent', 10);
+
+        return round((float) $this->base_price * (1 - $discount / 100), 2);
+    }
+
+    public function getBankTotalAttribute(): ?float
+    {
+        if ($this->base_price === null) {
+            return null;
+        }
+
+        $fee = (float) config('legal_aid.bank_admin_fee_percent', 10);
+
+        return round((float) $this->base_price * (1 + $fee / 100), 2);
     }
 }

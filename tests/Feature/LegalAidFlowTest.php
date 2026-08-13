@@ -8,6 +8,7 @@ use App\Mail\LegalAidReceiptNotificationMail;
 use App\Mail\LegalAidRejectionMail;
 use App\Mail\LegalAidTicketMail;
 use App\Models\LegalAidRequest;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -24,12 +25,21 @@ class LegalAidFlowTest extends TestCase
         Mail::fake();
         config(['legal_aid.payment_url' => 'https://pay.example/gpay']);
 
+        $service = Service::create([
+            'name_en' => 'Initial Consultation',
+            'name_fr' => 'Consultation initiale',
+            'name_ar' => 'الاستشارة الأولية',
+            'price' => 500,
+        ]);
+
         $response = $this->post(route('legal-aid.store'), [
             'full_name' => 'Jane Doe',
             'email' => 'jane@example.com',
             'phone' => '+212600000000',
             'whatsapp' => '+212600000001',
             'case_description' => 'I need help with a rental contract.',
+            'service_id' => $service->id,
+            'consultation_mode' => 'whatsapp',
         ]);
 
         $response->assertRedirect();
@@ -38,6 +48,9 @@ class LegalAidFlowTest extends TestCase
         $this->assertDatabaseHas('legal_aid_requests', [
             'email' => 'jane@example.com',
             'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
+            'service_id' => $service->id,
+            'base_price' => 500,
+            'consultation_mode' => 'whatsapp',
         ]);
 
         $ticket = LegalAidRequest::first()->ticket_number;
@@ -73,6 +86,31 @@ class LegalAidFlowTest extends TestCase
             ->assertSee($legalAidRequest->ticketLabel);
 
         $this->get(route('legal-aid.payment', '00000'))->assertNotFound();
+    }
+
+    public function test_payment_page_shows_auto_calculated_totals(): void
+    {
+        config(['legal_aid.online_discount_percent' => 10]);
+        config(['legal_aid.bank_admin_fee_percent' => 10]);
+
+        $legalAidRequest = LegalAidRequest::create([
+            'ticket_number' => '99998',
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'service_id' => null,
+            'base_price' => 500,
+            'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
+        ]);
+
+        $this->withSession(['locale' => 'en'])
+            ->get(route('legal-aid.payment', $legalAidRequest->ticket_number))
+            ->assertOk()
+            ->assertSee('450 MAD')
+            ->assertSee('550 MAD')
+            ->assertSee('Google Pay discount (10%)')
+            ->assertSee('Bank admin fee (10%)');
     }
 
     public function test_receipt_upload_notifies_admin(): void
@@ -289,11 +327,20 @@ class LegalAidFlowTest extends TestCase
     {
         Mail::fake();
 
+        $service = Service::create([
+            'name_en' => 'Initial Consultation',
+            'name_fr' => 'Consultation initiale',
+            'name_ar' => 'الاستشارة الأولية',
+            'price' => 500,
+        ]);
+
         $response = $this->post(route('legal-aid.store'), [
             'full_name' => 'Jane Doe',
             'email' => 'jane@example.com',
             'phone' => '6123456',
             'case_description' => 'Test case',
+            'service_id' => $service->id,
+            'consultation_mode' => 'office',
         ]);
 
         $response->assertSessionHasErrors('phone');
@@ -304,14 +351,47 @@ class LegalAidFlowTest extends TestCase
     {
         Mail::fake();
 
+        $service = Service::create([
+            'name_en' => 'Initial Consultation',
+            'name_fr' => 'Consultation initiale',
+            'name_ar' => 'الاستشارة الأولية',
+            'price' => 500,
+        ]);
+
         $response = $this->post(route('legal-aid.store'), [
             'full_name' => 'Jane Doe',
             'email' => 'jane@example.com',
             'phone' => '+212 612345678',
             'case_description' => 'Test case',
+            'service_id' => $service->id,
+            'consultation_mode' => 'office',
         ]);
 
         $response->assertSessionHasNoErrors();
+    }
+
+    public function test_consultation_mode_must_be_valid(): void
+    {
+        Mail::fake();
+
+        $service = Service::create([
+            'name_en' => 'Initial Consultation',
+            'name_fr' => 'Consultation initiale',
+            'name_ar' => 'الاستشارة الأولية',
+            'price' => 500,
+        ]);
+
+        $response = $this->post(route('legal-aid.store'), [
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212 612345678',
+            'case_description' => 'Test case',
+            'service_id' => $service->id,
+            'consultation_mode' => 'carrier-pigeon',
+        ]);
+
+        $response->assertSessionHasErrors('consultation_mode');
+        $this->assertDatabaseCount('legal_aid_requests', 0);
     }
 
     public function test_rejected_request_payment_page_allows_retry(): void

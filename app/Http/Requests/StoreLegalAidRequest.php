@@ -19,6 +19,8 @@ class StoreLegalAidRequest extends FormRequest
             'phone' => ['required', 'string', 'regex:/^\+?[1-9][0-9]{8,14}$/'],
             'whatsapp' => ['nullable', 'string', 'regex:/^\+?[1-9][0-9]{8,14}$/'],
             'case_description' => ['required', 'string', 'max:5000'],
+            'service_id' => ['required', 'integer', 'exists:services,id'],
+            'consultation_mode' => ['required', 'in:office,whatsapp'],
         ];
     }
 
@@ -55,6 +57,8 @@ class StoreLegalAidRequest extends FormRequest
             'phone' => __('legal_aid.field_phone'),
             'whatsapp' => __('legal_aid.field_whatsapp'),
             'case_description' => __('legal_aid.field_case'),
+            'service_id' => __('legal_aid.field_service'),
+            'consultation_mode' => __('legal_aid.field_consultation'),
         ];
     }
 }

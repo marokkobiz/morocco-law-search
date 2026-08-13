@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
@@ -54,6 +55,12 @@ Route::middleware(['auth', 'admin'])
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
+        Route::get('/services/create', [ServiceController::class, 'create'])->name('services.create');
+        Route::post('/services', [ServiceController::class, 'store'])->name('services.store');
+        Route::get('/services/{service}/edit', [ServiceController::class, 'edit'])->name('services.edit');
+        Route::put('/services/{service}', [ServiceController::class, 'update'])->name('services.update');
+        Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
         Route::get('/legal-aid', [LegalAidController::class, 'adminIndex'])->name('legal-aid.index');
         Route::get('/legal-aid/{legalAidRequest}', [LegalAidController::class, 'show'])->name('legal-aid.show');
         Route::post('/legal-aid/{legalAidRequest}/confirm', [LegalAidController::class, 'confirm'])->name('legal-aid.confirm');
