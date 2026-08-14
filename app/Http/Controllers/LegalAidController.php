@@ -81,14 +81,9 @@ class LegalAidController
         Mail::to(config('legal_aid.contact_email'))
             ->queue(new LegalAidAdminNotificationMail($legalAidRequest, $paymentUrl, $paymentLink));
 
-        if ($legalAidRequest->ticket_pdf_path && Storage::disk('public')->exists($legalAidRequest->ticket_pdf_path)) {
-            return Storage::disk('public')->download(
-                $legalAidRequest->ticket_pdf_path,
-                'legal-aid-ticket-'.$legalAidRequest->ticket_number.'.pdf'
-            );
-        }
-
-        return back()->with('ticket', '#'.$legalAidRequest->ticket_number);
+        return back()
+            ->with('ticket', '#'.$legalAidRequest->ticket_number)
+            ->with('ticket_number', $legalAidRequest->ticket_number);
     }
 
     public function downloadTicketPdf(string $ticket): Response

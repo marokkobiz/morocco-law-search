@@ -48,7 +48,10 @@ class LegalAidFlowTest extends TestCase
         $ticket = LegalAidRequest::first()->ticket_number;
         $this->assertMatchesRegularExpression('/^\d{5}$/', $ticket);
 
-        $response->assertDownload('legal-aid-ticket-'.$ticket.'.pdf');
+        $response->assertRedirect()->assertSessionHas('ticket', '#'.$ticket);
+
+        $this->get(route('legal-aid.ticket-pdf', $ticket))
+            ->assertDownload('legal-aid-ticket-'.$ticket.'.pdf');
 
         $this->assertDatabaseHas('legal_aid_requests', [
             'email' => 'jane@example.com',
@@ -109,6 +112,37 @@ class LegalAidFlowTest extends TestCase
 
         $this->get(route('legal-aid.ticket-pdf', '99999'))->assertNotFound();
         $this->get(route('legal-aid.ticket-pdf', '00000'))->assertNotFound();
+    }
+
+    public function test_booking_page_after_submit_shows_success_message_and_download_link(): void
+    {
+        Mail::fake();
+        Storage::fake('public');
+
+        $service = Service::create([
+            'name_en' => 'Initial Consultation',
+            'name_fr' => 'Consultation initiale',
+            'name_ar' => 'الاستشارة الأولية',
+            'price' => 500,
+        ]);
+
+        $this->post(route('legal-aid.store'), [
+            'full_name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'service_id' => $service->id,
+        ])->assertRedirect()->assertSessionHas('ticket_number');
+
+        $ticket = LegalAidRequest::first()->ticket_number;
+
+        $this->withSession(['locale' => 'en'])
+            ->get(route('legal-aid'))
+            ->assertOk()
+            ->assertSee('Your request has been received!')
+            ->assertSee('Download your ticket', false)
+            ->assertSee(route('legal-aid.ticket-pdf', $ticket), false)
+            ->assertDontSee('Jane Doe');
     }
 
     public function test_booking_page_shows_service_price_display_and_notes(): void
@@ -173,8 +207,8 @@ class LegalAidFlowTest extends TestCase
             'consultation_mode' => 'whatsapp',
         ];
 
-        $this->post(route('legal-aid.store'), $payload)->assertDownload();
-        $this->post(route('legal-aid.store'), $payload)->assertDownload();
+        $this->post(route('legal-aid.store'), $payload)->assertRedirect();
+        $this->post(route('legal-aid.store'), $payload)->assertRedirect();
 
         $this->assertDatabaseCount('legal_aid_requests', 2);
         $this->assertEquals(2, LegalAidRequest::query()->distinct('ticket_number')->count());
@@ -510,7 +544,7 @@ class LegalAidFlowTest extends TestCase
             'case_description' => 'Test case',
             'service_id' => $service->id,
             'consultation_mode' => 'office',
-        ])->assertDownload();
+        ])->assertRedirect();
 
         $this->assertDatabaseCount('legal_aid_requests', 1);
     }
@@ -602,7 +636,7 @@ class LegalAidFlowTest extends TestCase
             ->assertSessionHasErrors('consultation_mode');
 
         $this->post(route('legal-aid.store'), $base + ['consultation_mode' => 'office'])
-            ->assertDownload();
+            ->assertRedirect();
 
         $this->assertDatabaseCount('legal_aid_requests', 1);
         $this->assertDatabaseHas('legal_aid_requests', ['consultation_mode' => 'office']);
@@ -628,7 +662,7 @@ class LegalAidFlowTest extends TestCase
             'case_description' => 'Test case',
             'service_id' => $service->id,
             'consultation_mode' => 'office',
-        ])->assertDownload();
+        ])->assertRedirect();
 
         $this->assertDatabaseHas('legal_aid_requests', [
             'consultation_mode' => null,
@@ -673,7 +707,7 @@ class LegalAidFlowTest extends TestCase
             'whatsapp' => '+212600000001',
             'case_description' => 'I need help with a rental contract.',
             'service_id' => $service->id,
-        ])->assertDownload();
+        ])->assertRedirect();
 
         $this->assertDatabaseHas('legal_aid_requests', [
             'email' => 'jane@example.com',

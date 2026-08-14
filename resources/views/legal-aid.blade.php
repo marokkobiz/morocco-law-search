@@ -18,7 +18,18 @@
 
                     @if (session('ticket'))
                         <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-                            {{ __('legal_aid.success_ticket', ['ticket' => session('ticket')]) }}
+                            <p>{{ __('legal_aid.success_ticket', ['ticket' => session('ticket')]) }}</p>
+                            @if (session('ticket_number'))
+                                <a href="{{ route('legal-aid.ticket-pdf', session('ticket_number')) }}"
+                                    class="mt-2 inline-flex items-center gap-1.5 font-semibold underline">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                    {{ __('legal_aid.download_ticket') }}
+                                </a>
+                            @endif
                         </div>
                     @endif
 

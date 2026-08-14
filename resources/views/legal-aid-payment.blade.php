@@ -1,5 +1,38 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+    #google-pay-wrap {
+        position: relative;
+        transition: opacity .2s ease;
+    }
+    #google-pay-wrap.is-loading {
+        opacity: .55;
+        pointer-events: none;
+    }
+    #google-pay-button iframe {
+        width: 100% !important;
+        min-height: 48px;
+    }
+    .payment-alert {
+        margin-top: .75rem;
+        border-radius: .75rem;
+        padding: .75rem 1rem;
+        font-size: .875rem;
+    }
+    .payment-alert-error {
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        color: #991b1b;
+    }
+    .payment-alert-info {
+        border: 1px solid #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+</style>
+@endpush
+
 @section('title', __('legal_aid.payment_title') . ' | MarocLoi')
 
 @section('content')
@@ -83,10 +116,54 @@
                             </div>
                         </div>
                     @endif
-                    @if ($paymentUrl)
-                        <a href="{{ $paymentUrl }}" target="_blank" rel="noopener noreferrer" class="btn-primary w-full text-center inline-flex justify-center">
-                            {{ __('legal_aid.payment_pay_button') }}
-                        </a>
+                    @if (config('cashier.key'))
+                        <div id="google-pay-wrap" class="relative">
+                            <div id="google-pay-button" class="hidden"></div>
+
+                            <div id="payment-status"
+                                class="hidden rounded-xl border border-blue-200 bg-blue-50 p-4 text-center text-sm text-blue-800">
+                                {{ __('legal_aid.payment_processing') }}
+                            </div>
+
+                            <div id="google-pay-unsupported"
+                                class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                                {{ __('legal_aid.payment_unsupported') }}
+                            </div>
+                        </div>
+
+                        <div id="payment-message" class="hidden"></div>
+
+                        <p class="text-xs text-gray-400 mt-4 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                            {{ __('legal_aid.payment_secure_note') }}
+                        </p>
+
+                        <script>
+                            window.MarocLoiStripe = {
+                                stripeKey: @json(config('cashier.key')),
+                                intentUrl: @json(route('legal-aid.payment.intent', $request->ticket_number)),
+                                verifyUrl: @json(route('legal-aid.payment.verify', $request->ticket_number)),
+                                csrfToken: @json(csrf_token()),
+                                totalLabel: @json(__('legal_aid.payment_total')),
+                                currency: @json(strtolower((string) config('cashier.currency', 'mad'))),
+                                country: @json((string) config('cashier.country', 'MA')),
+                                messages: {
+                                    success: @json(__('legal_aid.payment_success')),
+                                    processing: @json(__('legal_aid.payment_processing')),
+                                    unsupported: @json(__('legal_aid.payment_unsupported')),
+                                    loadStripeError: @json(__('legal_aid.payment_load_stripe_error')),
+                                    networkError: @json(__('legal_aid.payment_network_error')),
+                                    genericError: @json(__('legal_aid.payment_generic_error')),
+                                    couldNotComplete: @json(__('legal_aid.payment_incomplete')),
+                                },
+                            };
+                        </script>
+
+                        @vite(['resources/js/stripe-payment-request.js'])
                     @else
                         <p class="text-sm rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
                             {{ __('legal_aid.payment_unavailable') }}

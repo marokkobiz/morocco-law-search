@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LegalAidController;
+use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,16 @@ Route::post('/test/beta/legal-aid', [LegalAidController::class, 'store'])->name(
 Route::get('/legal-aid/payment/{ticket}', [LegalAidController::class, 'payment'])->name('legal-aid.payment');
 Route::get('/legal-aid/ticket/{ticket}/pdf', [LegalAidController::class, 'downloadTicketPdf'])->name('legal-aid.ticket-pdf');
 Route::post('/legal-aid/payment/{ticket}/receipt', [LegalAidController::class, 'uploadReceipt'])->name('legal-aid.receipt');
+
+// Stripe Google Pay checkout endpoints
+Route::post('/legal-aid/payment/{ticket}/stripe/intent', [StripePaymentController::class, 'createIntent'])
+    ->name('legal-aid.payment.intent');
+Route::post('/legal-aid/payment/{ticket}/stripe/verify', [StripePaymentController::class, 'verify'])
+    ->name('legal-aid.payment.verify');
+
+// Stripe webhook (signature-verified, CSRF-exempt — see bootstrap/app.php)
+Route::post('/stripe/webhook', [StripePaymentController::class, 'webhook'])
+    ->name('stripe.webhook');
 
 Route::get('/locale/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'fr', 'ar'])) {
