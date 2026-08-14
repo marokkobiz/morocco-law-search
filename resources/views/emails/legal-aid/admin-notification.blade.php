@@ -16,6 +16,7 @@
                             __('emails.field_email') => $request->email,
                             __('emails.field_phone') => $request->phone,
                             __('emails.field_whatsapp') => $request->whatsapp ?: '—',
+                            __('emails.field_service') => $request->servicesSummary,
                             __('emails.field_case') => $request->case_description,
                         ];
                     @endphp

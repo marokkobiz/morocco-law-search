@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreLegalAidRequest;
 use App\Http\Requests\UploadLegalAidReceiptRequest;
 use App\Mail\LegalAidAdminNotificationMail;
+use App\Mail\LegalAidBookingConfirmationMail;
 use App\Mail\LegalAidConfirmationMail;
 use App\Mail\LegalAidReceiptNotificationMail;
 use App\Mail\LegalAidRejectionMail;
 use App\Mail\LegalAidTicketMail;
+use App\Models\LegalAidConfirmation;
 use App\Models\LegalAidRequest;
 use App\Models\Service;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -16,6 +18,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,25 +36,90 @@ class LegalAidController
     {
         $validated = $request->validated();
 
-        $service = Service::findOrFail($validated['service_id']);
+        $validated['service_ids'] = array_values(array_unique((array) $validated['service_ids']));
+        $validated['locale'] = app()->getLocale();
 
-        $validated['consultation_mode'] = $service->allowsMode($validated['consultation_mode'] ?? null)
-            ? $validated['consultation_mode']
+        $confirmation = LegalAidConfirmation::create([
+            'token' => $this->generateConfirmationToken(),
+            'email' => $validated['email'],
+            'payload' => $validated,
+            'expires_at' => now()->addHours((int) config('legal_aid.booking_confirmation_hours', 24)),
+        ]);
+
+        Mail::to($confirmation->email)
+            ->locale(app()->getLocale())
+            ->queue(new LegalAidBookingConfirmationMail($confirmation));
+
+        return back()
+            ->with('confirmation_sent', $confirmation->email);
+    }
+
+    public function confirmBooking(string $token): Response|RedirectResponse
+    {
+        $confirmation = LegalAidConfirmation::where('token', $token)->first();
+
+        if (! $confirmation || $confirmation->isConfirmed()) {
+            return redirect()->route('legal-aid')
+                ->with('error', __('legal_aid.confirm_invalid'));
+        }
+
+        if ($confirmation->isExpired()) {
+            return redirect()->route('legal-aid')
+                ->with('error', __('legal_aid.confirm_expired'));
+        }
+
+        $payload = $confirmation->payload;
+        $locale = (string) ($payload['locale'] ?? 'en');
+
+        $serviceIds = array_values(array_unique((array) ($payload['service_ids'] ?? [])));
+        $services = Service::whereIn('id', $serviceIds)->get();
+
+        if ($services->isEmpty()) {
+            return redirect()->route('legal-aid')
+                ->with('error', __('legal_aid.confirm_invalid'));
+        }
+
+        $allowedModes = $services
+            ->map->consultationModes
+            ->reject(fn (array $modes) => $modes === [])
+            ->reduce(
+                fn (?array $carry, array $modes) => $carry === null ? $modes : array_values(array_intersect($carry, $modes)),
+                null
+            ) ?? [];
+
+        $consultationMode = isset($payload['consultation_mode']) && in_array($payload['consultation_mode'], $allowedModes, true)
+            ? $payload['consultation_mode']
             : null;
+
+        $paymentMethod = (string) ($payload['payment_method'] ?? LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY);
+        $paymentMethod = in_array($paymentMethod, [LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK], true)
+            ? $paymentMethod
+            : LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY;
+
+        app()->setLocale($locale);
+
+        $basePrice = $services->sum('price');
 
         $legalAidRequest = null;
 
         for ($attempt = 0; $attempt < 5; $attempt++) {
             try {
-                $legalAidRequest = LegalAidRequest::create(array_merge($validated, [
-                    'service_id' => $service->id,
-                    'base_price' => $service->price,
+                $legalAidRequest = LegalAidRequest::create([
                     'ticket_number' => $this->generateTicketNumber(),
-                    'status' => (float) $service->price === 0.0
+                    'full_name' => (string) $payload['full_name'],
+                    'email' => (string) $payload['email'],
+                    'phone' => (string) $payload['phone'],
+                    'whatsapp' => $payload['whatsapp'] ?? null,
+                    'case_description' => (string) $payload['case_description'],
+                    'service_id' => $services->first()->id,
+                    'base_price' => $basePrice,
+                    'status' => (float) $basePrice === 0.0
                         ? LegalAidRequest::STATUS_PENDING
                         : LegalAidRequest::STATUS_PENDING_PAYMENT,
-                    'locale' => $request->getLocale(),
-                ]));
+                    'consultation_mode' => $consultationMode,
+                    'payment_method' => $paymentMethod,
+                    'locale' => $locale,
+                ]);
 
                 break;
             } catch (QueryException $e) {
@@ -65,25 +133,34 @@ class LegalAidController
             throw new RuntimeException('Unable to allocate a unique ticket number.');
         }
 
+        $legalAidRequest->services()->attach($services->pluck('id'));
+        $legalAidRequest->load('services');
+
         $this->generateTicketPdf($legalAidRequest);
 
-        $paymentUrl = $legalAidRequest->isFree()
-            ? ''
-            : (string) config('legal_aid.payment_url');
-        $paymentLink = $legalAidRequest->isFree()
-            ? ''
-            : route('legal-aid.payment', $legalAidRequest->ticket_number);
+        $confirmation->update(['confirmed_at' => now()]);
+
+        [$paymentUrl, $paymentLink] = $this->paymentUrls($legalAidRequest);
 
         Mail::to($legalAidRequest->email)
-            ->locale($legalAidRequest->locale)
+            ->locale($locale)
             ->queue(new LegalAidTicketMail($legalAidRequest, $paymentUrl, $paymentLink));
 
         Mail::to(config('legal_aid.contact_email'))
             ->queue(new LegalAidAdminNotificationMail($legalAidRequest, $paymentUrl, $paymentLink));
 
-        return back()
-            ->with('ticket', '#'.$legalAidRequest->ticket_number)
-            ->with('ticket_number', $legalAidRequest->ticket_number);
+        return redirect()->route('legal-aid.confirmed', ['ticket' => $legalAidRequest->ticket_number]);
+    }
+
+    public function confirmed(string $ticket): View
+    {
+        $legalAidRequest = LegalAidRequest::where('ticket_number', $ticket)->firstOrFail();
+
+        app()->setLocale($legalAidRequest->locale ?: app()->getLocale());
+
+        return view('legal-aid-confirmed', [
+            'request' => $legalAidRequest,
+        ]);
     }
 
     public function downloadTicketPdf(string $ticket): Response
@@ -134,13 +211,15 @@ class LegalAidController
     public function adminIndex(): View
     {
         return view('admin.legal-aid', [
-            'requests' => LegalAidRequest::latest()->get(),
+            'requests' => LegalAidRequest::with(['services', 'service'])->latest()->get(),
             'paymentUrl' => (string) config('legal_aid.payment_url'),
         ]);
     }
 
     public function show(LegalAidRequest $legalAidRequest): View
     {
+        $legalAidRequest->load(['services', 'service']);
+
         return view('admin.legal-aid-show', [
             'request' => $legalAidRequest,
             'paymentUrl' => (string) config('legal_aid.payment_url'),
@@ -187,12 +266,7 @@ class LegalAidController
             ]);
         }
 
-        $paymentUrl = $legalAidRequest->isFree()
-            ? ''
-            : (string) config('legal_aid.payment_url');
-        $paymentLink = $legalAidRequest->isFree()
-            ? ''
-            : route('legal-aid.payment', $legalAidRequest->ticket_number);
+        [$paymentUrl, $paymentLink] = $this->paymentUrls($legalAidRequest);
 
         Mail::to($legalAidRequest->email)
             ->locale($legalAidRequest->locale)
@@ -234,7 +308,13 @@ class LegalAidController
     private function generateTicketPdf(LegalAidRequest $legalAidRequest): void
     {
         try {
-            $pdf = Pdf::loadView('pdf.legal-aid-ticket', ['request' => $legalAidRequest]);
+            $locale = $legalAidRequest->locale ?: app()->getLocale();
+            app()->setLocale($locale);
+
+            $pdf = Pdf::loadView('pdf.legal-aid-ticket', [
+                'request' => $legalAidRequest,
+                'locale' => $locale,
+            ]);
 
             $pdfPath = 'tickets/legal-aid-ticket-'.$legalAidRequest->ticket_number.'.pdf';
 
@@ -244,6 +324,31 @@ class LegalAidController
         } catch (\Throwable $e) {
             report($e);
         }
+    }
+
+    private function generateConfirmationToken(): string
+    {
+        do {
+            $token = Str::random(40);
+        } while (LegalAidConfirmation::where('token', $token)->exists());
+
+        return $token;
+    }
+
+    /**
+     * @return array{0: string, 1: string} [paymentUrl, paymentLink]
+     */
+    private function paymentUrls(LegalAidRequest $legalAidRequest): array
+    {
+        if ($legalAidRequest->isFree()) {
+            return ['', ''];
+        }
+
+        if ($legalAidRequest->payment_method === LegalAidRequest::PAYMENT_METHOD_BANK) {
+            return ['', route('legal-aid.payment', $legalAidRequest->ticket_number)];
+        }
+
+        return [(string) config('legal_aid.payment_url'), route('legal-aid.payment', $legalAidRequest->ticket_number)];
     }
 
     private function generateTicketNumber(): string

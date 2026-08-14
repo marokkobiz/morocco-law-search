@@ -51,8 +51,10 @@ Track client requests, payments, and confirm cases.
 
                     <!-- Service -->
                     <td class="px-6 py-4">
-                        @if($request->service)
-                            <div class="font-semibold text-slate-900">{{ $request->service->name }}</div>
+                        @if($request->selectedServices->isNotEmpty())
+                            <div class="font-semibold text-slate-900">
+                                @foreach($request->selectedServices as $service){{ $service->name }}@if(! $loop->last), @endif @endforeach
+                            </div>
                             <div class="text-xs text-slate-500">{{ $request->base_price ? number_format((float) $request->base_price, 0).' MAD' : '—' }}</div>
                         @else
                             <span class="text-xs text-slate-400 italic">—</span>
@@ -64,6 +66,11 @@ Track client requests, payments, and confirm cases.
                                 {{ $request->consultation_mode === 'whatsapp' ? 'WhatsApp' : 'Office' }}
                             </span>
                         @endif
+                        <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border
+                            @if($request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK) bg-amber-50 text-amber-700 border-amber-200
+                            @else bg-emerald-50 text-emerald-700 border-emerald-200 @endif">
+                            {{ $request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK ? 'Bank' : 'Google Pay' }}
+                        </span>
                     </td>
 
                     <!-- Status Badge -->

@@ -16,20 +16,15 @@
                     <h2 class="mb-1 text-center text-xl font-bold text-gray-900">{{ __('legal_aid.form_title') }}</h2>
                     <p class="mb-6 text-center text-sm text-gray-500">{{ __('legal_aid.form_desc') }}</p>
 
-                    @if (session('ticket'))
-                        <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-                            <p>{{ __('legal_aid.success_ticket', ['ticket' => session('ticket')]) }}</p>
-                            @if (session('ticket_number'))
-                                <a href="{{ route('legal-aid.ticket-pdf', session('ticket_number')) }}"
-                                    class="mt-2 inline-flex items-center gap-1.5 font-semibold underline">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                        aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                    </svg>
-                                    {{ __('legal_aid.download_ticket') }}
-                                </a>
-                            @endif
+                    @if (session('confirmation_sent'))
+                        <div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+                            <p>{{ __('legal_aid.confirmation_sent', ['email' => session('confirmation_sent')]) }}</p>
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                            <p>{{ session('error') }}</p>
                         </div>
                     @endif
 
@@ -117,40 +112,45 @@
                         <div>
                             <label
                                 class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_service') }}</label>
-                            <div class="grid gap-2 sm:grid-cols-2">
-                                @foreach ($services as $service)
+                            <div class="grid items-stretch gap-3 sm:grid-cols-2">
+                                @forelse ($services as $service)
                                     <label
-                                        class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
-                                        <input type="radio" name="service_id" value="{{ $service->id }}"
-                                            class="sr-only" required data-modes="{{ $service->consultationModesList }}"
-                                            {{ old('service_id') == $service->id ? 'checked' : '' }}>
-                                        <div>
-                                            <p class="text-sm font-semibold text-gray-900">{{ $service->name }}</p>
+                                        class="flex h-full cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
+                                        <input type="checkbox" name="service_ids[]" value="{{ $service->id }}"
+                                            class="mt-0.5 h-4 w-4 shrink-0 accent-blue-600"
+                                            data-modes="{{ $service->consultationModesList }}"
+                                            {{ in_array($service->id, old('service_ids', []), true) ? 'checked' : '' }}>
+                                        <span class="flex min-h-full flex-1 flex-col">
+                                            <span class="text-sm font-semibold text-gray-900">{{ $service->name }}</span>
                                             @if ($service->description)
-                                                <p class="mt-0.5 text-xs text-gray-500">{{ $service->description }}</p>
+                                                <span class="mt-0.5 text-xs text-gray-500">{{ $service->description }}</span>
                                             @endif
-                                            @if ($service->notes)
-                                                <p class="mt-0.5 text-xs text-gray-500">• {{ $service->notes }}</p>
-                                            @endif
-                                            @if ($service->additional_notes)
-                                                <p class="mt-0.5 text-xs text-gray-500">• {{ $service->additional_notes }}</p>
-                                            @endif
-                                        </div>
+                                            <span class="mt-auto space-y-0.5 pt-2">
+                                                @if ($service->notes)
+                                                    <span class="block text-xs text-gray-500">• {{ $service->notes }}</span>
+                                                @endif
+                                                @if ($service->additional_notes)
+                                                    <span class="block text-xs text-gray-500">• {{ $service->additional_notes }}</span>
+                                                @endif
+                                            </span>
+                                        </span>
                                         <span
                                             class="whitespace-nowrap text-sm font-bold text-blue-600">{{ $service->priceLabel }}</span>
                                     </label>
-                                @endforeach
+                                @empty
+                                    <p class="sm:col-span-2 text-sm text-gray-500">{{ __('legal_aid.no_services') }}</p>
+                                @endforelse
                             </div>
                             <div class="mt-3 space-y-1 text-xs text-gray-500">
                                 <p>{{ __('legal_aid.price_list_note') }}</p>
                                 <p>{{ __('legal_aid.price_list_asterisk') }}</p>
                             </div>
-                            @error('service_id')
+                            @error('service_ids')
                                 <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <div id="consultation-section" class="{{ old('service_id') ? '' : 'hidden' }}">
+                        <div id="consultation-section" class="{{ ! empty(old('service_ids')) ? '' : 'hidden' }}">
                             <label
                                 class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_consultation') }}</label>
                             <div class="grid gap-2 sm:grid-cols-2">
@@ -189,6 +189,49 @@
                             @enderror
                         </div>
 
+                        <div id="payment-section">
+                            <label
+                                class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_payment') }}</label>
+                            <div class="grid gap-2 sm:grid-cols-2">
+                                <label id="payment-google-pay-wrap"
+                                    class="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-colors has-[:checked]:border-green-500 has-[:checked]:bg-green-50/50">
+                                    <input type="radio" name="payment_method" value="google_pay" class="sr-only"
+                                        {{ old('payment_method') === null || old('payment_method') === 'google_pay' ? 'checked' : '' }}>
+                                    <svg class="h-5 w-5 shrink-0 text-green-600" fill="currentColor" viewBox="0 0 24 24"
+                                        aria-hidden="true">
+                                        <path fill-rule="evenodd"
+                                            d="M4 4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2H4zm16 3H4v2h16V7zm0 4H4v7h16v-7z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-900">{{ __('legal_aid.payment_method_google_pay') }}</p>
+                                        <p class="mt-0.5 text-xs text-gray-500">{{ __('legal_aid.payment_method_google_pay_desc') }}</p>
+                                        <p class="mt-1 inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-bold text-green-700">{{ __('legal_aid.payment_method_google_pay_discount', ['percent' => (int) config('legal_aid.online_discount_percent')]) }}</p>
+                                    </div>
+                                </label>
+
+                                <label id="payment-bank-wrap"
+                                    class="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-colors has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50">
+                                    <input type="radio" name="payment_method" value="bank" class="sr-only"
+                                        {{ old('payment_method') === 'bank' ? 'checked' : '' }}>
+                                    <svg class="h-5 w-5 shrink-0 text-amber-600" fill="currentColor" viewBox="0 0 24 24"
+                                        aria-hidden="true">
+                                        <path fill-rule="evenodd"
+                                            d="M12 2L1 8v2h22V8L12 2zm-8 9h3v8H4v-8zm6 0h4v8h-4v-8zm8 0h3v8h-3v-8zM1 21v-1h22v1H1z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-900">{{ __('legal_aid.payment_method_bank') }}</p>
+                                        <p class="mt-0.5 text-xs text-gray-500">{{ __('legal_aid.payment_method_bank_desc') }}</p>
+                                        <p class="mt-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">{{ __('legal_aid.payment_method_bank_fee', ['percent' => (int) config('legal_aid.bank_admin_fee_percent')]) }}</p>
+                                    </div>
+                                </label>
+                            </div>
+                            @error('payment_method')
+                                <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <button type="submit" class="btn-primary w-full">
                             {{ __('legal_aid.submit') }}
                         </button>
@@ -205,7 +248,7 @@
             const section = document.getElementById('consultation-section');
             if (!section) return;
 
-            const serviceRadios = Array.from(document.querySelectorAll('input[name="service_id"]'));
+            const serviceBoxes = Array.from(document.querySelectorAll('input[name="service_ids[]"]'));
             const modeWraps = {
                 office: document.getElementById('mode-office-wrap'),
                 whatsapp: document.getElementById('mode-whatsapp-wrap'),
@@ -213,13 +256,21 @@
             const modeRadios = Array.from(document.querySelectorAll('input[name="consultation_mode"]'));
 
             function updateConsultationModes() {
-                const selected = serviceRadios.find((radio) => radio.checked);
-                if (!selected) {
+                const checked = serviceBoxes.filter((box) => box.checked);
+                if (checked.length === 0) {
                     section.classList.add('hidden');
                     return;
                 }
 
-                const allowed = (selected.dataset.modes || '').split(',').filter(Boolean);
+                const modeSets = checked
+                    .map((box) => (box.dataset.modes || '').split(',').filter(Boolean))
+                    .filter((modes) => modes.length > 0);
+
+                let allowed = modeSets.length === 0 ? [] : modeSets[0];
+                for (let i = 1; i < modeSets.length; i++) {
+                    allowed = allowed.filter((mode) => modeSets[i].includes(mode));
+                }
+
                 section.classList.toggle('hidden', allowed.length === 0);
 
                 modeRadios.forEach((radio) => {
@@ -230,7 +281,7 @@
                 });
             }
 
-            serviceRadios.forEach((radio) => radio.addEventListener('change', updateConsultationModes));
+            serviceBoxes.forEach((box) => box.addEventListener('change', updateConsultationModes));
             updateConsultationModes();
         })();
     </script>

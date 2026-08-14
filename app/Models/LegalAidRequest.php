@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class LegalAidRequest extends Model
 {
@@ -15,6 +17,7 @@ class LegalAidRequest extends Model
         'whatsapp',
         'case_description',
         'consultation_mode',
+        'payment_method',
         'service_id',
         'base_price',
         'status',
@@ -42,6 +45,10 @@ class LegalAidRequest extends Model
 
     public const STATUS_REJECTED = 'rejected';
 
+    public const PAYMENT_METHOD_GOOGLE_PAY = 'google_pay';
+
+    public const PAYMENT_METHOD_BANK = 'bank';
+
     public function isPaid(): bool
     {
         return in_array($this->status, [self::STATUS_PAID, self::STATUS_CONFIRMED], true);
@@ -52,6 +59,17 @@ class LegalAidRequest extends Model
         return $this->base_price !== null && (float) $this->base_price === 0.0;
     }
 
+    public function getPayableTotalAttribute(): ?float
+    {
+        if ($this->base_price === null) {
+            return null;
+        }
+
+        return $this->payment_method === self::PAYMENT_METHOD_BANK
+            ? $this->bankTotal
+            : $this->onlineTotal;
+    }
+
     public function getTicketLabelAttribute(): string
     {
         return '#'.$this->ticket_number;
@@ -60,6 +78,29 @@ class LegalAidRequest extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class);
+    }
+
+    public function getSelectedServicesAttribute(): Collection
+    {
+        if ($this->relationLoaded('services') && $this->services->isNotEmpty()) {
+            return $this->services;
+        }
+
+        $service = $this->service;
+
+        return $service ? new Collection([$service]) : new Collection;
+    }
+
+    public function getServicesSummaryAttribute(): string
+    {
+        return $this->selectedServices
+            ->map(fn (Service $service) => $service->name)
+            ->implode(', ');
     }
 
     public function getOnlineTotalAttribute(): ?float

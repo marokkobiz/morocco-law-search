@@ -97,6 +97,7 @@
                     </div>
                 @endif
 
+                @if ($request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY)
                 <div class="card p-8 mb-6" data-animate="fade-up">
                     <h2 class="text-lg font-bold text-gray-900 mb-2">{{ __('legal_aid.payment_online_title') }}</h2>
                     <p class="text-sm text-gray-500 mb-6">{{ __('legal_aid.payment_online_desc') }}</p>
@@ -170,7 +171,7 @@
                         </p>
                     @endif
                 </div>
-
+                @else
                 <div class="card p-8" data-animate="fade-up" style="--delay:.1s">
                     <h2 class="text-lg font-bold text-gray-900 mb-2">{{ __('legal_aid.payment_bank_title') }}</h2>
                     <p class="text-sm text-gray-500 mb-6">{{ __('legal_aid.payment_bank_desc') }}</p>
@@ -209,6 +210,7 @@
                         </form>
                     @endif
                 </div>
+                @endif
                 @endif
             @endif
         </div>

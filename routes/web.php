@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/test/beta/legal-aid', [LegalAidController::class, 'index'])->name('legal-aid');
 Route::post('/test/beta/legal-aid', [LegalAidController::class, 'store'])->name('legal-aid.store');
+Route::get('/legal-aid/confirm/{token}', [LegalAidController::class, 'confirmBooking'])->name('legal-aid.confirm-booking');
+Route::get('/legal-aid/confirmed/{ticket}', [LegalAidController::class, 'confirmed'])->name('legal-aid.confirmed');
 Route::get('/legal-aid/payment/{ticket}', [LegalAidController::class, 'payment'])->name('legal-aid.payment');
 Route::get('/legal-aid/ticket/{ticket}/pdf', [LegalAidController::class, 'downloadTicketPdf'])->name('legal-aid.ticket-pdf');
 Route::post('/legal-aid/payment/{ticket}/receipt', [LegalAidController::class, 'uploadReceipt'])->name('legal-aid.receipt');

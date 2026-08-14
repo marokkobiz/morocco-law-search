@@ -1,8 +1,11 @@
+@php
+    $shape = fn ($text) => \App\Support\PdfArabic::shape((string) $text, $locale);
+@endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ $locale }}">
 <head>
     <meta charset="utf-8">
-    <title>Legal Aid Ticket {{ $request->ticketLabel }}</title>
+    <title>{{ $shape(__('legal_aid_ticket.ticket_label')) }} {{ $request->ticketLabel }}</title>
     <style>
         body {
             font-family: Helvetica, Arial, sans-serif;
@@ -18,7 +21,7 @@
 
         .brand {
             font-size: 22px;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: 0.5px;
             color: #111827;
         }
@@ -46,7 +49,7 @@
 
         .ticket-number {
             font-size: 30px;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: 3px;
             color: #2563eb;
             text-align: right;
@@ -83,7 +86,7 @@
         }
 
         table.details td.value {
-            font-weight: 600;
+            font-weight: 700;
             color: #111827;
         }
 
@@ -113,12 +116,12 @@
 
         table.pricing .amount {
             text-align: right;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         table.pricing .total {
             font-size: 13px;
-            font-weight: 800;
+            font-weight: 700;
             color: #111827;
             padding-top: 10px;
         }
@@ -146,6 +149,24 @@
             line-height: 1.7;
             margin-top: 16px;
         }
+
+        @if ($locale === 'ar')
+        html, body {
+            text-align: right;
+        }
+
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+        }
+
+        .ticket-label, .ticket-number, table.pricing .amount {
+            text-align: left;
+        }
+
+        .section-title, .tagline, .note, .footer, table.details td.label, .ticket-label {
+            letter-spacing: 0;
+        }
+        @endif
     </style>
 </head>
 <body>
@@ -154,10 +175,10 @@
             <tr>
                 <td width="60%">
                     <div class="brand">Maroc<span class="accent">Loi</span></div>
-                    <div class="tagline">Legal Aid — Session Booking</div>
+                    <div class="tagline">{{ $shape(__('legal_aid_ticket.brand_tagline')) }}</div>
                 </td>
                 <td>
-                    <div class="ticket-label">Ticket No.</div>
+                    <div class="ticket-label">{{ $shape(__('legal_aid_ticket.ticket_label')) }}</div>
                     <div class="ticket-number">{{ $request->ticketLabel }}</div>
                 </td>
             </tr>
@@ -165,78 +186,83 @@
 
         <table class="details" cellpadding="0" cellspacing="0" width="100%">
             <tr>
-                <td width="50%" style="padding-right:24px;">
-                    <div class="section-title">Client</div>
-                    <table class="details" cellpadding="0" cellspacing="0" width="100%">
-                        <tr><td class="label">Full name</td><td class="value">{{ $request->full_name }}</td></tr>
-                        <tr><td class="label">Email</td><td class="value">{{ $request->email }}</td></tr>
-                        <tr><td class="label">Phone</td><td class="value">{{ $request->phone }}</td></tr>
-                        @if ($request->whatsapp)
-                            <tr><td class="label">WhatsApp</td><td class="value">{{ $request->whatsapp }}</td></tr>
-                        @endif
-                    </table>
-                </td>
-                <td width="50%" style="padding-left:24px;">
-                    <div class="section-title">Booking</div>
-                    <table class="details" cellpadding="0" cellspacing="0" width="100%">
-                        <tr><td class="label">Service</td><td class="value">{{ $request->service?->name_en ?: '—' }}</td></tr>
-                        <tr><td class="label">Consultation</td><td class="value">{{ $request->consultation_mode ? ($request->consultation_mode === 'whatsapp' ? 'By WhatsApp' : 'At the office') : '—' }}</td></tr>
-                        <tr><td class="label">Booked on</td><td class="value">{{ $request->created_at?->format('d M Y, H:i') ?: '—' }}</td></tr>
-                        <tr><td class="label">Status</td><td class="value">{{ ucwords(str_replace('_', ' ', $request->status)) }}</td></tr>
-                    </table>
-                </td>
+                @foreach (($locale === 'ar' ? ['booking', 'client'] : ['client', 'booking']) as $column)
+                    @if ($column === 'client')
+                        <td width="50%" style="padding-{{ $locale === 'ar' ? 'left' : 'right' }}:24px;">
+                            <div class="section-title">{{ $shape(__('legal_aid_ticket.client')) }}</div>
+                            <table class="details" cellpadding="0" cellspacing="0" width="100%">
+                                <tr><td class="label">{{ $shape(__('legal_aid_ticket.full_name')) }}</td><td class="value">{{ $request->full_name }}</td></tr>
+                                <tr><td class="label">{{ $shape(__('legal_aid_ticket.email')) }}</td><td class="value">{{ $request->email }}</td></tr>
+                                <tr><td class="label">{{ $shape(__('legal_aid_ticket.phone')) }}</td><td class="value">{{ $request->phone }}</td></tr>
+                                @if ($request->whatsapp)
+                                    <tr><td class="label">{{ $shape(__('legal_aid_ticket.whatsapp')) }}</td><td class="value">{{ $request->whatsapp }}</td></tr>
+                                @endif
+                            </table>
+                        </td>
+                    @else
+                        <td width="50%" style="padding-{{ $locale === 'ar' ? 'right' : 'left' }}:24px;">
+                            <div class="section-title">{{ $shape(__('legal_aid_ticket.booking')) }}</div>
+                            <table class="details" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td class="label">{{ $shape(__('legal_aid_ticket.consultation')) }}</td>
+                                    <td class="value">
+                                        {{ $request->consultation_mode ? $shape(__('legal_aid_ticket.mode_'.$request->consultation_mode)) : '—' }}
+                                    </td>
+                                </tr>
+                                <tr><td class="label">{{ $shape(__('legal_aid_ticket.booked_on')) }}</td><td class="value">{{ $request->created_at?->format('d M Y, H:i') ?: '—' }}</td></tr>
+                                <tr><td class="label">{{ $shape(__('legal_aid_ticket.status')) }}</td><td class="value">{{ $shape(__('legal_aid_ticket.status_'.$request->status)) }}</td></tr>
+                            </table>
+                        </td>
+                    @endif
+                @endforeach
             </tr>
         </table>
 
-        <div class="section-title" style="margin-top:26px;">Payment</div>
+        <div class="section-title" style="margin-top:26px;">{{ $shape(__('legal_aid_ticket.payment')) }}</div>
         <div class="price-card">
             <table class="pricing" cellpadding="0" cellspacing="0" width="100%">
+                @foreach ($request->selectedServices as $service)
+                    <tr>
+                        <td class="muted">{{ $shape($service->name) }}</td>
+                        <td class="amount muted">{{ number_format((float) $service->price, 0) }} MAD</td>
+                    </tr>
+                @endforeach
                 @if ($request->isFree())
                     <tr>
-                        <td class="muted">Price</td>
-                        <td class="amount">Free</td>
+                        <td class="total">{{ $shape(__('legal_aid_ticket.free')) }}</td>
+                        <td class="amount total positive">{{ number_format((float) $request->base_price, 0) }} MAD</td>
                     </tr>
                 @else
                     <tr>
-                        <td class="muted">Base price</td>
-                        <td class="amount muted">{{ number_format((float) $request->base_price, 0) }} MAD</td>
+                        <td class="line">{{ $shape(__('legal_aid_ticket.base_price')) }}</td>
+                        <td class="line amount">{{ number_format((float) $request->base_price, 0) }} MAD</td>
                     </tr>
-                    @if ($request->onlineTotal !== null)
+                    @if ($request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK)
                         <tr>
-                            <td class="line muted">Google Pay total (online discount {{ config('legal_aid.online_discount_percent') }}%)</td>
-                            <td class="line amount">{{ number_format($request->onlineTotal, 0) }} MAD</td>
+                            <td class="line muted">{{ $shape(__('legal_aid_ticket.bank_total', ['percent' => (int) config('legal_aid.bank_admin_fee_percent')])) }}</td>
+                            <td class="line amount">+{{ number_format((float) $request->bankTotal - (float) $request->base_price, 0) }} MAD</td>
                         </tr>
+                    @else
                         <tr>
-                            <td class="total positive">Pay online with Google Pay</td>
-                            <td class="amount total positive">{{ number_format($request->onlineTotal, 0) }} MAD</td>
-                        </tr>
-                    @endif
-                    @if ($request->bankTotal !== null)
-                        <tr>
-                            <td class="line muted">Bank transfer total (admin fee {{ config('legal_aid.bank_admin_fee_percent') }}%)</td>
-                            <td class="line amount">{{ number_format($request->bankTotal, 0) }} MAD</td>
-                        </tr>
-                        <tr>
-                            <td class="total">Pay by bank transfer</td>
-                            <td class="amount total">{{ number_format($request->bankTotal, 0) }} MAD</td>
+                            <td class="line muted">{{ $shape(__('legal_aid_ticket.online_total', ['percent' => (int) config('legal_aid.online_discount_percent')])) }}</td>
+                            <td class="line amount">- {{ number_format((float) $request->base_price - (float) $request->onlineTotal, 0) }} MAD</td>
                         </tr>
                     @endif
+                    <tr>
+                        <td class="total">{{ $shape(__('legal_aid_ticket.payment_method')) }} · {{ $shape(__('legal_aid_ticket.method_'.$request->payment_method)) }}</td>
+                        <td class="amount total {{ $request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK ? '' : 'positive' }}">{{ number_format($request->payableTotal, 0) }} MAD</td>
+                    </tr>
                 @endif
             </table>
         </div>
 
         <p class="note">
-            @if ($request->isFree())
-                This service is free of charge — no payment is required. You will be contacted soon on your WhatsApp number to continue with your case.
-            @else
-                This ticket confirms your booking request. Payment instructions and your secure payment link were
-                sent to your email. Please keep this ticket for your records.
-            @endif
+            {{ $request->isFree() ? $shape(__('legal_aid_ticket.note_free')) : $shape(__('legal_aid_ticket.note_paid')) }}
         </p>
 
         <div class="footer">
-            MarocLoi — Legal Aid Service &nbsp;·&nbsp; {{ config('legal_aid.contact_email') }}<br>
-            Issued {{ now()->format('d M Y, H:i') }}
+            {{ $shape(__('legal_aid_ticket.footer_service')) }} &nbsp;·&nbsp; {{ config('legal_aid.contact_email') }}<br>
+            {{ $shape(__('legal_aid_ticket.footer_issued', ['date' => now()->format('d M Y, H:i')])) }}
         </div>
     </div>
 </body>
