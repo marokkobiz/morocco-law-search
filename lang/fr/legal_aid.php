@@ -3,7 +3,7 @@
 return [
     'badge' => 'Aide juridique',
     'title' => 'Consultations juridiques professionnelles',
-    'subtitle' => 'Connectez-vous avec des experts juridiques marocains qualifiés. Réservez une session, obtenez des conseils d\'experts et comprenez vos options juridiques — dans la langue de votre choix.',
+    'subtitle' => 'Contactez des experts juridiques marocains qualifiés. Réservez une session, obtenez des conseils d\'experts et comprenez vos options juridiques — dans la langue de votre choix.',
 
     'pricing_title' => 'Services et tarifs',
     'pricing_desc' => 'Des tarifs transparents pour chaque type de consultation.',
