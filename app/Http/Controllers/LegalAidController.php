@@ -211,7 +211,7 @@ class LegalAidController
     public function adminIndex(): View
     {
         return view('admin.legal-aid', [
-            'requests' => LegalAidRequest::with(['services', 'service'])->latest()->get(),
+            'requests' => LegalAidRequest::with(['services', 'service'])->latest()->paginate(5),
             'paymentUrl' => (string) config('legal_aid.payment_url'),
         ]);
     }

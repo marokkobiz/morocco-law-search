@@ -46,13 +46,13 @@ Track client requests, payments, and confirm cases.
                             {{ $request->full_name }}
                         </a>
                         <div class="text-xs text-slate-500">{{ $request->email }}</div>
-                        <div class="text-xs text-slate-500">{{ $request->phone }}@if($request->whatsapp) · WA: {{ $request->whatsapp }}@endif</div>
+                        {{-- <div class="text-xs text-slate-500">{{ $request->phone }}@if($request->whatsapp) · WA: {{ $request->whatsapp }}@endif</div> --}}
                     </td>
 
                     <!-- Service -->
                     <td class="px-6 py-4">
                         @if($request->selectedServices->isNotEmpty())
-                            <div class="font-semibold text-slate-900">
+                            <div class="font-semibold text-slate-900 w-40 truncate">
                                 @foreach($request->selectedServices as $service){{ $service->name }}@if(! $loop->last), @endif @endforeach
                             </div>
                             <div class="text-xs text-slate-500">{{ $request->base_price ? number_format((float) $request->base_price, 0).' MAD' : '—' }}</div>
@@ -74,7 +74,7 @@ Track client requests, payments, and confirm cases.
                     </td>
 
                     <!-- Status Badge -->
-                    <td class="px-6 py-4">
+                    <td class="px-6 py-4 text-center">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border
                             @if($request->status === \App\Models\LegalAidRequest::STATUS_CONFIRMED) bg-emerald-50 text-emerald-700 border-emerald-200
                             @elseif($request->status === \App\Models\LegalAidRequest::STATUS_PAID) bg-blue-50 text-blue-700 border-blue-200
@@ -149,6 +149,12 @@ Track client requests, payments, and confirm cases.
             </tbody>
         </table>
     </div>
+
+    @if($requests->hasPages())
+        <div class="px-6 py-4 border-t border-slate-200">
+            {{ $requests->links() }}
+        </div>
+    @endif
 
 </div>
 
