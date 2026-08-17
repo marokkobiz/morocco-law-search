@@ -36,9 +36,9 @@ return [
     'cta_create' => 'Créer un compte gratuit',
     'cta_learn' => 'En savoir plus',
     'source_bulletin' => 'Bulletin Officiel',
-    'source_work_code' => 'Code du travail',
-    'source_penal_law' => 'Loi pénale',
-    'source_family_code' => 'Code de la famille',
-    'source_doc' => 'Documents juridiques',
+    'source_work_code' => 'Droit du travail',
+    'source_penal_law' => 'Droit pénal',
+    'source_family_code' => 'Droit civil',
+    'source_doc' => 'Droit commercial',
     'source_real_estate' => 'Immobilier',
 ];

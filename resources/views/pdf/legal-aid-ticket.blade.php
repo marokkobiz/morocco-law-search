@@ -135,12 +135,16 @@
         }
 
         .footer {
-            margin-top: 28px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             border-top: 1px solid #e5e7eb;
             padding-top: 14px;
             font-size: 10px;
             color: #6b7280;
             line-height: 1.7;
+            text-align: center;
         }
 
         .note {
@@ -209,6 +213,9 @@
                                         {{ $request->consultation_mode ? $shape(__('legal_aid_ticket.mode_'.$request->consultation_mode)) : '—' }}
                                     </td>
                                 </tr>
+                                @if ($request->call_time)
+                                    <tr><td class="label">{{ $shape(__('legal_aid_ticket.call_time')) }}</td><td class="value">{{ $request->call_time }}</td></tr>
+                                @endif
                                 <tr><td class="label">{{ $shape(__('legal_aid_ticket.booked_on')) }}</td><td class="value">{{ $request->created_at?->format('d M Y, H:i') ?: '—' }}</td></tr>
                                 <tr><td class="label">{{ $shape(__('legal_aid_ticket.status')) }}</td><td class="value">{{ $shape(__('legal_aid_ticket.status_'.$request->status)) }}</td></tr>
                             </table>
@@ -259,11 +266,11 @@
         <p class="note">
             {{ $request->isFree() ? $shape(__('legal_aid_ticket.note_free')) : $shape(__('legal_aid_ticket.note_paid')) }}
         </p>
+    </div>
 
-        <div class="footer">
-            {{ $shape(__('legal_aid_ticket.footer_service')) }} &nbsp;·&nbsp; {{ config('legal_aid.contact_email') }}<br>
-            {{ $shape(__('legal_aid_ticket.footer_issued', ['date' => now()->format('d M Y, H:i')])) }}
-        </div>
+    <div class="footer">
+        {{ $shape(__('legal_aid_ticket.footer_line_1')) }}<br>
+        {{ $shape(__('legal_aid_ticket.footer_line_2')) }}
     </div>
 </body>
 </html>

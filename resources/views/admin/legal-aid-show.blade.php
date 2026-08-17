@@ -134,6 +134,12 @@ Full details for legal aid request {{ $request->ticketLabel }}.
                     @endif
                 </dd>
             </div>
+            @if($request->call_time)
+            <div>
+                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Preferred Call Time</dt>
+                <dd class="text-slate-700">{{ $request->call_time }}</dd>
+            </div>
+            @endif
             <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Locale</dt>
                 <dd class="text-slate-700 uppercase">{{ $request->locale ?? '—' }}</dd>
