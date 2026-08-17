@@ -8,6 +8,7 @@ return [
     'legal_aid_confirmation_subject' => 'Your Case is Confirmed — Ticket :ticket',
     'legal_aid_receipt_subject' => 'Payment Receipt Uploaded :ticket',
     'legal_aid_rejection_subject' => 'Payment Not Verified — Ticket :ticket',
+    'legal_aid_booking_confirmation_subject' => 'Please confirm your booking request',
 
     'ticket_hello' => 'Hello :name,',
     'ticket_intro' => 'We have received your legal aid request. Here is your ticket number — keep it, you will need it for all communication about your case.',
@@ -18,6 +19,7 @@ return [
     'ticket_note' => 'Once your payment is confirmed, you will receive a confirmation email with the details of your case.',
     'ticket_free_intro' => 'This service is free of charge — no payment is required.',
     'ticket_free_note' => 'Our team will contact you soon on your WhatsApp number :whatsapp to continue with your case.',
+    'ticket_services' => 'Services: :services',
 
     'admin_hello' => 'New legal aid request received',
     'admin_intro' => 'A client has submitted a legal aid request. Details below:',
@@ -27,6 +29,7 @@ return [
     'field_phone' => 'Phone',
     'field_whatsapp' => 'WhatsApp',
     'field_case' => 'Case',
+    'field_service' => 'Service(s)',
     'admin_payment_url' => 'Payment link (Google Pay):',
     'admin_upload_url' => 'Receipt upload page:',
     'admin_note' => 'Confirm the case once the payment is received — the client will be notified automatically.',
@@ -49,4 +52,11 @@ return [
     'reject_body' => 'This does not mean your case is closed — please reply to this email with your ticket number if you believe this is a mistake, or use the button below to retry your payment. Our team is ready to help.',
     'reject_pay_button' => 'Retry Payment',
     'reject_note' => 'Thank you for your patience. — The MarocLoi Team',
+
+    'booking_confirm_hello' => 'Hello :name,',
+    'booking_confirm_intro' => 'We received your booking request. Please confirm your email address to complete your booking — we only store bookings confirmed by the client.',
+    'booking_confirm_services' => 'Selected services: :services',
+    'booking_confirm_button' => 'Confirm my booking',
+    'booking_confirm_note' => 'Once you confirm, your ticket will be generated and sent to :email along with the payment details.',
+    'booking_confirm_expiry' => 'This link expires in :hours hours.',
 ];

@@ -8,6 +8,7 @@ return [
     'legal_aid_confirmation_subject' => 'تم تأكيد قضيتك — تذكرة :ticket',
     'legal_aid_receipt_subject' => 'تم رفع إيصال الدفع :ticket',
     'legal_aid_rejection_subject' => 'تعذر التحقق من الدفع — تذكرة :ticket',
+    'legal_aid_booking_confirmation_subject' => 'يرجى تأكيد طلب الحجز الخاص بك',
 
     'ticket_hello' => 'مرحباً :name،',
     'ticket_intro' => 'لقد استلمنا طلب المساعدة القانونية الخاص بك. إليك رقم التذكرة الخاص بك — احتفظ به، ستحتاجه في جميع المراسلات المتعلقة بقضيتك.',
@@ -18,6 +19,7 @@ return [
     'ticket_note' => 'بمجرد تأكيد دفعتك، ستتلقى بريداً إلكترونياً للتأكيد مع تفاصيل قضيتك.',
     'ticket_free_intro' => 'هذه الخدمة مجانية — لا حاجة لأي دفعة.',
     'ticket_free_note' => 'سيتواصل معك فريقنا قريباً على رقم واتساب الخاص بك :whatsapp لمواصلة قضيتك.',
+    'ticket_services' => 'الخدمات: :services',
 
     'admin_hello' => 'تم استلام طلب مساعدة قانونية جديد',
     'admin_intro' => 'قام أحد العملاء بتقديم طلب مساعدة قانونية. التفاصيل أدناه:',
@@ -27,6 +29,7 @@ return [
     'field_phone' => 'الهاتف',
     'field_whatsapp' => 'واتساب',
     'field_case' => 'القضية',
+    'field_service' => 'الخدمة (الخدمات)',
     'admin_payment_url' => 'رابط الدفع (Google Pay):',
     'admin_upload_url' => 'صفحة رفع الإيصال:',
     'admin_note' => 'قم بتأكيد القضية بمجرد استلام الدفع — سيتم إشعار العميل تلقائياً.',
@@ -49,4 +52,11 @@ return [
     'reject_body' => 'هذا لا يعني أن قضيتك مغلقة — يرجى الرد على هذا البريد مع رقم التذكرة الخاص بك إذا كنت تعتقد أن هناك خطأ، أو استخدم الزر أدناه لإعادة محاولة الدفع. فريقنا مستعد لمساعدتك.',
     'reject_pay_button' => 'إعادة محاولة الدفع',
     'reject_note' => 'شكراً لصبرك. — فريق MarocLoi',
+
+    'booking_confirm_hello' => 'مرحباً :name،',
+    'booking_confirm_intro' => 'لقد استلمنا طلب الحجز الخاص بك. يرجى تأكيد بريدك الإلكتروني لإتمام الحجز — نحن لا نخزن إلا الحجوزات المؤكدة من قبل العميل.',
+    'booking_confirm_services' => 'الخدمات المحددة: :services',
+    'booking_confirm_button' => 'تأكيد حجزي',
+    'booking_confirm_note' => 'بمجرد التأكيد، سيتم إنشاء تذكرتك وإرسالها إلى :email مع تفاصيل الدفع.',
+    'booking_confirm_expiry' => 'تنتهي صلاحية هذا الرابط خلال :hours ساعة.',
 ];

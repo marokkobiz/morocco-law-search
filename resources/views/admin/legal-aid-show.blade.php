@@ -148,12 +148,32 @@ Full details for legal aid request {{ $request->ticketLabel }}.
         </div>
         <dl class="p-6 space-y-4 text-sm">
             <div>
-                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Service</dt>
-                <dd class="font-semibold text-slate-900">{{ $request->service?->name ?: '—' }}</dd>
+                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Service(s)</dt>
+                <dd class="font-semibold text-slate-900">
+                    @if($request->selectedServices->isNotEmpty())
+                        @foreach($request->selectedServices as $service){{ $service->name }}@if(! $loop->last), @endif @endforeach
+                    @else
+                        —
+                    @endif
+                </dd>
             </div>
             <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Base Price</dt>
                 <dd class="text-slate-700">{{ $request->base_price ? number_format((float) $request->base_price, 0).' MAD' : '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment Method</dt>
+                <dd>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border
+                        @if($request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK) bg-amber-50 text-amber-700 border-amber-200
+                        @else bg-emerald-50 text-emerald-700 border-emerald-200 @endif">
+                        {{ $request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK ? 'Bank Transfer' : 'Google Pay' }}
+                    </span>
+                </dd>
+            </div>
+            <div>
+                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Selected Total</dt>
+                <dd class="font-bold text-slate-900">{{ $request->payableTotal !== null ? number_format($request->payableTotal, 0).' MAD' : '—' }}</dd>
             </div>
             <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Google Pay Total (−{{ config('legal_aid.online_discount_percent') }}%)</dt>
