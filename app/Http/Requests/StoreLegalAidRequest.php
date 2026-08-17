@@ -25,6 +25,7 @@ class StoreLegalAidRequest extends FormRequest
             'service_ids' => ['required', 'array', 'min:1'],
             'service_ids.*' => ['integer', 'distinct', 'exists:services,id'],
             'consultation_mode' => ['nullable', 'in:office,whatsapp'],
+            'call_time' => ['nullable', 'string', 'max:20'],
             'payment_method' => ['nullable', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK])],
         ];
     }
@@ -97,6 +98,7 @@ class StoreLegalAidRequest extends FormRequest
             'case_description' => __('legal_aid.field_case'),
             'service_ids' => __('legal_aid.field_service'),
             'consultation_mode' => __('legal_aid.field_consultation'),
+            'call_time' => __('legal_aid.field_call_time'),
             'payment_method' => __('legal_aid.field_payment'),
         ];
     }

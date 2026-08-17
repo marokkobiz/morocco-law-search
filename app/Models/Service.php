@@ -39,10 +39,12 @@ class Service extends Model
 
     public function getConsultationModesAttribute(): array
     {
-        return collect(['office', 'whatsapp'])
+        $modes = collect(['office', 'whatsapp'])
             ->filter(fn (string $mode) => $this->{'allows_'.$mode})
             ->values()
             ->all();
+
+        return $modes === [] ? ['whatsapp'] : $modes;
     }
 
     public function allowsMode(?string $mode): bool

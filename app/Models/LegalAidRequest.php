@@ -17,6 +17,7 @@ class LegalAidRequest extends Model
         'whatsapp',
         'case_description',
         'consultation_mode',
+        'call_time',
         'payment_method',
         'service_id',
         'base_price',

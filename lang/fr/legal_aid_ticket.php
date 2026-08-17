@@ -14,6 +14,7 @@ return [
     'whatsapp' => 'WhatsApp',
     'service' => 'Service(s)',
     'consultation' => 'Consultation',
+    'call_time' => 'Heure d\'appel souhaitée',
     'booked_on' => 'Réservé le',
     'status' => 'Statut',
 
@@ -43,4 +44,6 @@ return [
 
     'footer_service' => 'MarocLoi — Service d\'aide juridique',
     'footer_issued' => 'Émis le :date',
+    'footer_line_1' => 'www.marocloi.com fait partie de Marokko Biz of 31.01.12 SARL',
+    'footer_line_2' => 'Marokko Biz of 31.01.12 SARL, Lot 9 Rue, 10 Dziri V Montagne 90000 TangierPatent 127407, ICE 003067038000038, CNSS 5800935',
 ];

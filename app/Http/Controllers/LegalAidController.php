@@ -117,6 +117,7 @@ class LegalAidController
                         ? LegalAidRequest::STATUS_PENDING
                         : LegalAidRequest::STATUS_PENDING_PAYMENT,
                     'consultation_mode' => $consultationMode,
+                    'call_time' => $payload['call_time'] ?? null,
                     'payment_method' => $paymentMethod,
                     'locale' => $locale,
                 ]);

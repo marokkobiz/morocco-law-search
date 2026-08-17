@@ -15,6 +15,8 @@ class EnsureUserIsAdmin
             abort(403, 'Unauthorized access.');
         }
 
+        app()->setLocale('en');
+
         return $next($request);
     }
 }

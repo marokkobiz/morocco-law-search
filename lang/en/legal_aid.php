@@ -3,7 +3,7 @@
 return [
     'badge' => 'Legal Aid',
     'title' => 'Professional Legal Consultations',
-    'subtitle' => 'Connect with qualified Moroccan lawyers. Book a session, get expert advice, and understand your legal options — all in your preferred language.',
+    'subtitle' => 'Connect with qualified Moroccan legal experts. Book a session, get expert advice, and understand your legal options — all in your preferred language.',
 
     'pricing_title' => 'Service & Pricing',
     'pricing_desc' => 'Transparent pricing for every type of consultation.',
@@ -45,6 +45,8 @@ return [
     'whatsapp_invalid' => 'The WhatsApp number must be in international format (e.g. +212 612345678).',
     'field_case' => 'Case is about:',
     'field_case_placeholder' => 'Briefly describe your legal matter...',
+    'field_call_time' => 'Preferred call time',
+    'call_time_placeholder' => 'Select a time interval...',
     'field_service' => 'Select one or more services',
     'no_services' => 'No services are available right now. Please check back later.',
     'service_required' => 'Please select at least one service.',
@@ -55,8 +57,10 @@ return [
     'field_consultation' => 'How would you like the consultation?',
     'consultation_office' => 'At the office',
     'consultation_office_desc' => 'Meet us in person at our office',
+    'consultation_office_only' => 'This consultation takes place at our office — you will need to visit us in person.',
     'consultation_whatsapp' => 'By WhatsApp',
     'consultation_whatsapp_desc' => 'Video or voice call over WhatsApp',
+    'consultation_whatsapp_only' => 'This consultation is conducted via WhatsApp — you will receive a call or message on your WhatsApp number.',
     'field_payment' => 'Choose how to pay',
     'payment_method_google_pay' => 'Google Pay',
     'payment_method_google_pay_desc' => 'Pay securely online and confirm your case instantly',
