@@ -36,8 +36,8 @@
                 <a href="{{ $paymentLink }}" style="color:#2563eb;font-weight:600;text-decoration:underline;">{{ $paymentLink }}</a>
             </p>
         @else
+            <p style="margin:0 0 16px;font-size:14px;color:#4b5563;line-height:1.7;">{{ __('emails.ticket_payment_intro') }}</p>
             @if ($paymentUrl)
-                <p style="margin:0 0 16px;font-size:14px;color:#4b5563;line-height:1.7;">{{ __('emails.ticket_payment_intro') }}</p>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
                     <tr>
                         <td align="center">
@@ -48,6 +48,10 @@
                         </td>
                     </tr>
                 </table>
+            @else
+                <p style="margin:0 0 16px;font-size:14px;color:#4b5563;line-height:1.7;">
+                    <a href="{{ $paymentLink }}" style="color:#2563eb;font-weight:600;text-decoration:underline;">{{ $paymentLink }}</a>
+                </p>
             @endif
         @endif
 
