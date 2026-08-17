@@ -22,7 +22,7 @@ return [
     'coverage_label' => 'التغطية',
     'coverage_title' => 'صُمم من أجل الشفافية',
     'coverage_desc' =>  'تم تجميع القوانين المغربية وفهرستها، وقد جُمعت جميعها من مصادر مغربية رسمية.',
-    'coverage_item_1_title' => 'Corpus مفهرس',
+    'coverage_item_1_title' => ' مفهرس',
     'coverage_item_1_desc' => 'تفضل النسخ السارية ويتم تمييزها بوضوح',
     'coverage_item_2_title' => 'مصادر قديمة احتياطية',
     'coverage_item_2_desc' => 'النسخ القديمة موسومة ويمكن تمييزها',
