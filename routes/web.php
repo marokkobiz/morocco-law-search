@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Advisor\CaseController;
+use App\Http\Controllers\Advisor\DashboardController as AdvisorDashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LegalAidController;
 use App\Http\Controllers\StripePaymentController;
@@ -101,6 +102,7 @@ Route::middleware(['auth', 'advisor'])
     ->prefix('advisor')
     ->name('advisor.')
     ->group(function () {
+        Route::get('/dashboard', [AdvisorDashboardController::class, 'index'])->name('dashboard');
         Route::get('/cases', [CaseController::class, 'index'])->name('cases.index');
         Route::get('/cases/{legalAidRequest}', [CaseController::class, 'show'])->name('cases.show');
         Route::post('/cases/{legalAidRequest}/services/{service}/toggle', [CaseController::class, 'toggleService'])->name('cases.toggle-service');

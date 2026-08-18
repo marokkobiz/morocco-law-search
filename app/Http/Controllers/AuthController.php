@@ -66,7 +66,7 @@ class AuthController
 
         $home = match ($user->role) {
             'admin' => route('admin.dashboard'),
-            'advisor' => route('advisor.cases.index'),
+            'advisor' => route('advisor.dashboard'),
             default => route('app.workspace'),
         };
 

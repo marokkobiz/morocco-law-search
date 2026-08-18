@@ -41,4 +41,10 @@ return [
     'source_family_code' => 'Droit civil',
     'source_doc' => 'Droit commercial',
     'source_real_estate' => 'Immobilier',
+    'back_to_landing_page' => "Retour à la page d'accueil",
+    'law_search_workspace' => 'Espace de recherche juridique',
+    'logout' => 'Déconnexion',
+    'go_to_dashboard' => 'Accéder au tableau de bord',
+    'admin_portal' => "Portail d'administration",
+    'log_in' => 'Se connecter',
 ];

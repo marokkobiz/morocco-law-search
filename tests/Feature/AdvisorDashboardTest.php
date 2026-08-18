@@ -400,6 +400,36 @@ class AdvisorDashboardTest extends TestCase
         $this->assertNotNull($case->fresh()->last_touched_at);
     }
 
+    public function test_advisor_dashboard_shows_case_stats(): void
+    {
+        $advisor = User::factory()->create(['role' => 'advisor']);
+
+        $open = $this->paidCase(['ticket_number' => '49001', 'case_status' => LegalAidRequest::CASE_OPEN]);
+        $open->update(['case_status' => LegalAidRequest::CASE_OPEN]);
+        $closed = $this->paidCase(['ticket_number' => '49002', 'case_status' => LegalAidRequest::CASE_CLOSED, 'closed_at' => now()]);
+        $this->paidCase(['ticket_number' => '49003']);
+
+        $open->update(['advisor_id' => $advisor->id, 'first_contact_at' => now()]);
+
+        $this->actingAs($advisor)
+            ->get(route('advisor.dashboard'))
+            ->assertOk()
+            ->assertSee('Advisor Dashboard')
+            ->assertSee('49001')
+            ->assertSee('49002')
+            ->assertSee('3')
+            ->assertSee('My Cases');
+    }
+
+    public function test_regular_users_are_forbidden_from_advisor_dashboard(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+
+        $this->actingAs($user)
+            ->get(route('advisor.dashboard'))
+            ->assertForbidden();
+    }
+
     public function test_advisors_are_notified_when_case_becomes_paid(): void
     {
         Mail::fake();

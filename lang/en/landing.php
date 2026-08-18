@@ -40,4 +40,10 @@ return [
     'source_penal_law' => 'Criminal Law',
     'source_family_code' => 'Civil Law',
     'source_doc' => 'Commercial law',
+    'back_to_landing_page' => 'Back to Landing Page',
+    'law_search_workspace' => 'Law Search Workspace',
+    'logout' => 'Logout',
+    'go_to_dashboard' => 'Go to Dashboard',
+    'admin_portal' => 'Admin Portal',
+    'log_in' => 'Log In',
 ];

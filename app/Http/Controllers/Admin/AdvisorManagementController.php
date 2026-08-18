@@ -16,7 +16,7 @@ class AdvisorManagementController extends Controller
     public function index(): View
     {
         return view('admin.advisors.index', [
-            'advisors' => User::where('role', 'advisor')->orderBy('name')->get(),
+            'advisors' => User::where('role', 'advisor')->orderBy('name')->paginate(5),
         ]);
     }
 

@@ -108,7 +108,7 @@ class AdvisorManagementTest extends TestCase
         $this->post('/login', [
             'email' => 'salma@example.com',
             'password' => $mail->temporaryPassword,
-        ])->assertRedirect(route('advisor.cases.index'));
+        ])->assertRedirect(route('advisor.dashboard'));
 
         $this->assertAuthenticatedAs(User::where('email', 'salma@example.com')->first());
     }

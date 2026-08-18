@@ -42,8 +42,12 @@ class CaseController extends Controller
             };
         }
 
-        if ($advisorId = (int) $request->query('advisor')) {
-            $query->where('advisor_id', $advisorId);
+        if ($advisorFilter = $request->query('advisor')) {
+            if ($advisorFilter === 'unclaimed') {
+                $query->whereNull('advisor_id');
+            } elseif ((int) $advisorFilter) {
+                $query->where('advisor_id', (int) $advisorFilter);
+            }
         }
 
         if ($serviceId = (int) $request->query('service')) {
@@ -53,7 +57,7 @@ class CaseController extends Controller
         return view('advisor.cases.index', [
             'requests' => $query->orderBy('case_status')
                 ->orderBy('created_at')
-                ->paginate(10)
+                ->paginate(4)
                 ->withQueryString(),
             'advisors' => User::where('role', 'advisor')->orderBy('name')->get(),
             'services' => Service::orderBy('name_en')->get(),

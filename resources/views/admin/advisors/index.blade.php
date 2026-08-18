@@ -14,7 +14,7 @@ Create, edit, suspend and reset credentials for advisor accounts.
 
 <div class="flex items-center justify-between mb-6">
     <p class="text-sm text-slate-500">
-        {{ $advisors->count() }} advisor{{ $advisors->count() !== 1 ? 's' : '' }} on the team.
+        {{ $advisors->total() }} advisor{{ $advisors->total() !== 1 ? 's' : '' }} on the team.
     </p>
     <a href="{{ route('admin.advisors.create') }}"
        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 transition cursor-pointer">
@@ -120,5 +120,11 @@ Create, edit, suspend and reset credentials for advisor accounts.
         </tbody>
     </table>
 </div>
+
+@if($advisors->hasPages())
+    <div class="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        {{ $advisors->links() }}
+    </div>
+@endif
 
 @endsection
