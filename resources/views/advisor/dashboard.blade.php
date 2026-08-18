@@ -16,7 +16,6 @@ Overview of the case workload across paid, confirmed and free consultation cases
     $s = $stats;
     $openPct = $s['total'] > 0 ? round($s['open'] / $s['total'] * 100) : 0;
     $closedPct = $s['total'] > 0 ? round($s['closed'] / $s['total'] * 100) : 0;
-    $unclaimedPct = $s['total'] > 0 ? round($s['unclaimed'] / $s['total'] * 100) : 0;
     $tasksPct = $s['tasksTotal'] > 0 ? round($s['tasksDone'] / $s['tasksTotal'] * 100) : 0;
 @endphp
 
@@ -74,24 +73,50 @@ Overview of the case workload across paid, confirmed and free consultation cases
         <div class="px-6 py-4 border-b border-slate-100">
             <h3 class="text-sm font-bold text-slate-900">Case Overview</h3>
         </div>
-        <div class="p-6 space-y-5">
-            @foreach([
-                ['label' => 'Open', 'count' => $s['open'], 'pct' => $openPct, 'bar' => 'bg-blue-600'],
-                ['label' => 'Closed', 'count' => $s['closed'], 'pct' => $closedPct, 'bar' => 'bg-emerald-600'],
-                ['label' => 'Unclaimed', 'count' => $s['unclaimed'], 'pct' => $unclaimedPct, 'bar' => 'bg-amber-500'],
-            ] as $row)
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-sm font-semibold text-slate-700">{{ $row['label'] }}</span>
-                        <span class="text-sm text-slate-500">{{ $row['count'] }} · {{ $row['pct'] }}%</span>
-                    </div>
-                    <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                        <div class="h-full rounded-full {{ $row['bar'] }} transition-all" style="width: {{ $row['pct'] }}%"></div>
-                    </div>
-                </div>
-            @endforeach
+        <div class="p-6 space-y-6">
+            @php $claimed = $s['total'] - $s['unclaimed']; @endphp
 
-            <div class="pt-3 border-t border-slate-100">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Case status</p>
+                <div class="space-y-4">
+                    @foreach([
+                        ['label' => 'Open', 'count' => $s['open'], 'bar' => 'bg-blue-600'],
+                        ['label' => 'Closed', 'count' => $s['closed'], 'bar' => 'bg-emerald-600'],
+                    ] as $row)
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-sm font-semibold text-slate-700">{{ $row['label'] }}</span>
+                                <span class="text-sm text-slate-500">{{ $row['count'] }} · {{ $s['total'] > 0 ? round($row['count'] / $s['total'] * 100) : 0 }}% of cases</span>
+                            </div>
+                            <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                                <div class="h-full rounded-full {{ $row['bar'] }} transition-all" style="width: {{ $s['total'] > 0 ? round($row['count'] / $s['total'] * 100) : 0 }}%"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">First contact</p>
+                <div class="space-y-4">
+                    @foreach([
+                        ['label' => 'Claimed', 'count' => $claimed, 'bar' => 'bg-purple-600'],
+                        ['label' => 'Unclaimed', 'count' => $s['unclaimed'], 'bar' => 'bg-amber-500'],
+                    ] as $row)
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-sm font-semibold text-slate-700">{{ $row['label'] }}</span>
+                                <span class="text-sm text-slate-500">{{ $row['count'] }} · {{ $s['total'] > 0 ? round($row['count'] / $s['total'] * 100) : 0 }}% of cases</span>
+                            </div>
+                            <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                                <div class="h-full rounded-full {{ $row['bar'] }} transition-all" style="width: {{ $s['total'] > 0 ? round($row['count'] / $s['total'] * 100) : 0 }}%"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100">
                 <div class="flex items-center justify-between mb-1.5">
                     <span class="text-sm font-semibold text-slate-700">All visible cases</span>
                     <span class="text-sm text-slate-500">{{ $s['total'] }}</span>
