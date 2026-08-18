@@ -55,4 +55,23 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+
+    public function isAdvisor(): bool
+    {
+        return $this->role === 'advisor';
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->isAdmin() || $this->isAdvisor();
+    }
+
+    public function getRoleLabelAttribute(): string
+    {
+        return match ($this->role) {
+            'admin' => 'Admin',
+            'advisor' => 'Advisor',
+            default => 'User',
+        };
+    }
 }

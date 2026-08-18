@@ -39,8 +39,9 @@ View all registered platform users.
                     <td class="px-6 py-4">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border
                             @if($user->role === 'admin') bg-rose-50 text-rose-700 border-rose-200
+                            @elseif($user->role === 'advisor') bg-blue-50 text-blue-700 border-blue-200
                             @else bg-slate-100 text-slate-700 border-slate-200 @endif">
-                            {{ ucfirst($user->role ?? 'User') }}
+                            {{ $user->roleLabel }}
                         </span>
                     </td>
 
@@ -63,6 +64,21 @@ View all registered platform users.
                                                 bg-slate-900 hover:bg-slate-800 text-white border-transparent
                                             @endif">
                                         {{ $user->role === 'admin' ? 'Remove Admin' : 'Make Admin' }}
+                                    </button>
+                                </form>
+
+                                <form action="{{ route('admin.users.toggle-advisor', $user->id) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                            class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition shadow-sm
+                                            @if($user->role === 'advisor')
+                                                bg-white hover:bg-rose-50 text-rose-600 border-rose-200 hover:border-rose-300
+                                            @elseif($user->role === 'admin')
+                                                bg-white hover:bg-blue-50 text-blue-600 border-blue-200 hover:border-blue-300
+                                            @else
+                                                bg-slate-900 hover:bg-slate-800 text-white border-transparent
+                                            @endif">
+                                        {{ $user->role === 'advisor' ? 'Remove Advisor' : 'Make Advisor' }}
                                     </button>
                                 </form>
 

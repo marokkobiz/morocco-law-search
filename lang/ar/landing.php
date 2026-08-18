@@ -42,4 +42,10 @@ return [
     'source_doc' => 'القانون التجاري',
     'source_real_estate' => 'العقار',
     "family_law" => "قانون الأسرة",
+    'back_to_landing_page' => 'العودة إلى الصفحة الرئيسية',
+    'law_search_workspace' => 'منصة البحث القانوني',
+    'logout' => 'تسجيل الخروج',
+    'go_to_dashboard' => 'الذهاب إلى لوحة التحكم',
+    'admin_portal' => 'لوحة الإدارة',
+    'log_in' => 'تسجيل الدخول',
 ];

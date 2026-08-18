@@ -1,0 +1,22 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('legal_aid_request_service', function (Blueprint $table) {
+            $table->timestamp('completed_at')->nullable()->after('service_id');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('legal_aid_request_service', function (Blueprint $table) {
+            $table->dropColumn('completed_at');
+        });
+    }
+};

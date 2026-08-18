@@ -13,6 +13,7 @@ use App\Mail\LegalAidTicketMail;
 use App\Models\LegalAidConfirmation;
 use App\Models\LegalAidRequest;
 use App\Models\Service;
+use App\Support\AdvisorNotifier;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -150,6 +151,10 @@ class LegalAidController
         Mail::to(config('legal_aid.contact_email'))
             ->queue(new LegalAidAdminNotificationMail($legalAidRequest, $paymentUrl, $paymentLink));
 
+        if ($legalAidRequest->isFree()) {
+            AdvisorNotifier::caseReady($legalAidRequest);
+        }
+
         return redirect()->route('legal-aid.confirmed', ['ticket' => $legalAidRequest->ticket_number]);
     }
 
@@ -246,6 +251,10 @@ class LegalAidController
         Mail::to($legalAidRequest->email)
             ->locale($legalAidRequest->locale)
             ->queue(new LegalAidConfirmationMail($legalAidRequest));
+
+        if (! $legalAidRequest->isFree()) {
+            AdvisorNotifier::caseReady($legalAidRequest);
+        }
 
         return back()->with('success', __('legal_aid.confirmed_ok', ['ticket' => $legalAidRequest->ticketLabel]));
     }

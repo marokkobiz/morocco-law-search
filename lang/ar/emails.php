@@ -9,6 +9,8 @@ return [
     'legal_aid_receipt_subject' => 'تم رفع إيصال الدفع :ticket',
     'legal_aid_rejection_subject' => 'تعذر التحقق من الدفع — تذكرة :ticket',
     'legal_aid_booking_confirmation_subject' => 'يرجى تأكيد طلب الحجز الخاص بك',
+    'legal_aid_advisor_subject' => 'قضية مدفوعة جديدة جاهزة :ticket',
+    'legal_aid_advisor_subject_free' => 'استشارة مجانية جديدة :ticket',
 
     'ticket_hello' => 'مرحباً :name،',
     'ticket_intro' => 'لقد استلمنا طلب المساعدة القانونية الخاص بك. إليك رقم التذكرة الخاص بك — احتفظ به، ستحتاجه في جميع المراسلات المتعلقة بقضيتك.',
@@ -59,4 +61,11 @@ return [
     'booking_confirm_button' => 'تأكيد حجزي',
     'booking_confirm_note' => 'بمجرد التأكيد، سيتم إنشاء تذكرتك وإرسالها إلى :email مع تفاصيل الدفع.',
     'booking_confirm_expiry' => 'تنتهي صلاحية هذا الرابط خلال :hours ساعة.',
+
+    'advisor_hello' => 'قضية جديدة مدفوعة وجاهزة',
+    'advisor_hello_free' => 'استشارة مجانية جديدة جاهزة',
+    'advisor_intro' => 'أصبحت قضية جديدة مرئية في لوحة المستشارين. التفاصيل أدناه — افتح القضية لتسجيلها كأول تواصل لك.',
+    'advisor_open_case_button' => 'فتح القضية',
+    'advisor_note' => 'تم تأكيد الدفع. يمكنك الآن رؤية هذه القضية في لوحة المستشارين والبدء في العمل عليها.',
+    'advisor_note_free' => 'هذه الاستشارة مجانية. يمكنك الآن رؤية هذه القضية في لوحة المستشارين والتواصل مع العميل.',
 ];

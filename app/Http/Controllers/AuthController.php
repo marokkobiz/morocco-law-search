@@ -50,9 +50,27 @@ class AuthController
                 ->onlyInput('email');
         }
 
+        $user = Auth::user();
+
+        if ($user->access_status === 'suspended') {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()
+                ->withErrors(['email' => 'Your account has been suspended. Contact an administrator.'])
+                ->onlyInput('email');
+        }
+
         $request->session()->regenerate();
 
-        return redirect()->intended(route('app.workspace'));
+        $home = match ($user->role) {
+            'admin' => route('admin.dashboard'),
+            'advisor' => route('advisor.dashboard'),
+            default => route('app.workspace'),
+        };
+
+        return redirect()->intended($home);
     }
 
     public function register(RegisterRequest $request): RedirectResponse
