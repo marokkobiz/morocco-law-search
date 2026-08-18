@@ -41,4 +41,5 @@ return [
     'source_family_code' => 'القانون المدني',
     'source_doc' => 'القانون التجاري',
     'source_real_estate' => 'العقار',
+    "family_law" => "قانون الأسرة",
 ];

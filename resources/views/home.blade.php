@@ -92,10 +92,10 @@
     <section id="sources" class="py-20 md:py-28">
         <div class="container-page">
             <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6" data-animate="fade-up">
-                <div class="max-w-3xl">
+                <div class="max-w-3xl lg:max-w-none">
                     <span class="section-label">{{ __('landing.sources_label') }}</span>
-                    <h2 class="section-title mt-4">{{ __('landing.sources_title') }}</h2>
-                    <p class="section-desc">{{ __('landing.sources_desc') }}</p>
+                    <h2 class="section-title mt-4 lg:whitespace-nowrap">{{ __('landing.sources_title') }}</h2>
+                    <p class="section-desc lg:max-w-none lg:whitespace-nowrap">{{ __('landing.sources_desc') }}</p>
                 </div>
             </div>
 
@@ -210,10 +210,10 @@
     <section id="database" class="py-20 md:py-28">
         <div class="container-page">
             <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6" data-animate="fade-up">
-                <div class="max-w-3xl">
+                <div class="max-w-3xl lg:max-w-none">
                     <span class="section-label">{{ __('landing.database_label') }}</span>
                     <h2 class="section-title mt-4">{{ __('landing.database_title') }}</h2>
-                    <p class="section-desc">{{ __('landing.database_desc') }}</p>
+                    <p class="section-desc lg:max-w-none lg:whitespace-nowrap">{{ __('landing.database_desc') }}</p>
                 </div>
             </div>
 
@@ -252,6 +252,13 @@
                         class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto font-bold text-sm">
                         DO</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_doc') }}</span>
+                </div>
+                <div class="card p-5 text-center hover:border-cyan-200 transition-colors cursor-default"
+                    data-animate="scale-in" style="--delay: 0.25s">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center mx-auto font-bold text-sm">
+                        FL</div>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __("landing.family_law") }}</span>
                 </div>
                 {{-- <div class="card p-5 text-center hover:border-cyan-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.25s">
