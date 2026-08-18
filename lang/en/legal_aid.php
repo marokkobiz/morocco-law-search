@@ -3,7 +3,7 @@
 return [
     'badge' => 'Legal Aid',
     'title' => 'Professional Legal Consultations',
-    'subtitle' => 'Connect with qualified Moroccan legal experts. Book a session, get expert advice, and understand your legal options — all in your preferred language.',
+    'subtitle' => 'Connect with qualified Moroccan legal experts. Book a session now. Get expert advice, and understand your legal options. All in your preferred language.',
 
     'pricing_title' => 'Service & Pricing',
     'pricing_desc' => 'Transparent pricing for every type of consultation.',
@@ -36,13 +36,13 @@ return [
     'field_email' => 'Email Address',
     'field_email_placeholder' => 'you@example.com',
     'field_phone' => 'Phone Number',
-    'field_phone_placeholder' => '+212 ...',
-    'field_phone_help' => 'International format — country code + number. E.g. +212 612345678',
+    'field_phone_placeholder' => '06 ...',
+    'field_phone_help' => 'International format — country code + number. E.g. 06 12 34 56 78',
     'field_whatsapp' => 'WhatsApp Number',
-    'field_whatsapp_placeholder' => '+212 ...',
-    'field_whatsapp_help' => 'Optional. Same format as the phone number. E.g. +212 612345678',
-    'phone_invalid' => 'The phone number must be in international format (e.g. +212 612345678).',
-    'whatsapp_invalid' => 'The WhatsApp number must be in international format (e.g. +212 612345678).',
+    'field_whatsapp_placeholder' => '06 ...',
+    'field_whatsapp_help' => 'Optional. Same format as the phone number. E.g. 06 12 34 56 78',
+    'phone_invalid' => 'The phone number must be a valid number (e.g. 06 12 34 56 78).',
+    'whatsapp_invalid' => 'The WhatsApp number must be a valid number (e.g. 06 12 34 56 78).',
     'field_case' => 'Case is about:',
     'field_case_placeholder' => 'Briefly describe your legal matter...',
     'field_call_time' => 'Preferred call time',
@@ -127,4 +127,8 @@ return [
     'rejected_ok' => 'Request :ticket rejected. The client has been notified.',
     'reject_not_allowed' => 'A confirmed request cannot be rejected.',
     'cannot_reject_without_receipt' => 'You can only reject a request after a payment receipt has been uploaded.',
+    "field_email_help" => "(a confirmation will be sent to this email)",
+    "copy_from_phone" => "Use my phone number",
+    "copy_from_phone_hint" => "Copy the phone number into the WhatsApp field",
+    "case_min_hint" => "(minimum 100 characters)"
 ];

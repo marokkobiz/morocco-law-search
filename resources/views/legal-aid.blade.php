@@ -45,25 +45,26 @@
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label
-                                        class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_name') }}</label>
-                                    <input type="text" name="full_name" value="{{ old('full_name') }}" required
-                                        class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                        placeholder="{{ __('legal_aid.field_name_placeholder') }}">
+                                        class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __("legal_aid.field_name") }}</label>
+                                    <input type="text" name="full_name" value="{{ old("full_name") }}" required
+                                        class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                        placeholder="{{ __("legal_aid.field_name_placeholder") }}">
                                 </div>
 
                                 <div>
                                     <label
-                                        class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_email') }}</label>
-                                    <input type="email" name="email" value="{{ old('email') }}" required
-                                        class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                        placeholder="{{ __('legal_aid.field_email_placeholder') }}">
+                                        class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __("legal_aid.field_email") }}</label>
+                                    <input type="email" name="email" value="{{ old("email") }}" required
+                                        class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                        placeholder="{{ __("legal_aid.field_email_placeholder") }}">
+                                    <p class="mt-1 text-xs text-gray-400">{{ __("legal_aid.field_email_help") }}</p>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid gap-4 sm:grid-cols-3">
                                 <div>
                                     <label class="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-gray-700">
-                                        {{ __('legal_aid.field_phone') }}
+                                        {{ __("legal_aid.field_phone") }}
                                         <span class="group relative inline-flex">
                                             <svg class="h-4 w-4 cursor-help text-gray-400" fill="none"
                                                 stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -72,18 +73,18 @@
                                             </svg>
                                             <span
                                                 class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-64 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs font-normal leading-relaxed text-white shadow-lg group-hover:block">
-                                                {{ __('legal_aid.field_phone_help') }}
+                                                {{ __("legal_aid.field_phone_help") }}
                                             </span>
                                         </span>
                                     </label>
-                                    <input type="tel" name="phone" value="{{ old('phone') }}" required
-                                        class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                        placeholder="{{ __('legal_aid.field_phone_placeholder') }}">
+                                    <input type="tel" name="phone" value="{{ old("phone") }}" required
+                                        class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                        placeholder="{{ __("legal_aid.field_phone_placeholder") }}">
                                 </div>
 
                                 <div>
                                     <label class="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-gray-700">
-                                        {{ __('legal_aid.field_whatsapp') }}
+                                        {{ __("legal_aid.field_whatsapp") }}
                                         <span class="group relative inline-flex">
                                             <svg class="h-4 w-4 cursor-help text-gray-400" fill="none"
                                                 stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -92,45 +93,55 @@
                                             </svg>
                                             <span
                                                 class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-64 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs font-normal leading-relaxed text-white shadow-lg group-hover:block">
-                                                {{ __('legal_aid.field_whatsapp_help') }}
+                                                {{ __("legal_aid.field_whatsapp_help") }}
                                             </span>
                                         </span>
                                     </label>
-                                    <input type="tel" name="whatsapp" value="{{ old('whatsapp') }}"
-                                        class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                        placeholder="{{ __('legal_aid.field_whatsapp_placeholder') }}">
+                                    <input type="tel" name="whatsapp" value="{{ old("whatsapp") }}"
+                                        class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                        placeholder="{{ __("legal_aid.field_whatsapp_placeholder") }}">
+                                    <button type="button" id="copy-phone-to-whatsapp"
+                                        class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 transition-colors hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40"
+                                        title="{{ __("legal_aid.copy_from_phone_hint") }}">
+                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H5a2 2 0 00-2 2v9a2 2 0 002 2h10a2 2 0 002-2v-3M16 3h5v5M8 16L21 3"/></svg>
+                                        {{ __("legal_aid.copy_from_phone") }}
+                                    </button>
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __("legal_aid.field_call_time") }}</label>
+                                    <select name="call_time" required
+                                        class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500">
+                                        <option value="">{{ __("legal_aid.call_time_placeholder") }}</option>
+                                        <option value="09:00-09:30">09:00 - 09:30</option>
+                                        <option value="09:30-10:00">09:30 - 10:00</option>
+                                        <option value="10:00-10:30">10:00 - 10:30</option>
+                                        <option value="10:30-11:00">10:30 - 11:00</option>
+                                        <option value="11:00-11:30">11:00 - 11:30</option>
+                                        <option value="11:30-12:00">11:30 - 12:00</option>
+                                        <option value="12:00-12:30">12:00 - 12:30</option>
+                                        <option value="12:30-13:00">12:30 - 13:00</option>
+                                        <option value="13:00-13:30">13:00 - 13:30</option>
+                                        <option value="13:30-14:00">13:30 - 14:00</option>
+                                        <option value="14:00-14:30">14:00 - 14:30</option>
+                                        <option value="14:30-15:00">14:30 - 15:00</option>
+                                        <option value="15:00-15:30">15:00 - 15:30</option>
+                                        <option value="15:30-16:00">15:30 - 16:00</option>
+                                    </select>
                                 </div>
                             </div>
 
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_case') }}</label>
-                                <textarea name="case_description" rows="4" required
-                                    class="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                    placeholder="{{ __('legal_aid.field_case_placeholder') }}">{{ old('case_description') }}</textarea>
-                            </div>
-
-                            <div>
-                                <label
-                                    class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_call_time') }}</label>
-                                <select name="call_time"
-                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500">
-                                    <option value="">{{ __('legal_aid.call_time_placeholder') }}</option>
-                                    <option value="09:00-10:00" {{ old('call_time') === '09:00-10:00' ? 'selected' : '' }}>09:00 - 10:00</option>
-                                    <option value="09:30-10:30" {{ old('call_time') === '09:30-10:30' ? 'selected' : '' }}>09:30 - 10:30</option>
-                                    <option value="10:00-11:00" {{ old('call_time') === '10:00-11:00' ? 'selected' : '' }}>10:00 - 11:00</option>
-                                    <option value="10:30-11:30" {{ old('call_time') === '10:30-11:30' ? 'selected' : '' }}>10:30 - 11:30</option>
-                                    <option value="11:00-12:00" {{ old('call_time') === '11:00-12:00' ? 'selected' : '' }}>11:00 - 12:00</option>
-                                    <option value="11:30-12:30" {{ old('call_time') === '11:30-12:30' ? 'selected' : '' }}>11:30 - 12:30</option>
-                                    <option value="12:00-13:00" {{ old('call_time') === '12:00-13:00' ? 'selected' : '' }}>12:00 - 13:00</option>
-                                    <option value="13:00-14:00" {{ old('call_time') === '13:00-14:00' ? 'selected' : '' }}>13:00 - 14:00</option>
-                                    <option value="13:30-14:30" {{ old('call_time') === '13:30-14:30' ? 'selected' : '' }}>13:30 - 14:30</option>
-                                    <option value="14:00-15:00" {{ old('call_time') === '14:00-15:00' ? 'selected' : '' }}>14:00 - 15:00</option>
-                                    <option value="14:30-15:30" {{ old('call_time') === '14:30-15:30' ? 'selected' : '' }}>14:30 - 15:30</option>
-                                    <option value="15:00-16:00" {{ old('call_time') === '15:00-16:00' ? 'selected' : '' }}>15:00 - 16:00</option>
-                                </select>
+                                    class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __("legal_aid.field_case") }}</label>
+                                <textarea name="case_description" rows="4" minlength="100" required
+                                    class="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                    placeholder="{{ __("legal_aid.field_case_placeholder") }}">{{ old("case_description") }}</textarea>
+                                <p class="mt-1 text-xs text-gray-400">{{ __("legal_aid.case_min_hint") }}</p>
                             </div>
                         </div>
+
 
                         <div>
                             <label
@@ -371,5 +382,17 @@
             serviceBoxes.forEach((box) => box.addEventListener('change', updateConsultationModes));
             updateConsultationModes();
         })();
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var phoneInput = document.getElementsByName("phone")[0] || null;
+            var whatsBtn = document.getElementById("copy-phone-to-whatsapp");
+            var whatsInput = document.getElementsByName("whatsapp")[0] || null;
+            if (!phoneInput || !whatsBtn || !whatsInput) return;
+            var sync = function () { whatsBtn.disabled = !phoneInput.value; };
+            phoneInput.addEventListener("input", sync);
+            whatsBtn.addEventListener("click", function () { whatsInput.value = phoneInput.value; sync(); });
+            sync();
+        });
     </script>
 @endpush
