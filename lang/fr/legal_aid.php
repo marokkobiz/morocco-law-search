@@ -3,7 +3,7 @@
 return [
     'badge' => 'Aide juridique',
     'title' => 'Consultations juridiques professionnelles',
-    'subtitle' => 'Contactez des experts juridiques marocains qualifiés. Réservez une session, obtenez des conseils d\'experts et comprenez vos options juridiques — dans la langue de votre choix.',
+    'subtitle' => 'Contactez des experts juridiques marocains qualifiés. Réservez une session dès maintenant, obtenez des conseils d\'experts et comprenez vos options juridiques. Dans la langue de votre choix.',
 
     'pricing_title' => 'Services et tarifs',
     'pricing_desc' => 'Des tarifs transparents pour chaque type de consultation.',
@@ -36,13 +36,13 @@ return [
     'field_email' => 'Adresse e-mail',
     'field_email_placeholder' => 'vous@exemple.com',
     'field_phone' => 'Numéro de téléphone',
-    'field_phone_placeholder' => '+212 ...',
-    'field_phone_help' => 'Format international — indicatif du pays + numéro. Ex. : +212 612345678',
+    'field_phone_placeholder' => '06 ...',
+    'field_phone_help' => 'Format international — indicatif du pays + numéro. Ex. : 06 12 34 56 78',
     'field_whatsapp' => 'Numéro WhatsApp',
-    'field_whatsapp_placeholder' => '+212 ...',
-    'field_whatsapp_help' => 'Facultatif. Même format que le numéro de téléphone. Ex. : +212 612345678',
-    'phone_invalid' => 'Le numéro de téléphone doit être au format international (ex. : +212 612345678).',
-    'whatsapp_invalid' => 'Le numéro WhatsApp doit être au format international (ex. : +212 612345678).',
+    'field_whatsapp_placeholder' => '06 ...',
+    'field_whatsapp_help' => 'Facultatif. Même format que le numéro de téléphone. Ex. : 06 12 34 56 78',
+    'phone_invalid' => 'Le numéro de téléphone doit être valide (ex. : 06 12 34 56 78).',
+    'whatsapp_invalid' => 'Le numéro WhatsApp doit être valide (ex. : 06 12 34 56 78).',
     'field_case' => 'Objet du dossier :',
     'field_case_placeholder' => 'Décrivez brièvement votre affaire juridique...',
     'field_call_time' => 'Heure d\'appel souhaitée',
@@ -127,4 +127,8 @@ return [
     'rejected_ok' => 'Demande :ticket rejetée. Le client a été notifié.',
     'reject_not_allowed' => 'Une demande confirmée ne peut pas être rejetée.',
     'cannot_reject_without_receipt' => 'Vous ne pouvez rejeter une demande qu\'après le téléversement d\'un reçu de paiement.',
+    "field_email_help" => "(une confirmation sera envoyée à cet e-mail)",
+    "copy_from_phone" => "Utiliser mon numéro de téléphone",
+    "copy_from_phone_hint" => "Copie le numéro de téléphone dans le champ WhatsApp",
+    "case_min_hint" => "(100 caractères minimum)"
 ];
