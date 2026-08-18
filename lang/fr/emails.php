@@ -9,6 +9,8 @@ return [
     'legal_aid_receipt_subject' => 'Reçu de paiement téléversé :ticket',
     'legal_aid_rejection_subject' => 'Paiement non vérifié — Ticket :ticket',
     'legal_aid_booking_confirmation_subject' => 'Veuillez confirmer votre demande de réservation',
+    'legal_aid_advisor_subject' => 'Nouveau dossier payé prêt :ticket',
+    'legal_aid_advisor_subject_free' => 'Nouvelle consultation gratuite :ticket',
 
     'ticket_hello' => 'Bonjour :name,',
     'ticket_intro' => 'Nous avons bien reçu votre demande d\'aide juridique. Voici votre numéro de ticket — conservez-le, il vous sera demandé pour toute communication concernant votre dossier.',
@@ -59,4 +61,11 @@ return [
     'booking_confirm_button' => 'Confirmer ma réservation',
     'booking_confirm_note' => 'Une fois confirmée, votre ticket sera généré et envoyé à :email avec les détails de paiement.',
     'booking_confirm_expiry' => 'Ce lien expire dans :hours heures.',
+
+    'advisor_hello' => 'Un nouveau dossier payé est prêt',
+    'advisor_hello_free' => 'Une nouvelle consultation gratuite est prête',
+    'advisor_intro' => 'Un dossier vient de devenir visible sur le tableau de bord des conseillers. Détails ci-dessous — ouvrez le dossier pour le revendiquer comme votre premier contact.',
+    'advisor_open_case_button' => 'Ouvrir le dossier',
+    'advisor_note' => 'Le paiement a été confirmé. Vous pouvez désormais voir ce dossier sur le tableau de bord des conseillers et commencer à travailler dessus.',
+    'advisor_note_free' => 'Cette consultation est gratuite. Vous pouvez désormais voir ce dossier sur le tableau de bord des conseillers et contacter le client.',
 ];
