@@ -8,7 +8,7 @@
             <div class="mx-auto mb-12 max-w-3xl text-center" data-animate="fade-up">
                 <span class="section-label">{{ __('legal_aid.badge') }}</span>
                 <h1 class="section-title mt-4">{{ __('legal_aid.title') }}</h1>
-                <p class="section-desc mx-auto mt-4">{{ __('legal_aid.subtitle') }}</p>
+                <p class="section-desc mx-auto mt-4">{!! __('legal_aid.subtitle') !!}</p>
             </div>
 
             <div class="mx-auto max-w-3xl">

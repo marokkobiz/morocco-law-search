@@ -3,7 +3,7 @@
 return [
     'badge' => 'Legal Aid',
     'title' => 'Professional Legal Consultations',
-    'subtitle' => 'Connect with qualified Moroccan legal experts. Book a session now. Get expert advice, and understand your legal options. All in your preferred language.',
+    'subtitle' => 'Connect with qualified Moroccan legal experts. <strong>Book a session now.</strong> <br> Get expert advice, and understand your legal options. <br><br> All in your preferred language.',
 
     'pricing_title' => 'Service & Pricing',
     'pricing_desc' => 'Transparent pricing for every type of consultation.',

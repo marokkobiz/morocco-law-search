@@ -142,8 +142,6 @@
                 <div>
                     <p class="text-sm text-gray-500 text-center">Copyright Marokko Biz of 31.01.12 SARL</p>
                     <p class="mt-3 text-xs text-slate-400 text-center">www.marocloi.com is part of Marokko Biz of 31.01.12 SARL</p>
-                    <p class="text-xs text-slate-400 text-center lg:whitespace-nowrap">Marokko Biz of 31.01.12 SARL, Lot 9 Rue, 10 Dziri V Montagne 90000 Tangier Patent 127407, ICE 003067038000038, CNSS 5800935</p>
-                    <p class="text-xs text-slate-400 text-center">Email: <a href="mailto:info@marocloi.com" class="text-slate-300 hover:text-white">info@marocloi.com</a></p>
                     <div class="text-center">
                         <div
                             class="flex flex-wrap items-center justify-center gap-x-1 text-[10px] sm:text-xs text-slate-400">
