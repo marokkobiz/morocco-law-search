@@ -257,16 +257,9 @@
                     data-animate="scale-in" style="--delay: 0.25s">
                     <div
                         class="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        FL</div>
-                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __("landing.family_law") }}</span>
+                        CL</div>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_civil_law') }}</span>
                 </div>
-                {{-- <div class="card p-5 text-center hover:border-cyan-200 transition-colors cursor-default"
-                    data-animate="scale-in" style="--delay: 0.25s">
-                    <div
-                        class="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        IM</div>
-                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_real_estate') }}</span>
-                </div> --}}
             </div>
         </div>
     </section>

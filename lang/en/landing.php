@@ -35,12 +35,14 @@ return [
     'cta_desc' => 'Access thousands of Moroccan legal documents from a single, professional workspace.',
     'cta_create' => 'Create Free Account',
     'cta_learn' => 'Learn More',
+
     'source_bulletin' => 'Official Bulletin',
     'source_work_code' => 'Labor Law',
     'source_penal_law' => 'Criminal Law',
-    'source_family_code' => 'Civil Law',
-    'source_doc' => 'Commercial law',
-    "family_law" => "Family Law",
+    'source_family_code' => 'Family Law',
+    'source_doc' => 'Commercial Law',
+    'source_civil_law' => 'Civil Law',
+
     'back_to_landing_page' => 'Back to Landing Page',
     'law_search_workspace' => 'Law Search Workspace',
     'logout' => 'Logout',
