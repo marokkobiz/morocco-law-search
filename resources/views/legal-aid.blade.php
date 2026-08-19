@@ -159,7 +159,7 @@
                                             @if ($service->description)
                                                 <span class="mt-0.5 text-xs text-gray-500">{{ $service->description }}</span>
                                             @endif
-                                            <span class="mt-auto space-y-0.5 pt-2">
+                                            <span class="space-y-0.5 pt-2">
                                                 @if ($service->notes)
                                                     <span class="block text-xs text-gray-500">• {{ $service->notes }}</span>
                                                 @endif
