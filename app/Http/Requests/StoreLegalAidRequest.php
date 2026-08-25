@@ -19,8 +19,8 @@ class StoreLegalAidRequest extends FormRequest
         return [
             'full_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email:rfc', 'max:255'],
-            'phone' => ['required', 'string', 'regex:/^\+?[1-9][0-9]{8,14}$/'],
-            'whatsapp' => ['nullable', 'string', 'regex:/^\+?[1-9][0-9]{8,14}$/'],
+            'phone' => ['required', 'string', 'regex:/^\+?0?[1-9][0-9]{7,14}$/'],
+            'whatsapp' => ['nullable', 'string', 'regex:/^\+?0?[1-9][0-9]{7,14}$/'],
             'case_description' => ['required', 'string', 'max:5000'],
             'service_ids' => ['required', 'array', 'min:1'],
             'service_ids.*' => ['integer', 'distinct', 'exists:services,id'],
