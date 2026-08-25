@@ -9,6 +9,8 @@ return [
     'legal_aid_receipt_subject' => 'Payment Receipt Uploaded :ticket',
     'legal_aid_rejection_subject' => 'Payment Not Verified — Ticket :ticket',
     'legal_aid_booking_confirmation_subject' => 'Please confirm your booking request',
+    'legal_aid_advisor_subject' => 'New paid case ready :ticket',
+    'legal_aid_advisor_subject_free' => 'New free consultation :ticket',
 
     'ticket_hello' => 'Hello :name,',
     'ticket_intro' => 'We have received your legal aid request. Here is your ticket number — keep it, you will need it for all communication about your case.',
@@ -59,4 +61,11 @@ return [
     'booking_confirm_button' => 'Confirm my booking',
     'booking_confirm_note' => 'Once you confirm, your ticket will be generated and sent to :email along with the payment details.',
     'booking_confirm_expiry' => 'This link expires in :hours hours.',
+
+    'advisor_hello' => 'A new case is paid and ready',
+    'advisor_hello_free' => 'A new free consultation is ready',
+    'advisor_intro' => 'A case has just become visible to the advisor dashboard. Details below — open the case to claim it as your first contact.',
+    'advisor_open_case_button' => 'Open the case',
+    'advisor_note' => 'The payment has been confirmed. You can now see this case on the advisor dashboard and start working on it.',
+    'advisor_note_free' => 'This consultation is free of charge. You can now see this case on the advisor dashboard and contact the client.',
 ];

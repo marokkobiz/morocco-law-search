@@ -29,6 +29,21 @@ class UserController extends Controller
         return back();
     }
 
+    public function toggleAdvisor(User $user): RedirectResponse
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'You cannot change your own role.');
+        }
+
+        $newRole = $user->isAdvisor() ? 'user' : 'advisor';
+
+        $user->forceFill(['role' => $newRole])->save();
+
+        return back()->with('success', $newRole === 'advisor'
+            ? $user->name.' is now an advisor.'
+            : $user->name.' is no longer an advisor.');
+    }
+
     public function destroy(User $user): RedirectResponse
     {
         if ($user->id === auth()->id()) {

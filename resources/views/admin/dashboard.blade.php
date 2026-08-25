@@ -47,6 +47,45 @@ Monitor legal aid requests and confirm payments.
 
 </div>
 
+<!-- Payment Split -->
+@php
+    $paidTotal = $paymentSplit['googlePayPaid'] + $paymentSplit['bankConfirmed'];
+    $paidShare = $paidTotal + $paymentSplit['free'] > 0 ? round($paidTotal / ($paidTotal + $paymentSplit['free']) * 100) : 0;
+@endphp
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+    <div class="px-6 py-4 border-b border-slate-100">
+        <h3 class="text-sm font-bold text-slate-900">Payment Split</h3>
+        <p class="text-xs text-slate-500 mt-0.5">How legal aid requests are being paid.</p>
+    </div>
+    <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        @foreach([
+            ['label' => 'Google Pay (paid)', 'count' => $paymentSplit['googlePayPaid'], 'bar' => 'bg-emerald-600'],
+            ['label' => 'Bank (confirmed)', 'count' => $paymentSplit['bankConfirmed'], 'bar' => 'bg-amber-500'],
+            ['label' => 'Free consultation', 'count' => $paymentSplit['free'], 'bar' => 'bg-purple-500'],
+        ] as $row)
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-sm font-semibold text-slate-700">{{ $row['label'] }}</span>
+                    <span class="text-sm text-slate-500">{{ $row['count'] }} · {{ $paidTotal + $paymentSplit['free'] > 0 ? round($row['count'] / ($paidTotal + $paymentSplit['free']) * 100) : 0 }}%</span>
+                </div>
+                <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                    <div class="h-full rounded-full {{ $row['bar'] }} transition-all" style="width: {{ $paidTotal + $paymentSplit['free'] > 0 ? round($row['count'] / ($paidTotal + $paymentSplit['free']) * 100) : 0 }}%"></div>
+                </div>
+            </div>
+        @endforeach
+
+        <div>
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-sm font-semibold text-slate-700">Paid + confirmed share</span>
+                <span class="text-sm text-slate-500">{{ $paidShare }}%</span>
+            </div>
+            <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                <div class="h-full rounded-full bg-slate-900 transition-all" style="width: {{ $paidShare }}%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Recent Requests -->
 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 
@@ -68,8 +107,7 @@ Monitor legal aid requests and confirm payments.
                     <th class="px-6 py-4">Ticket</th>
                     <th class="px-6 py-4">Client</th>
                     <th class="px-6 py-4">Status</th>
-                    <th class="px-6 py-4">Receipt</th>
-                    <th class="px-6 py-4 text-center">Actions</th>
+                    <th class="px-6 py-4">Uploaded Receipt</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-sm">
@@ -105,19 +143,6 @@ Monitor legal aid requests and confirm payments.
                             </a>
                         @else
                             <span class="text-xs text-slate-400 italic">—</span>
-                        @endif
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        @if(!$request->isPaid())
-                            <form action="{{ route('admin.legal-aid.confirm', $request->id) }}" method="POST" class="inline">
-                                @csrf
-                                <button type="submit"
-                                        class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition shadow-sm bg-slate-900 hover:bg-slate-800 text-white border-transparent">
-                                    {{ $request->isFree() ? 'Confirm' : 'Confirm Payment' }}
-                                </button>
-                            </form>
-                        @else
-                            <span class="text-xs text-emerald-600 font-semibold">✓ Confirmed</span>
                         @endif
                     </td>
                 </tr>

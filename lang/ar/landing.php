@@ -35,11 +35,18 @@ return [
     'cta_desc' => 'ادخل إلى آلاف الوثائق القانونية المغربية من فضاء مهني واحد.',
     'cta_create' => 'إنشاء حساب مجاني',
     'cta_learn' => 'معرفة المزيد',
-    'source_bulletin' => 'النشرة الرسمية',
-    'source_work_code' => 'قانون العمل',
+
+    'source_bulletin' => 'الجريدة الرسمية',
+    'source_work_code' => ' مدونة الشغل',
     'source_penal_law' => 'القانون الجنائي',
-    'source_family_code' => 'القانون المدني',
+    'source_family_code' => 'مدونة الأسرة',
     'source_doc' => 'القانون التجاري',
-    'source_real_estate' => 'العقار',
-    "family_law" => "قانون الأسرة",
+    'source_civil_law' => 'قانون الالتزامات والعقود',
+
+    'back_to_landing_page' => 'العودة إلى الصفحة الرئيسية',
+    'law_search_workspace' => 'منصة البحث القانوني',
+    'logout' => 'تسجيل الخروج',
+    'go_to_dashboard' => 'الذهاب إلى لوحة التحكم',
+    'admin_portal' => 'لوحة الإدارة',
+    'log_in' => 'تسجيل الدخول',
 ];

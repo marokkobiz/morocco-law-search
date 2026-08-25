@@ -85,20 +85,24 @@
                 </details>
 
                 @auth
-                    {{-- Admin Panel Button (visible only to admins) --}}
-                    @if (Auth::user()->is_admin || Auth::user()->role === 'admin' || (method_exists(Auth::user(), 'isAdmin') && Auth::user()->isAdmin()))
-                        <a href="/admin"
+                    {{-- Staff Panel Button (Admin or Advisor) --}}
+                    @if (Auth::user()->isAdmin() || Auth::user()->isAdvisor())
+                        <a href="{{ Auth::user()->isAdmin() ? '/admin' : route('advisor.cases.index') }}"
                             class="h-8 flex items-center px-3.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition-colors no-underline gap-1.5 shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
-                            {{ $c('Admin Panel', 'Panneau Admin', 'لوحة الإدارة') }}
+                            @if(Auth::user()->isAdmin())
+                                {{ $c('Admin Panel', 'Panneau Admin', 'لوحة الإدارة') }}
+                            @else
+                                {{ $c('Advisor Panel', 'Panneau Conseiller', 'لوحة المستشار') }}
+                            @endif
                         </a>
                     @endif
 
                     <a href="{{ route('app.workspace') }}"
-                        class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $locale === 'fr' ? 'Dashboard' : ($locale === 'ar' ? 'لوحة التحكم' : 'Dashboard') }}</a>
+                        class="h-8 flex items-center px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors no-underline">{{ $c('Explore Laws', 'Explorer les Lois', 'استكشف القوانين') }}</a>
 
                     {{-- Logout Button --}}
                     <a href="{{ route('logout') }}"
@@ -138,8 +142,6 @@
                 <div>
                     <p class="text-sm text-gray-500 text-center">Copyright Marokko Biz of 31.01.12 SARL</p>
                     <p class="mt-3 text-xs text-slate-400 text-center">www.marocloi.com is part of Marokko Biz of 31.01.12 SARL</p>
-                    <p class="text-xs text-slate-400 text-center lg:whitespace-nowrap">Marokko Biz of 31.01.12 SARL, Lot 9 Rue, 10 Dziri V Montagne 90000 Tangier Patent 127407, ICE 003067038000038, CNSS 5800935</p>
-                    <p class="text-xs text-slate-400 text-center">Email: <a href="mailto:info@marocloi.com" class="text-slate-300 hover:text-white">info@marocloi.com</a></p>
                     <div class="text-center">
                         <div
                             class="flex flex-wrap items-center justify-center gap-x-1 text-[10px] sm:text-xs text-slate-400">

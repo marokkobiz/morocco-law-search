@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\AdvisorManagementController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Advisor\CaseController;
+use App\Http\Controllers\Advisor\DashboardController as AdvisorDashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LegalAidController;
 use App\Http\Controllers\StripePaymentController;
@@ -68,6 +71,7 @@ Route::middleware(['auth', 'admin'])
         Route::get('/dashboard', [DashboardController::class, 'index']);
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
+        Route::post('/users/{user}/toggle-advisor', [UserController::class, 'toggleAdvisor'])->name('users.toggle-advisor');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
         Route::get('/services/create', [ServiceController::class, 'create'])->name('services.create');
@@ -80,4 +84,30 @@ Route::middleware(['auth', 'admin'])
         Route::post('/legal-aid/{legalAidRequest}/confirm', [LegalAidController::class, 'confirm'])->name('legal-aid.confirm');
         Route::post('/legal-aid/{legalAidRequest}/resend', [LegalAidController::class, 'resendPaymentLink'])->name('legal-aid.resend');
         Route::post('/legal-aid/{legalAidRequest}/reject', [LegalAidController::class, 'reject'])->name('legal-aid.reject');
+
+        // Advisor management (admin only)
+        Route::get('/advisors', [AdvisorManagementController::class, 'index'])->name('advisors.index');
+        Route::get('/advisors/create', [AdvisorManagementController::class, 'create'])->name('advisors.create');
+        Route::post('/advisors', [AdvisorManagementController::class, 'store'])->name('advisors.store');
+        Route::get('/advisors/{advisor}/edit', [AdvisorManagementController::class, 'edit'])->name('advisors.edit');
+        Route::put('/advisors/{advisor}', [AdvisorManagementController::class, 'update'])->name('advisors.update');
+        Route::delete('/advisors/{advisor}', [AdvisorManagementController::class, 'destroy'])->name('advisors.destroy');
+        Route::post('/advisors/{advisor}/suspend', [AdvisorManagementController::class, 'suspend'])->name('advisors.suspend');
+        Route::post('/advisors/{advisor}/unsuspend', [AdvisorManagementController::class, 'unsuspend'])->name('advisors.unsuspend');
+        Route::post('/advisors/{advisor}/reset-password', [AdvisorManagementController::class, 'resetPassword'])->name('advisors.reset-password');
+    });
+
+// Advisor portal (admins + active advisors)
+Route::middleware(['auth', 'advisor'])
+    ->prefix('advisor')
+    ->name('advisor.')
+    ->group(function () {
+        Route::get('/dashboard', [AdvisorDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/cases', [CaseController::class, 'index'])->name('cases.index');
+        Route::get('/cases/{legalAidRequest}', [CaseController::class, 'show'])->name('cases.show');
+        Route::post('/cases/{legalAidRequest}/services/{service}/toggle', [CaseController::class, 'toggleService'])->name('cases.toggle-service');
+        Route::post('/cases/{legalAidRequest}/first-contact', [CaseController::class, 'markFirstContact'])->name('cases.first-contact');
+        Route::post('/cases/{legalAidRequest}/close', [CaseController::class, 'close'])->name('cases.close');
+        Route::post('/cases/{legalAidRequest}/reopen', [CaseController::class, 'reopen'])->name('cases.reopen');
+        Route::post('/cases/{legalAidRequest}/notes', [CaseController::class, 'storeNote'])->name('cases.notes');
     });

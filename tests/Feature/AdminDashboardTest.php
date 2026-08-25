@@ -32,6 +32,49 @@ class AdminDashboardTest extends TestCase
             ->assertSee('#11111');
     }
 
+    public function test_admin_dashboard_shows_payment_split(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        LegalAidRequest::create([
+            'ticket_number' => '11120',
+            'full_name' => 'Paid Client',
+            'email' => 'paid@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'status' => LegalAidRequest::STATUS_PAID,
+            'paid_at' => now(),
+            'base_price' => 500,
+        ]);
+        LegalAidRequest::create([
+            'ticket_number' => '11121',
+            'full_name' => 'Bank Client',
+            'email' => 'bank@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'status' => LegalAidRequest::STATUS_CONFIRMED,
+            'confirmed_at' => now(),
+            'base_price' => 300,
+        ]);
+        LegalAidRequest::create([
+            'ticket_number' => '11122',
+            'full_name' => 'Free Client',
+            'email' => 'free@example.com',
+            'phone' => '+212600000000',
+            'case_description' => 'Test case',
+            'status' => LegalAidRequest::STATUS_PAID,
+            'base_price' => 0,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Payment Split')
+            ->assertSee('Google Pay (paid)')
+            ->assertSee('Bank (confirmed)')
+            ->assertSee('Free consultation');
+    }
+
     public function test_dashboard_and_users_pages_render_different_content(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

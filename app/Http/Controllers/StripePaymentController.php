@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LegalAidRequest;
 use App\Models\PaymentTransaction;
+use App\Support\AdvisorNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -310,6 +311,8 @@ class StripePaymentController extends Controller
             'paid_at' => now(),
             'receipt_path' => null,
         ]);
+
+        AdvisorNotifier::caseReady($legalAidRequest);
     }
 
     private function cancelStaleIntents(LegalAidRequest $legalAidRequest): void
