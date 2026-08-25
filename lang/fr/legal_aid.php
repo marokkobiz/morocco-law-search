@@ -40,7 +40,7 @@ return [
     'field_phone_help' => 'Ex. : 06 12 34 56 78 (local) ou +212 6 12 34 56 78 (international)',
     'field_whatsapp' => 'Numéro WhatsApp',
     'field_whatsapp_placeholder' => '06 ...',
-    'field_whatsapp_help' => 'Facultatif. Même format que le numéro de téléphone. Ex. : 06 12 34 56 78',
+    'field_whatsapp_help' => 'Facultatif. Ex. : 06 12 34 56 78 (local) ou +212 6 12 34 56 78 (international)',
     'phone_invalid' => 'Le numéro de téléphone doit être valide (ex. : 06 12 34 56 78 ou +212 6 12 34 56 78).',
     'whatsapp_invalid' => 'Le numéro WhatsApp doit être valide (ex. : 06 12 34 56 78 ou +212 6 12 34 56 78).',
     'field_case' => 'Objet du dossier :',

@@ -40,7 +40,7 @@ return [
     'field_phone_help' => 'E.g. 06 12 34 56 78 (local) or +212 6 12 34 56 78 (international)',
     'field_whatsapp' => 'WhatsApp Number',
     'field_whatsapp_placeholder' => '06 ...',
-    'field_whatsapp_help' => 'Optional. Same format as the phone number. E.g. 06 12 34 56 78',
+    'field_whatsapp_help' => 'Optional. E.g. 06 12 34 56 78 (local) or +212 6 12 34 56 78 (international)',
     'phone_invalid' => 'The phone number must be a valid number (e.g. 06 12 34 56 78 or +212 6 12 34 56 78).',
     'whatsapp_invalid' => 'The WhatsApp number must be a valid number (e.g. 06 12 34 56 78 or +212 6 12 34 56 78).',
     'field_case' => 'Case is about:',
