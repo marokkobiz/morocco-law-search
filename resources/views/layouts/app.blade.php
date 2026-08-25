@@ -47,10 +47,10 @@
                     class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('sources') }}</a>
                 <a href="/#coverage"
                     class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('coverage') }}</a>
-                @if (Route::is('test') || Route::is('legal-aid'))
-                    <a href="{{ route('legal-aid') }}"
-                        class="px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('legal_aid') }}</a>
-                @endif
+                    <a
+                        tabindex="-1" aria-disabled="true"
+                        href="{{ route('legal-aid') }}"
+                        class="pointer-events-none opacity-50 cursor-not-allowed px-3 py-1.5 text-sm font-semibold text-gray-300 hover:text-white transition-colors no-underline">{{ $layoutCopy('legal_aid') }}</a>
             </div>
 
             <div class="flex items-center gap-3 shrink-0">

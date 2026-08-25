@@ -53,11 +53,15 @@
 
                                 <div>
                                     <label
-                                        class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __("legal_aid.field_email") }}</label>
+                                        class="mb-1.5 flex gap-2 text-sm font-semibold text-gray-700">
+                                        {{ __("legal_aid.field_email") }}
+
+                                        <p class="mt-1 text-xs text-gray-400">{{ __("legal_aid.field_email_help") }}</p>
+                                    </label>
                                     <input type="email" name="email" value="{{ old("email") }}" required
                                         class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                                         placeholder="{{ __("legal_aid.field_email_placeholder") }}">
-                                    <p class="mt-1 text-xs text-gray-400">{{ __("legal_aid.field_email_help") }}</p>
+
                                 </div>
                             </div>
 
@@ -111,24 +115,32 @@
                                 <div>
                                     <label
                                         class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __("legal_aid.field_call_time") }}</label>
-                                    <select name="call_time" required
-                                        class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500">
-                                        <option value="">{{ __("legal_aid.call_time_placeholder") }}</option>
-                                        <option value="09:00-09:30">09:00 - 09:30</option>
-                                        <option value="09:30-10:00">09:30 - 10:00</option>
-                                        <option value="10:00-10:30">10:00 - 10:30</option>
-                                        <option value="10:30-11:00">10:30 - 11:00</option>
-                                        <option value="11:00-11:30">11:00 - 11:30</option>
-                                        <option value="11:30-12:00">11:30 - 12:00</option>
-                                        <option value="12:00-12:30">12:00 - 12:30</option>
-                                        <option value="12:30-13:00">12:30 - 13:00</option>
-                                        <option value="13:00-13:30">13:00 - 13:30</option>
-                                        <option value="13:30-14:00">13:30 - 14:00</option>
-                                        <option value="14:00-14:30">14:00 - 14:30</option>
-                                        <option value="14:30-15:00">14:30 - 15:00</option>
-                                        <option value="15:00-15:30">15:00 - 15:30</option>
-                                        <option value="15:30-16:00">15:30 - 16:00</option>
-                                    </select>
+                                    <div class="relative" id="call-time-dropdown">
+                                        <button type="button" id="call-time-btn"
+                                            class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-left text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500">
+                                            <span id="call-time-label">{{ __("legal_aid.call_time_placeholder") }}</span>
+                                            <svg class="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        </button>
+                                        <input type="hidden" name="call_time" id="call-time-value" required>
+                                        <ul id="call-time-options"
+                                            class="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg hidden">
+                                            <li data-value="" class="cursor-pointer px-3 py-2 text-sm text-gray-400 hover:bg-blue-50 hover:text-blue-600">{{ __("legal_aid.call_time_placeholder") }}</li>
+                                            <li data-value="09:00-09:30" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">09:00 - 09:30</li>
+                                            <li data-value="09:30-10:00" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">09:30 - 10:00</li>
+                                            <li data-value="10:00-10:30" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">10:00 - 10:30</li>
+                                            <li data-value="10:30-11:00" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">10:30 - 11:00</li>
+                                            <li data-value="11:00-11:30" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">11:00 - 11:30</li>
+                                            <li data-value="11:30-12:00" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">11:30 - 12:00</li>
+                                            <li data-value="12:00-12:30" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">12:00 - 12:30</li>
+                                            <li data-value="12:30-13:00" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">12:30 - 13:00</li>
+                                            <li data-value="13:00-13:30" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">13:00 - 13:30</li>
+                                            <li data-value="13:30-14:00" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">13:30 - 14:00</li>
+                                            <li data-value="14:00-14:30" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">14:00 - 14:30</li>
+                                            <li data-value="14:30-15:00" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">14:30 - 15:00</li>
+                                            <li data-value="15:00-15:30" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">15:00 - 15:30</li>
+                                            <li data-value="15:30-16:00" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">15:30 - 16:00</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
 
@@ -388,11 +400,42 @@
             var phoneInput = document.getElementsByName("phone")[0] || null;
             var whatsBtn = document.getElementById("copy-phone-to-whatsapp");
             var whatsInput = document.getElementsByName("whatsapp")[0] || null;
+
+            function stripNonNumeric(el) {
+                var raw = el.value;
+                var cleaned = raw.replace(/[^0-9+]/g, '').replace(/(?!^)\+/g, '');
+                if (cleaned !== raw) el.value = cleaned;
+            }
+
+            if (phoneInput) phoneInput.addEventListener("input", function () { stripNonNumeric(this); });
+            if (whatsInput) whatsInput.addEventListener("input", function () { stripNonNumeric(this); });
+
             if (!phoneInput || !whatsBtn || !whatsInput) return;
             var sync = function () { whatsBtn.disabled = !phoneInput.value; };
             phoneInput.addEventListener("input", sync);
             whatsBtn.addEventListener("click", function () { whatsInput.value = phoneInput.value; sync(); });
             sync();
+
+            var ctBtn = document.getElementById("call-time-btn");
+            var ctOptions = document.getElementById("call-time-options");
+            var ctValue = document.getElementById("call-time-value");
+            var ctLabel = document.getElementById("call-time-label");
+            if (ctBtn && ctOptions) {
+                ctBtn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    ctOptions.classList.toggle("hidden");
+                });
+                ctOptions.querySelectorAll("li").forEach(function (li) {
+                    li.addEventListener("click", function () {
+                        ctValue.value = this.dataset.value;
+                        ctLabel.textContent = this.textContent;
+                        ctLabel.classList.toggle("text-gray-400", !this.dataset.value);
+                        ctLabel.classList.toggle("text-gray-900", !!this.dataset.value);
+                        ctOptions.classList.add("hidden");
+                    });
+                });
+                document.addEventListener("click", function () { ctOptions.classList.add("hidden"); });
+            }
         });
     </script>
 @endpush
