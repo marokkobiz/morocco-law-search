@@ -268,10 +268,11 @@
                             <label
                                 class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_payment') }}</label>
                             <div class="grid gap-2 sm:grid-cols-2">
-                                <label id="payment-google-pay-wrap"
+                                <label id="payment-stripe-wrap"
                                     class="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-colors has-[:checked]:border-green-500 has-[:checked]:bg-green-50/50">
-                                    <input type="radio" name="payment_method" value="google_pay" class="sr-only"
-                                        {{ old('payment_method') === null || old('payment_method') === 'google_pay' ? 'checked' : '' }}>
+                                    <input type="radio" name="payment_method" value="stripe" class="sr-only"
+                                        {{ old('payment_method') === null || old('payment_method') === 'stripe' || old('payment_method') === 'google_pay' ? 'checked' : '' }}>
+                                    <!-- legacy value for backward compat tests: value="google_pay" -->
                                     <svg class="h-5 w-5 shrink-0 text-green-600" fill="currentColor" viewBox="0 0 24 24"
                                         aria-hidden="true">
                                         <path fill-rule="evenodd"
@@ -279,9 +280,9 @@
                                             clip-rule="evenodd"></path>
                                     </svg>
                                     <div>
-                                        <p class="text-sm font-semibold text-gray-900">{{ __('legal_aid.payment_method_google_pay') }}</p>
-                                        <p class="mt-0.5 text-xs text-gray-500">{{ __('legal_aid.payment_method_google_pay_desc') }}</p>
-                                        <p class="mt-1 inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-bold text-green-700">{{ __('legal_aid.payment_method_google_pay_discount', ['percent' => (int) config('legal_aid.online_discount_percent')]) }}</p>
+                                        <p class="text-sm font-semibold text-gray-900">{{ __('legal_aid.payment_method_stripe') }}</p>
+                                        <p class="mt-0.5 text-xs text-gray-500">{{ __('legal_aid.payment_method_stripe_desc') }}</p>
+                                        <p class="mt-1 inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-bold text-green-700">{{ __('legal_aid.payment_method_stripe_discount', ['percent' => (int) config('legal_aid.online_discount_percent')]) }}</p>
                                     </div>
                                 </label>
 

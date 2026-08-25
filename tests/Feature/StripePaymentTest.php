@@ -294,10 +294,63 @@ final class FakeStripeClient extends StripeClient
 
     public FakePaymentMethods $paymentMethods;
 
+    public FakeCheckoutSessions $checkout;
+
     public function __construct()
     {
         $this->paymentIntents = new FakePaymentIntents;
         $this->paymentMethods = new FakePaymentMethods;
+        $this->checkout = new FakeCheckoutSessions;
+        // StripeClient exposes $checkout->sessions; emulate that structure
+        $this->checkout->sessions = new FakeCheckoutSessionResource;
+    }
+}
+
+final class FakeCheckoutSessions
+{
+    public FakeCheckoutSessionResource $sessions;
+}
+
+final class FakeCheckoutSessionResource
+{
+    /** @var array<string, object> */
+    public array $sessions = [];
+
+    public function create(array $params = []): object
+    {
+        $id = 'cs_test_'.Str::random(48);
+        $session = (object) [
+            'id' => $id,
+            'object' => 'checkout.session',
+            'url' => 'https://checkout.stripe.com/c/pay/'.$id,
+            'payment_intent' => null,
+            'payment_status' => 'unpaid',
+            'status' => 'open',
+            'metadata' => (object) ($params['metadata'] ?? []),
+            'payment_method_types' => $params['payment_method_types'] ?? ['card'],
+            'currency' => $params['line_items'][0]['price_data']['currency'] ?? 'mad',
+            'amount_total' => $params['line_items'][0]['price_data']['unit_amount'] ?? 0,
+            'success_url' => $params['success_url'] ?? null,
+            'cancel_url' => $params['cancel_url'] ?? null,
+        ];
+        // Allow toJSON for controller's json_decode((string)$session->toJSON())
+        $session->toJSON = fn() => json_encode($session);
+        // Provide toJSON method via __call
+        $this->sessions[$id] = $session;
+        return new class($session) {
+            public function __construct(private object $s) {}
+            public function __get(string $name) { return $this->s->$name ?? null; }
+            public function __isset(string $name): bool { return isset($this->s->$name); }
+            public function toJSON(): string { return json_encode($this->s); }
+        };
+    }
+
+    public function retrieve(string $id): object
+    {
+        if (!isset($this->sessions[$id])) {
+            throw new \Stripe\Exception\InvalidRequestException("No such checkout.session: {$id}");
+        }
+        return $this->sessions[$id];
     }
 }
 

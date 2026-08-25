@@ -256,7 +256,7 @@
                         </tr>
                     @endif
                     <tr>
-                        <td class="total">{{ $shape(__('legal_aid_ticket.payment_method')) }} · {{ $shape(__('legal_aid_ticket.method_'.$request->payment_method)) }}</td>
+                        <td class="total">{{ $shape(__('legal_aid_ticket.payment_method')) }} · {{ $shape(__('legal_aid_ticket.method_'.($request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY ? 'stripe' : $request->payment_method))) }}</td>
                         <td class="amount total {{ $request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK ? '' : 'positive' }}">{{ number_format($request->payableTotal, 0) }} MAD</td>
                     </tr>
                 @endif

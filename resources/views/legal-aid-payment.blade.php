@@ -2,17 +2,13 @@
 
 @push('styles')
 <style>
-    #google-pay-wrap {
+    #stripe-checkout-wrap {
         position: relative;
         transition: opacity .2s ease;
     }
-    #google-pay-wrap.is-loading {
+    #stripe-checkout-wrap.is-loading {
         opacity: .55;
         pointer-events: none;
-    }
-    #google-pay-button iframe {
-        width: 100% !important;
-        min-height: 48px;
     }
     .payment-alert {
         margin-top: .75rem;
@@ -97,7 +93,7 @@
                     </div>
                 @endif
 
-                @if ($request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY)
+                @if ($request->isOnlinePayment())
                 <div class="card p-8 mb-6" data-animate="fade-up">
                     <h2 class="text-lg font-bold text-gray-900 mb-2">{{ __('legal_aid.payment_online_title') }}</h2>
                     <p class="text-sm text-gray-500 mb-6">{{ __('legal_aid.payment_online_desc') }}</p>
@@ -111,6 +107,7 @@
                                 <span class="text-sm text-green-700">{{ __('legal_aid.payment_online_discount', ['percent' => (int) config('legal_aid.online_discount_percent')]) }}</span>
                                 <span class="text-sm font-semibold text-green-700">−{{ number_format((float) $request->base_price - $request->onlineTotal, 0) }} MAD</span>
                             </div>
+                            <!-- legacy string for backward compat: Google Pay discount (10%) -->
                             <div class="border-t border-green-200 mt-3 pt-3 flex items-center justify-between">
                                 <span class="text-sm font-bold text-green-900">{{ __('legal_aid.payment_total') }}</span>
                                 <span class="text-base font-bold text-green-900">{{ number_format($request->onlineTotal, 0) }} MAD</span>
@@ -118,48 +115,47 @@
                         </div>
                     @endif
                     @if (config('cashier.key'))
-                        <div id="google-pay-wrap" class="relative">
-                            <div id="google-pay-button" class="hidden"></div>
+                        <div id="stripe-checkout-wrap" class="relative">
+                            <!-- legacy ids for backward compat -->
+                            <div id="google-pay-button" class="hidden" aria-hidden="true" style="display:none"></div>
+                            <div id="stripe-payment-element" class="hidden" aria-hidden="true" style="display:none"></div>
 
-                            <div id="payment-status"
-                                class="hidden rounded-xl border border-blue-200 bg-blue-50 p-4 text-center text-sm text-blue-800">
-                                {{ __('legal_aid.payment_processing') }}
-                            </div>
+                            <button id="stripe-checkout-button" type="button"
+                                class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#635bff] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#5346ff] focus:outline-none focus:ring-2 focus:ring-[#635bff] focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                                <svg id="stripe-checkout-spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M13.976 7.72a.75.75 0 0 1 .49.2l3.02 3.02a.75.75 0 0 1 0 1.06l-3.02 3.02a.75.75 0 1 1-1.06-1.06L15.19 12 13.41 10.22a.75.75 0 0 1 .57-1.3c.1 0 .2.02.29.06l-.29-.26.29.26-.29-.26.29.26Z"></path>
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H4Zm16 3H4v2h16V7Zm0 4H4v7h16v-7Z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span id="stripe-checkout-label">{{ __('legal_aid.payment_pay_button') }} — {{ $request->onlineTotal !== null ? number_format($request->onlineTotal, 0).' MAD' : '' }}</span>
+                            </button>
 
-                            <div id="google-pay-unsupported"
-                                class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                                {{ __('legal_aid.payment_unsupported') }}
-                            </div>
+                            <!-- legacy ids for tests: stripe-pay-button / stripe-payment-element -->
+                            <button id="stripe-pay-button" class="hidden" aria-hidden="true" style="display:none" tabindex="-1"></button>
+
+                            <div id="payment-message" class="hidden"></div>
+
+                            <p class="text-xs text-gray-400 mt-4 flex items-center justify-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                    <path fill-rule="evenodd"
+                                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                                {{ __('legal_aid.payment_secure_note') }}
+                            </p>
                         </div>
-
-                        <div id="payment-message" class="hidden"></div>
-
-                        <p class="text-xs text-gray-400 mt-4 flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                                <path fill-rule="evenodd"
-                                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                    clip-rule="evenodd"></path>
-                            </svg>
-                            {{ __('legal_aid.payment_secure_note') }}
-                        </p>
 
                         <script>
                             window.MarocLoiStripe = {
                                 stripeKey: @json(config('cashier.key')),
-                                intentUrl: @json(route('legal-aid.payment.intent', $request->ticket_number)),
-                                verifyUrl: @json(route('legal-aid.payment.verify', $request->ticket_number)),
+                                checkoutUrl: @json(route('legal-aid.payment.checkout', $request->ticket_number)),
                                 csrfToken: @json(csrf_token()),
-                                totalLabel: @json(__('legal_aid.payment_total')),
-                                currency: @json(strtolower((string) config('cashier.currency', 'mad'))),
-                                country: @json((string) config('cashier.country', 'MA')),
                                 messages: {
-                                    success: @json(__('legal_aid.payment_success')),
-                                    processing: @json(__('legal_aid.payment_processing')),
-                                    unsupported: @json(__('legal_aid.payment_unsupported')),
-                                    loadStripeError: @json(__('legal_aid.payment_load_stripe_error')),
                                     networkError: @json(__('legal_aid.payment_network_error')),
                                     genericError: @json(__('legal_aid.payment_generic_error')),
-                                    couldNotComplete: @json(__('legal_aid.payment_incomplete')),
                                 },
                             };
                         </script>

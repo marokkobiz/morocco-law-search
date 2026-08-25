@@ -18,12 +18,198 @@ use Throwable;
 class StripePaymentController extends Controller
 {
     /**
+     * Create a Stripe Checkout Session and return its hosted URL.
+     *
+     * The frontend shows a single "Pay with Stripe" button; clicking it
+     * POSTs here and then redirects the browser to the returned `url`
+     * (Stripe hosted payment page). No card form is rendered in-app.
+     */
+    public function createCheckoutSession(string $ticket): JsonResponse
+    {
+        $legalAidRequest = LegalAidRequest::where('ticket_number', $ticket)->firstOrFail();
+
+        if ($legalAidRequest->isFree()) {
+            return $this->error(422, 'This request is free of charge and does not require payment.');
+        }
+
+        if ($legalAidRequest->isPaid()) {
+            return $this->error(409, 'This request has already been paid.');
+        }
+
+        $amountMAD = $legalAidRequest->onlineTotal;
+
+        if ($amountMAD === null) {
+            return $this->error(422, 'This request does not have a payable amount.');
+        }
+
+        $amountCents = $this->toCents($amountMAD);
+        $currency = strtolower((string) config('cashier.currency', 'mad'));
+
+        if ($amountCents < 100) {
+            return $this->error(422, 'The minimum payable amount is 1.00 MAD.');
+        }
+
+        $this->cancelStaleIntents($legalAidRequest);
+
+        $successUrl = route('legal-aid.payment.checkout.success', ['ticket' => $legalAidRequest->ticket_number]).'?session_id={CHECKOUT_SESSION_ID}';
+        $cancelUrl = route('legal-aid.payment', $legalAidRequest->ticket_number);
+
+        try {
+            $session = $this->stripe()->checkout->sessions->create([
+                'mode' => 'payment',
+                'payment_method_types' => ['card'],
+                'customer_email' => $legalAidRequest->email,
+                'line_items' => [[
+                    'price_data' => [
+                        'currency' => $currency,
+                        'product_data' => [
+                            'name' => 'Legal aid request '.$legalAidRequest->ticketLabel,
+                            'description' => $legalAidRequest->servicesSummary ?: 'Legal consultation services',
+                        ],
+                        'unit_amount' => $amountCents,
+                    ],
+                    'quantity' => 1,
+                ]],
+                'success_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
+                'metadata' => [
+                    'legal_aid_request_id' => (string) $legalAidRequest->id,
+                    'ticket_number' => $legalAidRequest->ticket_number,
+                ],
+                'payment_intent_data' => [
+                    'description' => 'Legal aid request '.$legalAidRequest->ticketLabel,
+                    'receipt_email' => $legalAidRequest->email,
+                    'metadata' => [
+                        'legal_aid_request_id' => (string) $legalAidRequest->id,
+                        'ticket_number' => $legalAidRequest->ticket_number,
+                    ],
+                ],
+                'expires_at' => now()->addMinutes(30)->getTimestamp(),
+            ]);
+        } catch (ApiErrorException $e) {
+            report($e);
+
+            return $this->error(502, 'We could not initialise your payment right now. Please try again in a moment.');
+        } catch (Throwable $e) {
+            report($e);
+
+            return $this->error(500, 'Something went wrong while preparing your payment.');
+        }
+
+        // Checkout Sessions have no payment_intent at creation time (null). Keep the
+        // legacy stripe_payment_intent_id column populated with a placeholder so the
+        // unique/not-null constraint stays satisfied. Column is now 128 chars (see
+        // 2026_08_25_000002_expand_payment_intent_id_length) so cs_pending_ prefix fits.
+        $pendingIntentPlaceholder = $session->payment_intent ?? 'cs_pending_'.$session->id;
+
+        PaymentTransaction::create([
+            'legal_aid_request_id' => $legalAidRequest->id,
+            'stripe_payment_intent_id' => substr($pendingIntentPlaceholder, 0, 128),
+            'stripe_checkout_session_id' => $session->id,
+            'currency' => $currency,
+            'country' => (string) config('cashier.country', 'MA'),
+            'amount_cents' => $amountCents,
+            'amount' => $amountMAD,
+            'status' => $session->payment_status ?? PaymentTransaction::STATUS_REQUIRES_PAYMENT_METHOD,
+            'payload' => json_decode((string) $session->toJSON(), true),
+        ]);
+
+        return response()->json([
+            'url' => $session->url,
+            'id' => $session->id,
+        ]);
+    }
+
+    /**
+     * Handle redirect back from Stripe Checkout (success_url).
+     * Verifies the session server-side and marks the request as paid.
+     */
+    public function checkoutSuccess(Request $request, string $ticket)
+    {
+        $legalAidRequest = LegalAidRequest::where('ticket_number', $ticket)->firstOrFail();
+
+        // If webhook already marked it paid (race), just show success
+        if ($legalAidRequest->isPaid()) {
+            return redirect()->route('legal-aid.payment', $ticket)->with('status', __('legal_aid.payment_success'));
+        }
+
+        $sessionId = $request->query('session_id');
+
+        if (! $sessionId || ! preg_match('/^cs_[A-Za-z0-9_]+$/', $sessionId)) {
+            report('Stripe checkoutSuccess: invalid session_id format: '.$sessionId);
+            return redirect()->route('legal-aid.payment', $ticket)->with('error', __('legal_aid.payment_incomplete'));
+        }
+
+        try {
+            $session = $this->stripe()->checkout->sessions->retrieve($sessionId);
+        } catch (Throwable $e) {
+            report($e);
+
+            return redirect()->route('legal-aid.payment', $ticket)->with('error', __('legal_aid.payment_generic_error'));
+        }
+
+        // Ensure the session belongs to this ticket (handle both array and object metadata)
+        $metadata = $session->metadata ?? [];
+        $metaTicket = $metadata['ticket_number'] ?? $metadata->ticket_number ?? null;
+        if (is_object($metadata)) {
+            $metaTicket = $metadata->ticket_number ?? $metadata['ticket_number'] ?? $metaTicket;
+        }
+        $metaIdRaw = $metadata['legal_aid_request_id'] ?? $metadata->legal_aid_request_id ?? 0;
+        if (is_object($metadata)) {
+            $metaIdRaw = $metadata->legal_aid_request_id ?? $metadata['legal_aid_request_id'] ?? $metaIdRaw;
+        }
+        $metaId = (int) $metaIdRaw;
+        if ($metaTicket !== $legalAidRequest->ticket_number || $metaId !== $legalAidRequest->id) {
+            report('Stripe checkoutSuccess metadata mismatch: session '.$sessionId.' expected ticket '.$legalAidRequest->ticket_number.'/'.$legalAidRequest->id.' got '.$metaTicket.'/'.$metaId);
+            return redirect()->route('legal-aid.payment', $ticket)->with('error', __('legal_aid.payment_generic_error'));
+        }
+
+        // Stripe marks a successful Checkout as payment_status=paid. Status is
+        // typically 'complete' for hosted Checkout. Be permissive to avoid false
+        // negatives in test mode or with async methods.
+        if (($session->payment_status ?? null) === 'paid') {
+            // Sync transaction and mark paid
+            $paymentIntentId = $session->payment_intent ?? null;
+            if ($paymentIntentId) {
+                try {
+                    $intent = $this->stripe()->paymentIntents->retrieve($paymentIntentId);
+                    $this->syncTransactionFromIntent($intent);
+                    // Also update the checkout transaction if exists
+                    PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                        'stripe_payment_intent_id' => $paymentIntentId,
+                        'status' => $intent->status,
+                        'payload' => json_decode((string) $session->toJSON(), true),
+                    ]);
+                } catch (Throwable $e) {
+                    report($e);
+                }
+            } else {
+                PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                    'status' => PaymentTransaction::STATUS_SUCCEEDED,
+                    'payload' => json_decode((string) $session->toJSON(), true),
+                ]);
+            }
+
+            $this->markRequestPaid($legalAidRequest);
+
+            return redirect()->route('legal-aid.payment', $ticket)->with('status', __('legal_aid.payment_success'));
+        }
+
+        if ($session->status === 'open') {
+            return redirect()->route('legal-aid.payment', $ticket)->with('error', __('legal_aid.payment_incomplete'));
+        }
+
+        return redirect()->route('legal-aid.payment', $ticket)->with('error', __('legal_aid.payment_incomplete'));
+    }
+
+    /**
      * Dynamically create a Stripe PaymentIntent and return the client secret
      * to the frontend so Stripe.js can render the Google Pay / Payment Request
      * button and confirm the payment.
      *
      * The amount is always derived server-side from the request's online total,
      * never trusted from the client.
+     * @deprecated Kept for backward compatibility; new flow uses Checkout Sessions.
      */
     public function createIntent(string $ticket): JsonResponse
     {
@@ -187,6 +373,8 @@ class StripePaymentController extends Controller
                 'payment_intent.succeeded' => $this->handleIntentSucceeded($event->data->object),
                 'payment_intent.payment_failed' => $this->handleIntentFailed($event->data->object),
                 'payment_intent.canceled' => $this->handleIntentCanceled($event->data->object),
+                'checkout.session.completed' => $this->handleCheckoutSessionCompleted($event->data->object),
+                'checkout.session.expired' => $this->handleCheckoutSessionExpired($event->data->object),
                 default => null,
             };
         } catch (Throwable $e) {
@@ -235,6 +423,64 @@ class StripePaymentController extends Controller
         $transaction->update([
             'status' => PaymentTransaction::STATUS_CANCELED,
         ]);
+    }
+
+    private function handleCheckoutSessionCompleted(object $session): void
+    {
+        $sessionId = $session->id ?? null;
+        $paymentIntentId = $session->payment_intent ?? null;
+        $metadata = $session->metadata ?? [];
+        $ticket = $metadata['ticket_number'] ?? $metadata->ticket_number ?? null;
+        if (is_object($metadata)) {
+            $ticket = $metadata->ticket_number ?? $metadata['ticket_number'] ?? $ticket;
+        }
+        $requestIdRaw = $metadata['legal_aid_request_id'] ?? $metadata->legal_aid_request_id ?? 0;
+        if (is_object($metadata)) {
+            $requestIdRaw = $metadata->legal_aid_request_id ?? $metadata['legal_aid_request_id'] ?? $requestIdRaw;
+        }
+        $requestId = (int) $requestIdRaw;
+
+        // Prefer to mark via PaymentIntent if available
+        if ($paymentIntentId) {
+            try {
+                $intent = $this->stripe()->paymentIntents->retrieve($paymentIntentId);
+                $transaction = $this->syncTransactionFromIntent($intent);
+                if ($transaction && ! $transaction->legalAidRequest->isPaid()) {
+                    $this->markRequestPaid($transaction->legalAidRequest);
+                }
+                // Update checkout transaction as succeeded
+                if ($sessionId) {
+                    PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                        'stripe_payment_intent_id' => $paymentIntentId,
+                        'status' => $intent->status,
+                    ]);
+                }
+                return;
+            } catch (Throwable $e) {
+                report($e);
+            }
+        }
+
+        // Fallback: mark via session metadata directly
+        $legalAidRequest = $requestId ? LegalAidRequest::find($requestId) : ($ticket ? LegalAidRequest::where('ticket_number', $ticket)->first() : null);
+        if ($legalAidRequest && ! $legalAidRequest->isPaid() && ($session->payment_status ?? null) === 'paid') {
+            PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                'status' => PaymentTransaction::STATUS_SUCCEEDED,
+            ]);
+            $this->markRequestPaid($legalAidRequest);
+        }
+    }
+
+    private function handleCheckoutSessionExpired(object $session): void
+    {
+        $sessionId = $session->id ?? null;
+        if (! $sessionId) {
+            return;
+        }
+        $transaction = PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->first();
+        if ($transaction) {
+            $transaction->update(['status' => PaymentTransaction::STATUS_CANCELED]);
+        }
     }
 
     private function syncTransactionFromIntent(PaymentIntent $intent): ?PaymentTransaction

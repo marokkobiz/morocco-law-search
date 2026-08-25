@@ -92,10 +92,10 @@ class LegalAidController
             ? $payload['consultation_mode']
             : null;
 
-        $paymentMethod = (string) ($payload['payment_method'] ?? LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY);
-        $paymentMethod = in_array($paymentMethod, [LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK], true)
+        $paymentMethod = (string) ($payload['payment_method'] ?? LegalAidRequest::PAYMENT_METHOD_STRIPE);
+        $paymentMethod = in_array($paymentMethod, [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK], true)
             ? $paymentMethod
-            : LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY;
+            : LegalAidRequest::PAYMENT_METHOD_STRIPE;
 
         app()->setLocale($locale);
 

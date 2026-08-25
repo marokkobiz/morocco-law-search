@@ -23,7 +23,13 @@ Route::get('/legal-aid/payment/{ticket}', [LegalAidController::class, 'payment']
 Route::get('/legal-aid/ticket/{ticket}/pdf', [LegalAidController::class, 'downloadTicketPdf'])->name('legal-aid.ticket-pdf');
 Route::post('/legal-aid/payment/{ticket}/receipt', [LegalAidController::class, 'uploadReceipt'])->name('legal-aid.receipt');
 
-// Stripe Google Pay checkout endpoints
+// Stripe Checkout endpoints (hosted payment page)
+Route::post('/legal-aid/payment/{ticket}/stripe/checkout', [StripePaymentController::class, 'createCheckoutSession'])
+    ->name('legal-aid.payment.checkout');
+Route::get('/legal-aid/payment/{ticket}/stripe/success', [StripePaymentController::class, 'checkoutSuccess'])
+    ->name('legal-aid.payment.checkout.success');
+
+// Legacy PaymentIntent endpoints (kept for backward compatibility / webhooks)
 Route::post('/legal-aid/payment/{ticket}/stripe/intent', [StripePaymentController::class, 'createIntent'])
     ->name('legal-aid.payment.intent');
 Route::post('/legal-aid/payment/{ticket}/stripe/verify', [StripePaymentController::class, 'verify'])

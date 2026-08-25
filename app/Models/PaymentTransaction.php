@@ -10,6 +10,7 @@ class PaymentTransaction extends Model
     protected $fillable = [
         'legal_aid_request_id',
         'stripe_payment_intent_id',
+        'stripe_checkout_session_id',
         'stripe_payment_method_id',
         'currency',
         'country',
