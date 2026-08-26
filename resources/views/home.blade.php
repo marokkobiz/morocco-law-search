@@ -147,7 +147,7 @@
             </div>
 
             <div class="mt-10 w-full h-36" data-animate="fade-up" style="--delay: 0.3s">
-                <a href="{{ route('legal-aid') }}" class="flex h-full w-full items-center justify-center lg:text-4xl sm:text-3xl rounded-xl bg-blue-600 px-6 py-4 sm:py-5 md:text-xl font-bold capitalize text-white shadow-lg hover:bg-blue-700 transition-colors no-underline">
+                <a tabindex="-1" aria-disabled="true" href="{{ route('legal-aid') }}" class="pointer-events-none opacity-70 cursor-not-allowed flex h-full w-full items-center justify-center lg:text-4xl sm:text-3xl rounded-xl bg-blue-600 px-6 py-4 sm:py-5 md:text-xl font-bold capitalize text-white shadow-lg hover:bg-blue-700 transition-colors no-underline">
                     {{ __('landing.get_legal_aid') }}
                 </a>
             </div>
@@ -294,7 +294,7 @@
             </div>
 
             <div class="mt-10 w-full" data-animate="fade-up" style="--delay: 0.3s">
-                <a href="{{ route('legal-aid') }}" class="flex w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-4 sm:py-5 text-base sm:text-lg md:text-xl font-bold capitalize text-white shadow-lg hover:bg-blue-700 transition-colors no-underline">
+                <a tabindex="-1" aria-disabled="true" href="{{ route('legal-aid') }}" class="pointer-events-none opacity-70 cursor-not-allowed flex w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-4 sm:py-5 text-base sm:text-lg md:text-xl font-bold capitalize text-white shadow-lg hover:bg-blue-700 transition-colors no-underline">
                     {{ __('landing.get_legal_aid') }}
                 </a>
             </div>
