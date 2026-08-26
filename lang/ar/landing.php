@@ -28,6 +28,9 @@ return [
     'coverage_item_2_desc' => 'النسخ القديمة موسومة ويمكن تمييزها',
     'coverage_item_3_title' => 'مصادر رسمية',
     'coverage_item_3_desc' => 'كل وثيقة تعود إلى مصدرها الأصلي',
+
+    'coverage_footer_title' => 'بموجب القانون! يجب بناء البلاد',
+
     'database_label' => 'قاعدة مفهرسة',
     'database_title' => 'المصادر ',
     'database_desc' => 'تصفح مجموعة منتقاة من الوثائق القانونية المغربية من مصادر رسمية موثوقة.',
@@ -42,6 +45,8 @@ return [
     'source_family_code' => 'مدونة الأسرة',
     'source_doc' => 'القانون التجاري',
     'source_civil_law' => 'قانون الالتزامات والعقود',
+    'source_international' => 'الاتفاقيات الدولية',
+    'source_constitutional' => 'القانون الدستوري',
 
     'get_legal_aid' => 'احصل على المساعدة القانونية',
 

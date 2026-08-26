@@ -146,8 +146,8 @@
                 </article>
             </div>
 
-            <div class="mt-10 w-full" data-animate="fade-up" style="--delay: 0.3s">
-                <a href="{{ route('legal-aid') }}" class="flex w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-4 sm:py-5 text-base sm:text-lg md:text-xl font-bold capitalize text-white shadow-lg hover:bg-blue-700 transition-colors no-underline">
+            <div class="mt-10 w-full h-36" data-animate="fade-up" style="--delay: 0.3s">
+                <a href="{{ route('legal-aid') }}" class="flex h-full w-full items-center justify-center lg:text-4xl sm:text-3xl rounded-xl bg-blue-600 px-6 py-4 sm:py-5 md:text-xl font-bold capitalize text-white shadow-lg hover:bg-blue-700 transition-colors no-underline">
                     {{ __('landing.get_legal_aid') }}
                 </a>
             </div>
@@ -217,8 +217,10 @@
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
+            <h2 class="section-title text-3xl mt-12 text-center">{{ __('landing.coverage_footer_title') }}</h2>
     </section>
 
     {{-- Database Section --}}
@@ -232,7 +234,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-12">
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 mt-12">
                 <div class="card p-5 text-center hover:border-blue-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0s">
                     <div
@@ -274,6 +276,20 @@
                         class="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center mx-auto font-bold text-sm">
                         CL</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_civil_law') }}</span>
+                </div>
+                <div class="card p-5 text-center hover:border-indigo-200 transition-colors cursor-default"
+                    data-animate="scale-in" style="--delay: 0.3s">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center mx-auto font-bold text-sm">
+                        IA</div>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_international') }}</span>
+                </div>
+                <div class="card p-5 text-center hover:border-slate-200 transition-colors cursor-default"
+                    data-animate="scale-in" style="--delay: 0.35s">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mx-auto font-bold text-sm">
+                        CO</div>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_constitutional') }}</span>
                 </div>
             </div>
 

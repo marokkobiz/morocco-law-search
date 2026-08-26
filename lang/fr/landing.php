@@ -28,6 +28,9 @@ return [
     'coverage_item_2_desc' => 'Les anciennes versions sont étiquetées et distinguables',
     'coverage_item_3_title' => 'Sources officielles',
     'coverage_item_3_desc' => 'Chaque document renvoie vers sa source originale',
+
+    'coverage_footer_title' => 'Par la loi! le pays devrait être construit',
+
     'database_label' => 'Base indexée',
     'database_title' => 'Sources ',
     'database_desc' => 'Parcourez une collection de documents juridiques marocains issus de sources officielles vérifiées.',
@@ -41,6 +44,8 @@ return [
     'source_family_code' => 'Droit civil',
     'source_doc' => 'Droit commercial',
     'source_civil_law' => 'Droit des obligations et des contrats',
+    'source_international' => 'Accords internationaux',
+    'source_constitutional' => 'Droit constitutionnel',
 
     'get_legal_aid' => 'Obtenir une aide juridique',
 

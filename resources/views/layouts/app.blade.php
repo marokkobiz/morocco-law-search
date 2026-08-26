@@ -51,8 +51,15 @@
                         class="pointer-events-none cursor-not-allowed px-3 py-1.5 text-sm font-semibold text-gray-300 no-underline opacity-50 transition-colors hover:text-white">{{ $layoutCopy('legal_aid') }}</a>
                 </div>
                 <div>
-                    <a href="#"
-                        class="px-3 py-1.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:text-white">{{ $layoutCopy('customer-service') }}</a>
+                    <a href="https://web.facebook.com/profile.php?id=61590564394012"
+                        target="_blank" rel="noopener noreferrer"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:text-white">
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                        </span>
+                        {{ $layoutCopy('customer-service') }}
+                    </a>
                 </div>
             </div>
 
@@ -147,8 +154,14 @@
                     class="rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:bg-gray-800 hover:text-white">{{ $layoutCopy('coverage') }}</a>
                 <a href="{{ route('legal-aid') }}"
                     class="rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-300 no-underline opacity-60 transition-colors hover:bg-gray-800 hover:text-white">{{ $layoutCopy('legal_aid') }}</a>
-                <a href="#"
-                    class="rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:bg-gray-800 hover:text-white">{{ $layoutCopy('customer-service') }}</a>
+                <a href="https://web.facebook.com/profile.php?id=61590564394012" target="_blank" rel="noopener noreferrer"
+                    class="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:bg-gray-800 hover:text-white">
+                    <span class="relative flex h-2.5 w-2.5 shrink-0">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                    </span>
+                    {{ $layoutCopy('customer-service') }}
+                </a>
                 @auth
                     <div class="mt-2 flex flex-col gap-2 border-t border-gray-800 pt-3">
                         @if (Auth::user()->isAdmin() || Auth::user()->isAdvisor())
@@ -232,11 +245,11 @@
                     </div>
                 </div>
                 <div class="flex flex-col items-center gap-1 md:items-start">
-                    <a href="http://marokkobiz.com/docs/privacy_policy.pdf" target="_blank"
+                    <a href="https://marokkobiz.com/docs/privacy_policy.pdf" target="_blank"
                         class="text-sm text-gray-400 transition-colors hover:text-gray-200">{{ $layoutCopy('privacy') }}</a>
-                    <a href="http://marokkobiz.com/docs/terms_and_conditions.pdf" target="_blank"
+                    <a href="https://marokkobiz.com/docs/terms_and_conditions.pdf" target="_blank"
                         class="text-sm text-gray-400 transition-colors hover:text-gray-200">{{ $layoutCopy('terms') }}</a>
-                    <a href="http://marokkobiz.com/" target="_blank"
+                    <a href="https://marokkobiz.com/" target="_blank"
                         class="text-sm text-gray-400 transition-colors hover:text-gray-200">{{ $layoutCopy('about') }}</a>
                 </div>
             </div>
