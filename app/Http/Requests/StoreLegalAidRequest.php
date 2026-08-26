@@ -47,6 +47,12 @@ class StoreLegalAidRequest extends FormRequest
                 null
             ) ?? [];
 
+        // Custom rule: Initial interview alone = whatsapp only, with others = office only
+        $hasInitial = $services->contains(fn (Service $s) => $s->name_en === 'Initial interview (case content) 30 min.');
+        if ($hasInitial) {
+            $allowed = $services->count() === 1 ? ['whatsapp'] : ['office'];
+        }
+
         if ($allowed !== []) {
             $validator->addRules([
                 'consultation_mode' => ['required', 'in:'.implode(',', $allowed)],

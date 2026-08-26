@@ -19,7 +19,7 @@ return [
     'source_card_2_desc' => 'Lois et décrets relatifs aux références au niveau de larticle.',
     'source_card_3_title' => 'Citations',
     'source_card_3_desc' => 'Les résultats incluent les liens sources, références d\'articles et identifiants des documents officiels.',
-    'coverage_label' => 'Couverture',
+    'coverage_label' => 'Mission',
     'coverage_title' => 'Conçu pour la transparence.',
     'coverage_desc' => 'Les lois marocaines sont rassemblées et indexées. Toutes les lois proviennent de sources officielles marocaines.',
     'coverage_item_1_title' => 'Corpus indexé',
@@ -41,6 +41,9 @@ return [
     'source_family_code' => 'Droit civil',
     'source_doc' => 'Droit commercial',
     'source_civil_law' => 'Droit des obligations et des contrats',
+
+    'get_legal_aid' => 'Obtenir une aide juridique',
+
     'back_to_landing_page' => "Retour à la page d'accueil",
     'law_search_workspace' => 'Espace de recherche juridique',
     'logout' => 'Déconnexion',

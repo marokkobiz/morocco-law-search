@@ -116,14 +116,14 @@
                                     <label
                                         class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __("legal_aid.field_call_time") }}</label>
                                     <div class="relative" id="call-time-dropdown">
-                                        <button type="button" id="call-time-btn"
-                                            class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-left text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500">
-                                            <span id="call-time-label">{{ __("legal_aid.call_time_placeholder") }}</span>
-                                            <svg class="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        <button type="button" id="call-time-btn" aria-haspopup="listbox" aria-expanded="false"
+                                            class="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-[9px] text-left text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 hover:border-gray-300 hover:bg-white focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500">
+                                            <span id="call-time-label" class="truncate text-gray-400">{{ __("legal_aid.call_time_placeholder") }}</span>
+                                            <svg id="call-time-chevron" class="pointer-events-none h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                         </button>
                                         <input type="hidden" name="call_time" id="call-time-value" required>
                                         <ul id="call-time-options"
-                                            class="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg hidden">
+                                            class="absolute z-20 mt-2 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl shadow-gray-200/50 hidden">
                                             <li data-value="" class="cursor-pointer px-3 py-2 text-sm text-gray-400 hover:bg-blue-50 hover:text-blue-600">{{ __("legal_aid.call_time_placeholder") }}</li>
                                             <li data-value="09:00-09:30" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">09:00 - 09:30</li>
                                             <li data-value="09:30-10:00" class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">09:30 - 10:00</li>
@@ -165,6 +165,7 @@
                                         <input type="checkbox" name="service_ids[]" value="{{ $service->id }}"
                                             class="mt-0.5 h-4 w-4 shrink-0 accent-blue-600"
                                             data-modes="{{ $service->consultationModesList }}"
+                                            data-initial="{{ $service->name_en === 'Initial interview (case content) 30 min.' ? '1' : '0' }}"
                                             {{ in_array($service->id, old('service_ids', []), true) ? 'checked' : '' }}>
                                         <span class="flex min-h-full flex-1 flex-col">
                                             <span class="text-sm font-semibold text-gray-900">{{ $service->name }}</span>
@@ -349,6 +350,31 @@
                     return;
                 }
 
+                // Custom rule for Initial interview (case content) 30 min.
+                const hasInitial = checked.some((box) => box.dataset.initial === '1');
+                const onlyInitial = hasInitial && checked.length === 1 && checked[0].dataset.initial === '1';
+                const initialWithOthers = hasInitial && checked.length > 1;
+
+                if (onlyInitial) {
+                    section.classList.remove('hidden');
+                    if (questionDiv) questionDiv.classList.add('hidden');
+                    if (officeOnlyDiv) officeOnlyDiv.classList.add('hidden');
+                    if (whatsappOnlyDiv) whatsappOnlyDiv.classList.remove('hidden');
+                    modeRadios.forEach((r) => { r.checked = false; });
+                    setConsultationMode('whatsapp');
+                    return;
+                }
+
+                if (initialWithOthers) {
+                    section.classList.remove('hidden');
+                    if (questionDiv) questionDiv.classList.add('hidden');
+                    if (whatsappOnlyDiv) whatsappOnlyDiv.classList.add('hidden');
+                    if (officeOnlyDiv) officeOnlyDiv.classList.remove('hidden');
+                    modeRadios.forEach((r) => { r.checked = false; });
+                    setConsultationMode('office');
+                    return;
+                }
+
                 const modeSets = checked
                     .map((box) => (box.dataset.modes || '').split(',').filter(Boolean))
                     .filter((modes) => modes.length > 0);
@@ -359,7 +385,7 @@
                 }
 
                 if (allowed.length === 0) {
-                    allowed = ['whatsapp'];
+                    allowed = ['office'];
                 }
 
                 const isSingleMode = allowed.length === 1;
@@ -421,10 +447,21 @@
             var ctOptions = document.getElementById("call-time-options");
             var ctValue = document.getElementById("call-time-value");
             var ctLabel = document.getElementById("call-time-label");
+            var ctChevron = document.getElementById("call-time-chevron");
             if (ctBtn && ctOptions) {
+                function setCallTimeOpen(open) {
+                    ctOptions.classList.toggle("hidden", !open);
+                    ctBtn.setAttribute("aria-expanded", open ? "true" : "false");
+                    if (ctChevron) ctChevron.style.transform = open ? "rotate(180deg)" : "";
+                    ctBtn.classList.toggle("border-blue-500", open);
+                    ctBtn.classList.toggle("bg-white", open);
+                    ctBtn.classList.toggle("ring-1", open);
+                    ctBtn.classList.toggle("ring-blue-500", open);
+                }
                 ctBtn.addEventListener("click", function (e) {
                     e.stopPropagation();
-                    ctOptions.classList.toggle("hidden");
+                    var isHidden = ctOptions.classList.contains("hidden");
+                    setCallTimeOpen(isHidden);
                 });
                 ctOptions.querySelectorAll("li").forEach(function (li) {
                     li.addEventListener("click", function () {
@@ -432,10 +469,16 @@
                         ctLabel.textContent = this.textContent;
                         ctLabel.classList.toggle("text-gray-400", !this.dataset.value);
                         ctLabel.classList.toggle("text-gray-900", !!this.dataset.value);
-                        ctOptions.classList.add("hidden");
+                        ctOptions.querySelectorAll("li").forEach(function (el) {
+                            el.classList.remove("bg-blue-50", "text-blue-600", "font-semibold");
+                        });
+                        if (this.dataset.value) this.classList.add("bg-blue-50", "text-blue-600", "font-semibold");
+                        setCallTimeOpen(false);
+                        ctBtn.focus();
                     });
                 });
-                document.addEventListener("click", function () { ctOptions.classList.add("hidden"); });
+                document.addEventListener("click", function () { setCallTimeOpen(false); });
+                document.addEventListener("keydown", function (e) { if (e.key === "Escape") setCallTimeOpen(false); });
             }
         });
     </script>
