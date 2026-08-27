@@ -186,8 +186,8 @@ Full details for legal aid request {{ $request->ticketLabel }}.
                     <dd>
                         @if($isBank)
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">Bank Transfer</span>
-                        @elseif($isGooglePay)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Google Pay</span>
+                        @elseif($isGooglePay || $request->isOnlinePayment())
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Card</span>
                         @else
                             <span class="text-slate-400">—</span>
                         @endif
@@ -204,14 +204,14 @@ Full details for legal aid request {{ $request->ticketLabel }}.
                             <p class="mt-1 text-xs text-slate-400">
                                 Base price {{ number_format((float) $request->base_price, 0) }} MAD
                                 @if($isBank) · +{{ $bankFeePercent }}% bank fee
-                                @elseif($isGooglePay) · −{{ $discountPercent }}% online discount
+                                @elseif($isGooglePay || $request->isOnlinePayment()) · −{{ $discountPercent }}% online discount
                                 @endif
                             </p>
                         @endif
                     </dd>
                 </div>
 
-                @if($isGooglePay)
+                @if($isGooglePay || $request->isOnlinePayment())
                     <div>
                         <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment Link</dt>
                         <dd>

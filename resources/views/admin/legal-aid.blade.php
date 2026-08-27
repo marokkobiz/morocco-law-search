@@ -69,7 +69,7 @@ Track client requests, payments, and confirm cases.
                         <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border
                             @if($request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK) bg-amber-50 text-amber-700 border-amber-200
                             @else bg-emerald-50 text-emerald-700 border-emerald-200 @endif">
-                            {{ $request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK ? 'Bank' : 'Google Pay' }}
+                            {{ $request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK ? 'Bank' : 'Card' }}
                         </span>
                     </td>
 

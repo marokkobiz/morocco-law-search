@@ -60,6 +60,8 @@ class LegalAidRequest extends Model
 
     public const PAYMENT_METHOD_GOOGLE_PAY = 'google_pay';
 
+    public const PAYMENT_METHOD_STRIPE = 'stripe';
+
     public const PAYMENT_METHOD_BANK = 'bank';
 
     public const CASE_OPEN = 'open';
@@ -140,6 +142,11 @@ class LegalAidRequest extends Model
         $this->forceFill(['last_touched_at' => now()])->save();
 
         return $this;
+    }
+
+    public function isOnlinePayment(): bool
+    {
+        return in_array($this->payment_method, [self::PAYMENT_METHOD_STRIPE, self::PAYMENT_METHOD_GOOGLE_PAY], true);
     }
 
     public function getPayableTotalAttribute(): ?float

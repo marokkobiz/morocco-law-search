@@ -88,14 +88,26 @@ class LegalAidController
                 null
             ) ?? [];
 
-        $consultationMode = isset($payload['consultation_mode']) && in_array($payload['consultation_mode'], $allowedModes, true)
-            ? $payload['consultation_mode']
-            : null;
+        // Custom rule: Initial interview alone = whatsapp only, with other services = office only
+        $hasInitial = $services->contains(fn (Service $s) => $s->name_en === 'Initial interview (case content) 30 min.');
+        if ($hasInitial) {
+            if ($services->count() === 1) {
+                $allowedModes = ['whatsapp'];
+                $consultationMode = 'whatsapp';
+            } else {
+                $allowedModes = ['office'];
+                $consultationMode = 'office';
+            }
+        } else {
+            $consultationMode = isset($payload['consultation_mode']) && in_array($payload['consultation_mode'], $allowedModes, true)
+                ? $payload['consultation_mode']
+                : null;
+        }
 
-        $paymentMethod = (string) ($payload['payment_method'] ?? LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY);
-        $paymentMethod = in_array($paymentMethod, [LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK], true)
+        $paymentMethod = (string) ($payload['payment_method'] ?? LegalAidRequest::PAYMENT_METHOD_STRIPE);
+        $paymentMethod = in_array($paymentMethod, [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK], true)
             ? $paymentMethod
-            : LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY;
+            : LegalAidRequest::PAYMENT_METHOD_STRIPE;
 
         app()->setLocale($locale);
 

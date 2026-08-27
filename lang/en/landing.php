@@ -19,7 +19,7 @@ return [
     'source_card_2_desc' => 'Laws, decrees, on article-level references.',
     'source_card_3_title' => 'Citations',
     'source_card_3_desc' => 'Results include source links, article references, and official document identifiers.',
-    'coverage_label' => 'Coverage',
+    'coverage_label' => 'Mission',
     'coverage_title' => 'Built for transparency',
     'coverage_desc' => 'Moroccan laws are collected and indexed. All laws are collected from official Moroccan sources',
     'coverage_item_1_title' => 'Indexed',
@@ -28,6 +28,9 @@ return [
     'coverage_item_2_desc' => 'Older versions are labeled and distinguishable',
     'coverage_item_3_title' => 'Official sources',
     'coverage_item_3_desc' => 'Every document links back to its original source',
+
+    'coverage_footer_title' => 'By law! the country should be built',
+
     'database_label' => 'Indexed Database',
     'database_title' => 'Sources',
     'database_desc' => 'Browse our curated collection of Moroccan legal documents from verified official sources.',
@@ -42,6 +45,10 @@ return [
     'source_family_code' => 'Family Law',
     'source_doc' => 'Commercial Law',
     'source_civil_law' => 'Civil Law',
+    'source_international' => 'International Agreements',
+    'source_constitutional' => 'Constitutional Law',
+
+    'get_legal_aid' => 'Get Legal Aid',
 
     'back_to_landing_page' => 'Back to Landing Page',
     'law_search_workspace' => 'Law Search Workspace',

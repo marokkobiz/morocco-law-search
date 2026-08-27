@@ -17,39 +17,39 @@
             style="background-image: linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px); background-size: 60px 60px;">
         </div>
 
-        <div class="relative z-10 container-page pt-20 md:pt-24 pb-16 md:pb-24 w-full">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-                <div data-animate="fade-up">
+        <div class="relative z-10 container-page pt-16 sm:pt-20 md:pt-24 pb-16 md:pb-24 w-full">
+            <div class="grid lg:grid-cols-2 gap-10 lg:gap-12 items-start">
+                <div class="flex flex-col " data-animate="fade-up">
                     <span
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold tracking-wider uppercase bg-white/10 text-blue-200 border border-white/10 backdrop-blur-sm">
+                        class="inline-flex items-center gap-2 self-start px-4 py-2 rounded-full text-xs font-semibold tracking-wider uppercase bg-white/10 text-blue-200 border border-white/10 backdrop-blur-sm">
                         <span class="w-2 h-2 rounded-full bg-blue-400 shadow-lg shadow-blue-400/50"></span>
                         {{ __('landing.badge') }}
                     </span>
 
                     <h1
-                        class="mt-4 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-bold leading-none tracking-tight">
+                        class="mt-4 text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-bold leading-[0.9] tracking-tight">
                         <span class="gradient-text">{!! __('landing.title_html') !!}</span>
                     </h1>
 
-                    <p class="mt-6 text-lg sm:text-xl text-blue-100/80 max-w-2xl leading-relaxed font-sans">
+                    <p class="mt-6 text-base sm:text-lg md:text-xl text-blue-100/80 max-w-2xl leading-relaxed font-sans">
                         {{ __('landing.subtitle') }}
                     </p>
 
                     <form
-                        class="flex items-center gap-2 p-2 mt-8 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl shadow-blue-500/10 max-w-2xl"
+                        class="flex items-center gap-2 p-2 mt-8 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl shadow-blue-500/10 max-w-2xl w-full"
                         action="{{ auth()->check() ? route('app.search') : route('login') }}" method="get">
-                        <div class="flex items-center gap-3 flex-1 px-4">
+                        <div class="flex items-center gap-3 flex-1 min-w-0 px-3 sm:px-4">
                             <svg class="w-5 h-5 text-blue-300 shrink-0" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                             <input type="search" name="q" placeholder="{{ __('landing.placeholder') }}"
-                                class="w-full bg-transparent border-none text-white placeholder:text-blue-200/50 text-sm md:text-base font-medium focus:outline-none">
+                                class="w-full min-w-0 bg-transparent border-none text-white placeholder:text-blue-200/50 text-sm md:text-base font-medium focus:outline-none">
                         </div>
-                        <button type="submit" class="btn-primary shrink-0">
+                        <button type="submit" class="btn-primary shrink-0 whitespace-nowrap">
                             {{ __('landing.search') }}
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-4 h-4 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M17 8l4 4m0 0l-4 4m4-4H3" />
                             </svg>
@@ -57,9 +57,18 @@
                     </form>
                 </div>
 
-                <div class="hidden lg:flex justify-center" data-animate="fade-up" style="--delay: 0.15s">
-                    <img src="{{ asset('images/hero2.jpg') }}" alt="MarocLoi Dashboard Preview"
-                        class="img-elevate w-full max-w-lg rounded-2xl shadow-2xl shadow-blue-900/40 ring-1 ring-white/10">
+                <div class="flex flex-col items-center mt-12 p-1 gap-4 w-full lg:items-stretch" data-animate="fade-up" style="--delay: 0.15s">
+                    <div class="relative w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
+                        <div class="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-2xl border border-sky-300/40 pointer-events-none hidden sm:block" aria-hidden="true"></div>
+                        <div class="absolute inset-0 rounded-2xl border border-sky-400/30 pointer-events-none" aria-hidden="true"></div>
+                        <img src="{{ asset('images/hero2.jpg') }}" alt="MarocLoi Dashboard Preview"
+                            class="relative w-full aspect-[4/3] sm:aspect-[4/3] object-cover rounded-2xl shadow-2xl shadow-blue-900/40 ring-1 ring-white/10">
+                    </div>
+
+                    <a tabindex="-1" aria-disabled="true" href="{{ route('legal-aid') }}"
+                        class="pointer-events-none opacity-20 cursor-not-allowed flex w-full mt-9 max-w-md mx-auto lg:mx-0 lg:ml-auto items-center justify-center rounded-xl bg-white border-2 border-gray-900 px-6 py-3.5 text-center text-sm sm:text-base font-bold text-gray-900 shadow-xl shadow-blue-900/20 hover:bg-gray-50 hover:border-black transition-colors no-underline">
+                        {{ __('landing.get_legal_aid') }}
+                    </a>
                 </div>
             </div>
 
@@ -89,11 +98,11 @@
     </section>
 
     {{-- Sources Section --}}
-    <section id="sources" class="py-20 md:py-28">
+    <section class="py-20 md:py-28">
         <div class="container-page">
             <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6" data-animate="fade-up">
                 <div class="max-w-3xl lg:max-w-none">
-                    <span class="section-label">{{ __('landing.sources_label') }}</span>
+                    {{-- <span class="section-label">{{ __('landing.sources_label') }}</span> --}}
                     <h2 class="section-title mt-4 lg:whitespace-nowrap">{{ __('landing.sources_title') }}</h2>
                     <p class="section-desc lg:max-w-none lg:whitespace-nowrap">{{ __('landing.sources_desc') }}</p>
                 </div>
@@ -136,15 +145,21 @@
                     <p class="mt-3 text-gray-600 leading-relaxed">{{ __('landing.source_card_3_desc') }}</p>
                 </article>
             </div>
+
+            <div class="mt-10 w-full h-36" data-animate="fade-up" style="--delay: 0.3s">
+                <a tabindex="-1" aria-disabled="true" href="{{ route('legal-aid') }}" class="pointer-events-none opacity-70 cursor-not-allowed flex h-full w-full items-center justify-center lg:text-4xl sm:text-3xl rounded-xl bg-blue-600 px-6 py-4 sm:py-5 md:text-xl font-bold capitalize text-white shadow-lg hover:bg-blue-700 transition-colors no-underline">
+                    {{ __('landing.get_legal_aid') }}
+                </a>
+            </div>
         </div>
     </section>
 
-    {{-- Coverage Section --}}
+    {{-- Mission Section --}}
     <section id="coverage" class="py-20 md:py-28 bg-linear-to-b from-gray-50 to-white">
         <div class="container-page">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                 <div class="hidden lg:flex justify-center" data-animate="fade-up">
-                    <img src="{{ asset('/images/hero.jpg') }}" alt="Coverage Visualization"
+                    <img src="{{ asset('/images/hero.jpg') }}" alt="Mission Visualization"
                         class="img-elevate w-full max-w-md rounded-2xl shadow-lg shadow-blue-500/5 ring-1 ring-blue-100">
                 </div>
 
@@ -202,22 +217,24 @@
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
+            <h2 class="section-title text-3xl mt-12 text-center">{{ __('landing.coverage_footer_title') }}</h2>
     </section>
 
     {{-- Database Section --}}
-    <section id="database" class="py-20 md:py-28">
+    <section id="sources" class="py-20 md:py-28">
         <div class="container-page">
             <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6" data-animate="fade-up">
                 <div class="max-w-3xl lg:max-w-none">
-                    <span class="section-label">{{ __('landing.database_label') }}</span>
+                    <span class="section-label">{{ __('landing.sources_label') }}</span>
                     <h2 class="section-title mt-4">{{ __('landing.database_title') }}</h2>
                     <p class="section-desc lg:max-w-none lg:whitespace-nowrap">{{ __('landing.database_desc') }}</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-12">
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 mt-12">
                 <div class="card p-5 text-center hover:border-blue-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0s">
                     <div
@@ -260,6 +277,26 @@
                         CL</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_civil_law') }}</span>
                 </div>
+                <div class="card p-5 text-center hover:border-indigo-200 transition-colors cursor-default"
+                    data-animate="scale-in" style="--delay: 0.3s">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center mx-auto font-bold text-sm">
+                        IA</div>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_international') }}</span>
+                </div>
+                <div class="card p-5 text-center hover:border-slate-200 transition-colors cursor-default"
+                    data-animate="scale-in" style="--delay: 0.35s">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mx-auto font-bold text-sm">
+                        CO</div>
+                    <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_constitutional') }}</span>
+                </div>
+            </div>
+
+            <div class="mt-10 w-full" data-animate="fade-up" style="--delay: 0.3s">
+                <a tabindex="-1" aria-disabled="true" href="{{ route('legal-aid') }}" class="pointer-events-none opacity-70 cursor-not-allowed flex w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-4 sm:py-5 text-base sm:text-lg md:text-xl font-bold capitalize text-white shadow-lg hover:bg-blue-700 transition-colors no-underline">
+                    {{ __('landing.get_legal_aid') }}
+                </a>
             </div>
         </div>
     </section>

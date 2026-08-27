@@ -27,7 +27,7 @@ class ServiceSeeder extends Seeder
                 'additional_notes_en' => null,
                 'additional_notes_fr' => null,
                 'additional_notes_ar' => null,
-                'allows_office' => true,
+                'allows_office' => false,
                 'allows_whatsapp' => true,
             ],
             [
@@ -47,6 +47,8 @@ class ServiceSeeder extends Seeder
                 'additional_notes_en' => null,
                 'additional_notes_fr' => null,
                 'additional_notes_ar' => null,
+                'allows_office' => true,
+                'allows_whatsapp' => false,
             ],
             [
                 'name_en' => 'Create documents, pleadings',
@@ -65,6 +67,8 @@ class ServiceSeeder extends Seeder
                 'additional_notes_en' => null,
                 'additional_notes_fr' => null,
                 'additional_notes_ar' => null,
+                'allows_office' => true,
+                'allows_whatsapp' => false,
             ],
             [
                 'name_en' => 'Submission to the court',
@@ -83,6 +87,8 @@ class ServiceSeeder extends Seeder
                 'additional_notes_en' => 'Possibly a bailiff fee',
                 'additional_notes_fr' => 'Frais d\'huissier éventuels',
                 'additional_notes_ar' => 'احتمال رسوم المفوض القضائي',
+                'allows_office' => true,
+                'allows_whatsapp' => false,
             ],
             [
                 'name_en' => 'Tracking the case (when there are court hearings)',
@@ -101,6 +107,8 @@ class ServiceSeeder extends Seeder
                 'additional_notes_en' => null,
                 'additional_notes_fr' => null,
                 'additional_notes_ar' => null,
+                'allows_office' => true,
+                'allows_whatsapp' => false,
             ],
             [
                 'name_en' => 'Participation in court hearings represented by a legal expert',
@@ -119,6 +127,8 @@ class ServiceSeeder extends Seeder
                 'additional_notes_en' => null,
                 'additional_notes_fr' => null,
                 'additional_notes_ar' => null,
+                'allows_office' => true,
+                'allows_whatsapp' => false,
             ],
             [
                 'name_en' => 'Participation in court hearings by a Lawyer',
@@ -137,6 +147,8 @@ class ServiceSeeder extends Seeder
                 'additional_notes_en' => null,
                 'additional_notes_fr' => null,
                 'additional_notes_ar' => null,
+                'allows_office' => true,
+                'allows_whatsapp' => false,
             ],
         ];
 

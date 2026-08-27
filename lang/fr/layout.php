@@ -3,7 +3,8 @@
 return [
     'about' => 'A propos',
     'sources' => 'Sources',
-    'coverage' => 'Couverture',
+    'coverage' => 'Mission',
+    'customer-service' => 'Service client',
     'legal_aid' => 'Aide juridique',
     'login' => 'Connexion',
     'start' => 'Commencer',

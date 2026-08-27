@@ -19,7 +19,7 @@ return [
     'source_card_2_desc' => 'القوانين والقرارات المتعلقة بالمراجع على مستوى المقالة.',
     'source_card_3_title' => 'الإحالات',
     'source_card_3_desc' => 'النتائج تتضمن روابط المصادر ومراجع المواد ومعرفات الوثائق الرسمية.',
-    'coverage_label' => 'التغطية',
+    'coverage_label' => 'المهمة',
     'coverage_title' => 'صُمم من أجل الشفافية',
     'coverage_desc' =>  'تم تجميع القوانين المغربية وفهرستها، وقد جُمعت جميعها من مصادر مغربية رسمية.',
     'coverage_item_1_title' => ' مفهرس',
@@ -28,6 +28,9 @@ return [
     'coverage_item_2_desc' => 'النسخ القديمة موسومة ويمكن تمييزها',
     'coverage_item_3_title' => 'مصادر رسمية',
     'coverage_item_3_desc' => 'كل وثيقة تعود إلى مصدرها الأصلي',
+
+    'coverage_footer_title' => 'بموجب القانون! يجب بناء البلاد',
+
     'database_label' => 'قاعدة مفهرسة',
     'database_title' => 'المصادر ',
     'database_desc' => 'تصفح مجموعة منتقاة من الوثائق القانونية المغربية من مصادر رسمية موثوقة.',
@@ -42,6 +45,10 @@ return [
     'source_family_code' => 'مدونة الأسرة',
     'source_doc' => 'القانون التجاري',
     'source_civil_law' => 'قانون الالتزامات والعقود',
+    'source_international' => 'الاتفاقيات الدولية',
+    'source_constitutional' => 'القانون الدستوري',
+
+    'get_legal_aid' => 'احصل على المساعدة القانونية',
 
     'back_to_landing_page' => 'العودة إلى الصفحة الرئيسية',
     'law_search_workspace' => 'منصة البحث القانوني',

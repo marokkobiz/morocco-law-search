@@ -3,7 +3,8 @@
 return [
     'about' => 'من نحن',
     'sources' => 'المصادر',
-    'coverage' => 'التغطية',
+    'coverage' => 'المهمة',
+    'customer-service' => 'خدمة العملاء',
     'legal_aid' => 'المساعدة القانونية',
     'login' => 'تسجيل الدخول',
     'start' => 'ابدأ الآن',

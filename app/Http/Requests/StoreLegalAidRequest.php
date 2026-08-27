@@ -19,14 +19,14 @@ class StoreLegalAidRequest extends FormRequest
         return [
             'full_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email:rfc', 'max:255'],
-            'phone' => ['required', 'string', 'regex:/^\+?[1-9][0-9]{8,14}$/'],
-            'whatsapp' => ['nullable', 'string', 'regex:/^\+?[1-9][0-9]{8,14}$/'],
+            'phone' => ['required', 'string', 'regex:/^\+?0?[1-9][0-9]{7,14}$/'],
+            'whatsapp' => ['nullable', 'string', 'regex:/^\+?0?[1-9][0-9]{7,14}$/'],
             'case_description' => ['required', 'string', 'max:5000'],
             'service_ids' => ['required', 'array', 'min:1'],
             'service_ids.*' => ['integer', 'distinct', 'exists:services,id'],
             'consultation_mode' => ['nullable', 'in:office,whatsapp'],
             'call_time' => ['nullable', 'string', 'max:20'],
-            'payment_method' => ['nullable', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK])],
+            'payment_method' => ['nullable', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK])],
         ];
     }
 
@@ -47,6 +47,12 @@ class StoreLegalAidRequest extends FormRequest
                 null
             ) ?? [];
 
+        // Custom rule: Initial interview alone = whatsapp only, with others = office only
+        $hasInitial = $services->contains(fn (Service $s) => $s->name_en === 'Initial interview (case content) 30 min.');
+        if ($hasInitial) {
+            $allowed = $services->count() === 1 ? ['whatsapp'] : ['office'];
+        }
+
         if ($allowed !== []) {
             $validator->addRules([
                 'consultation_mode' => ['required', 'in:'.implode(',', $allowed)],
@@ -55,7 +61,7 @@ class StoreLegalAidRequest extends FormRequest
 
         if ($services->sum('price') > 0) {
             $validator->addRules([
-                'payment_method' => ['required', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK])],
+                'payment_method' => ['required', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK])],
             ]);
         }
     }
