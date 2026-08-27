@@ -61,7 +61,7 @@
 
                 <div class="sm:max-w-xs">
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Price (MAD)</label>
-                    <input type="number" name="price" value="{{ old('price', $service->price) }}" step="0.01" min="0"
+                    <input type="number" id="price-input" name="price" value="{{ old('price', $service->price) }}" step="0.01" min="0"
                            required
                            class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
                 </div>
@@ -70,12 +70,14 @@
                     @foreach(['en', 'fr', 'ar'] as $locale)
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1.5">Price display ({{ strtoupper($locale) }})</label>
-                            <input type="text" name="price_display_{{ $locale }}" value="{{ old('price_display_' . $locale, $service->{'price_display_' . $locale}) }}"
+                            <input type="text" id="price-display-{{ $locale }}" name="price_display_{{ $locale }}" value="{{ old('price_display_' . $locale, $service->{'price_display_' . $locale}) }}"
                                    maxlength="255" placeholder="{{ $locale === 'en' ? 'e.g. Free' : ($locale === 'fr' ? 'ex. Gratuit' : 'مثال: مجاني') }}"
+                                   data-auto="1"
                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
                         </div>
                     @endforeach
                 </div>
+                <p class="mt-1 text-xs text-slate-400">Leave empty to auto-format, or type a custom label like “Free” / “from 3.000,00 MAD”. Editing price auto-fills empty displays.</p>
             </div>
 
             <div class="space-y-4">
@@ -150,5 +152,62 @@
         </form>
     </div>
 </div>
+
+<script>
+(function() {
+    const priceInput = document.getElementById('price-input');
+    const fields = {
+        en: document.getElementById('price-display-en'),
+        fr: document.getElementById('price-display-fr'),
+        ar: document.getElementById('price-display-ar'),
+    };
+    if (!priceInput || !fields.en) return;
+
+    function formatPrice(price, locale) {
+        const num = parseFloat(price);
+        if (isNaN(num) || price === '') return '';
+        if (num === 0) {
+            if (locale === 'en') return 'Free';
+            if (locale === 'fr') return 'Gratuit';
+            return 'مجاني';
+        }
+        const formatted = num.toLocaleString(locale === 'ar' ? 'ar-MA' : 'fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (locale === 'ar') return formatted + ' درهم';
+        return formatted + ' MAD';
+    }
+
+    function autoFill() {
+        const price = priceInput.value;
+        Object.keys(fields).forEach(locale => {
+            const input = fields[locale];
+            if (!input) return;
+            if (input.dataset.auto === '1' || input.value.trim() === '') {
+                input.value = formatPrice(price, locale);
+                input.dataset.auto = '1';
+            }
+        });
+    }
+
+    Object.values(fields).forEach(input => {
+        input.addEventListener('input', () => {
+            if (input.value.trim() === '') {
+                input.dataset.auto = '1';
+            } else {
+                const locale = input.id.replace('price-display-', '');
+                const autoVal = formatPrice(priceInput.value, locale);
+                input.dataset.auto = (input.value === autoVal) ? '1' : '0';
+            }
+        });
+        if (input.value.trim() !== '') {
+            const locale = input.id.replace('price-display-', '');
+            input.dataset.auto = (input.value === formatPrice(priceInput.value, locale)) ? '1' : '0';
+        }
+    });
+
+    priceInput.addEventListener('input', autoFill);
+    priceInput.addEventListener('change', autoFill);
+    autoFill();
+})();
+</script>
 
 @endsection
