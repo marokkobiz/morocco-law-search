@@ -65,8 +65,8 @@
                             class="relative w-full aspect-[4/3] sm:aspect-[4/3] object-cover rounded-2xl shadow-2xl shadow-blue-900/40 ring-1 ring-white/10">
                     </div>
 
-                    <a href="{{ route('legal-aid') }}"
-                        class="flex w-full mt-9 max-w-md mx-auto lg:mx-0 lg:ml-auto items-center justify-center rounded-xl bg-white border-2 border-gray-900 px-6 py-3.5 text-center text-sm sm:text-base font-bold text-gray-900 shadow-xl shadow-blue-900/20 hover:bg-gray-50 hover:border-black transition-colors no-underline">
+                    <a tabindex="-1" aria-disabled="true" href="{{ route('legal-aid') }}"
+                        class="pointer-events-none opacity-20 cursor-not-allowed flex w-full mt-9 max-w-md mx-auto lg:mx-0 lg:ml-auto items-center justify-center rounded-xl bg-white border-2 border-gray-900 px-6 py-3.5 text-center text-sm sm:text-base font-bold text-gray-900 shadow-xl shadow-blue-900/20 hover:bg-gray-50 hover:border-black transition-colors no-underline">
                         {{ __('landing.get_legal_aid') }}
                     </a>
                 </div>
