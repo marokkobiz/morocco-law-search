@@ -39,18 +39,12 @@ class StoreLegalAidRequest extends FormRequest
             return;
         }
 
-        $allowed = $services
-            ->map->consultationModes
-            ->reject(fn (array $modes) => $modes === [])
-            ->reduce(
-                fn (?array $carry, array $modes) => $carry === null ? $modes : array_values(array_intersect($carry, $modes)),
-                null
-            ) ?? [];
-
-        // Custom rule: Initial interview alone = whatsapp only, with others = office only
+        // Rule: only Initial interview alone = WhatsApp, everything else = Office
         $hasInitial = $services->contains(fn (Service $s) => $s->name_en === 'Initial interview (case content) 30 min.');
-        if ($hasInitial) {
-            $allowed = $services->count() === 1 ? ['whatsapp'] : ['office'];
+        if ($hasInitial && $services->count() === 1) {
+            $allowed = ['whatsapp'];
+        } else {
+            $allowed = ['office'];
         }
 
         if ($allowed !== []) {

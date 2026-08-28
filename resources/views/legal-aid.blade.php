@@ -397,10 +397,9 @@
                     return;
                 }
 
-                // Custom rule for Initial interview (case content) 30 min.
+                // Rule: only Initial interview alone = WhatsApp, everything else = Office
                 const hasInitial = checked.some((box) => box.dataset.initial === '1');
                 const onlyInitial = hasInitial && checked.length === 1 && checked[0].dataset.initial === '1';
-                const initialWithOthers = hasInitial && checked.length > 1;
 
                 if (onlyInitial) {
                     section.classList.remove('hidden');
@@ -414,56 +413,15 @@
                     return;
                 }
 
-                if (initialWithOthers) {
-                    section.classList.remove('hidden');
-                    if (questionDiv) questionDiv.classList.add('hidden');
-                    if (whatsappOnlyDiv) whatsappOnlyDiv.classList.add('hidden');
-                    if (officeOnlyDiv) officeOnlyDiv.classList.remove('hidden');
-                    modeRadios.forEach((r) => {
-                        r.checked = false;
-                    });
-                    setConsultationMode('office');
-                    return;
-                }
-
-                const modeSets = checked
-                    .map((box) => (box.dataset.modes || '').split(',').filter(Boolean))
-                    .filter((modes) => modes.length > 0);
-
-                let allowed = modeSets.length === 0 ? [] : modeSets[0];
-                for (let i = 1; i < modeSets.length; i++) {
-                    allowed = allowed.filter((mode) => modeSets[i].includes(mode));
-                }
-
-                if (allowed.length === 0) {
-                    allowed = ['office'];
-                }
-
-                const isSingleMode = allowed.length === 1;
-                const singleMode = isSingleMode ? allowed[0] : null;
-
+                // Any other selection (including Tracking/Submission/Participation without Initial) = Office only
                 section.classList.remove('hidden');
-                if (questionDiv) questionDiv.classList.toggle('hidden', isSingleMode);
-                Object.keys(singleBanners).forEach((key) => {
-                    if (singleBanners[key]) singleBanners[key].classList.toggle('hidden', !(isSingleMode &&
-                        key === singleMode));
+                if (questionDiv) questionDiv.classList.add('hidden');
+                if (whatsappOnlyDiv) whatsappOnlyDiv.classList.add('hidden');
+                if (officeOnlyDiv) officeOnlyDiv.classList.remove('hidden');
+                modeRadios.forEach((r) => {
+                    r.checked = false;
                 });
-
-                if (isSingleMode) {
-                    modeRadios.forEach((r) => {
-                        r.checked = false;
-                    });
-                    setConsultationMode(singleMode);
-                } else {
-                    modeRadios.forEach((radio) => {
-                        const wrap = modeWraps[radio.value];
-                        const isAllowed = allowed.includes(radio.value);
-                        if (wrap) wrap.classList.toggle('hidden', !isAllowed);
-                        if (!isAllowed && radio.checked) radio.checked = false;
-                    });
-                    const selected = modeRadios.find((r) => r.checked);
-                    setConsultationMode(selected ? selected.value : 'whatsapp');
-                }
+                setConsultationMode('office');
             }
 
             modeRadios.forEach((radio) => {

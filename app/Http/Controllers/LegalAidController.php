@@ -78,28 +78,14 @@ class LegalAidController
                 ->with('error', __('legal_aid.confirm_invalid'));
         }
 
-        $allowedModes = $services
-            ->map->consultationModes
-            ->reject(fn (array $modes) => $modes === [])
-            ->reduce(
-                fn (?array $carry, array $modes) => $carry === null ? $modes : array_values(array_intersect($carry, $modes)),
-                null
-            ) ?? [];
-
-        // Custom rule: Initial interview alone = whatsapp only, with other services = office only
+        // Rule: only Initial interview alone = WhatsApp, everything else = Office
         $hasInitial = $services->contains(fn (Service $s) => $s->name_en === 'Initial interview (case content) 30 min.');
-        if ($hasInitial) {
-            if ($services->count() === 1) {
-                $allowedModes = ['whatsapp'];
-                $consultationMode = 'whatsapp';
-            } else {
-                $allowedModes = ['office'];
-                $consultationMode = 'office';
-            }
+        if ($hasInitial && $services->count() === 1) {
+            $allowedModes = ['whatsapp'];
+            $consultationMode = 'whatsapp';
         } else {
-            $consultationMode = isset($payload['consultation_mode']) && in_array($payload['consultation_mode'], $allowedModes, true)
-                ? $payload['consultation_mode']
-                : null;
+            $allowedModes = ['office'];
+            $consultationMode = 'office';
         }
 
         $paymentMethod = (string) ($payload['payment_method'] ?? LegalAidRequest::PAYMENT_METHOD_STRIPE);

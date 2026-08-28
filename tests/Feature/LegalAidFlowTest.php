@@ -793,7 +793,7 @@ class LegalAidFlowTest extends TestCase
             ->assertOk()
             ->assertSee('data-modes="office,whatsapp"', false)
             ->assertSee('data-modes="office"', false)
-            ->assertSee('data-modes=""', false);
+            ->assertSee('data-modes="whatsapp"', false);
     }
 
     public function test_consultation_mode_is_required_only_when_all_services_allow_modes(): void
@@ -826,13 +826,13 @@ class LegalAidFlowTest extends TestCase
         $whatsappOnly = $this->makeService('WhatsApp Only', 300, modes: ['whatsapp']);
 
         $confirmation = $this->submitBooking(array_merge($this->basePayload($officeOnly, $whatsappOnly), [
-            'consultation_mode' => 'whatsapp',
+            'consultation_mode' => 'office',
         ]));
 
         $this->get(route('legal-aid.confirm-booking', $confirmation->token))->assertRedirect();
 
         $this->assertDatabaseHas('legal_aid_requests', [
-            'consultation_mode' => null,
+            'consultation_mode' => 'office',
         ]);
     }
 
@@ -850,7 +850,7 @@ class LegalAidFlowTest extends TestCase
         $this->get(route('legal-aid.confirm-booking', $confirmation->token))->assertRedirect();
 
         $this->assertDatabaseHas('legal_aid_requests', [
-            'consultation_mode' => null,
+            'consultation_mode' => 'office',
         ]);
     }
 
