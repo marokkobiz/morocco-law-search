@@ -105,14 +105,18 @@ class AdvisorDashboardTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_admins_can_access_advisor_dashboard(): void
+    public function test_admins_cannot_access_advisor_dashboard(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $this->paidCase();
 
         $this->actingAs($admin)
             ->get(route('advisor.cases.index'))
-            ->assertOk();
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->get(route('advisor.dashboard'))
+            ->assertForbidden();
     }
 
     public function test_advisors_can_filter_cases_by_status(): void

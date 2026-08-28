@@ -21,7 +21,6 @@ Route::get('/legal-aid/confirm/{token}', [LegalAidController::class, 'confirmBoo
 Route::get('/legal-aid/confirmed/{ticket}', [LegalAidController::class, 'confirmed'])->name('legal-aid.confirmed');
 Route::get('/legal-aid/payment/{ticket}', [LegalAidController::class, 'payment'])->name('legal-aid.payment');
 Route::get('/legal-aid/ticket/{ticket}/pdf', [LegalAidController::class, 'downloadTicketPdf'])->name('legal-aid.ticket-pdf');
-Route::post('/legal-aid/payment/{ticket}/receipt', [LegalAidController::class, 'uploadReceipt'])->name('legal-aid.receipt');
 
 // Stripe Checkout endpoints (hosted payment page)
 Route::post('/legal-aid/payment/{ticket}/stripe/checkout', [StripePaymentController::class, 'createCheckoutSession'])
@@ -89,7 +88,6 @@ Route::middleware(['auth', 'admin'])
         Route::get('/legal-aid/{legalAidRequest}', [LegalAidController::class, 'show'])->name('legal-aid.show');
         Route::post('/legal-aid/{legalAidRequest}/confirm', [LegalAidController::class, 'confirm'])->name('legal-aid.confirm');
         Route::post('/legal-aid/{legalAidRequest}/resend', [LegalAidController::class, 'resendPaymentLink'])->name('legal-aid.resend');
-        Route::post('/legal-aid/{legalAidRequest}/reject', [LegalAidController::class, 'reject'])->name('legal-aid.reject');
 
         // Advisor management (admin only)
         Route::get('/advisors', [AdvisorManagementController::class, 'index'])->name('advisors.index');
@@ -103,7 +101,7 @@ Route::middleware(['auth', 'admin'])
         Route::post('/advisors/{advisor}/reset-password', [AdvisorManagementController::class, 'resetPassword'])->name('advisors.reset-password');
     });
 
-// Advisor portal (admins + active advisors)
+// Advisor portal (advisors only — admins are blocked)
 Route::middleware(['auth', 'advisor'])
     ->prefix('advisor')
     ->name('advisor.')

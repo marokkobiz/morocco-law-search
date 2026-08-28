@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\LegalAidPaymentReceivedMail;
 use App\Models\LegalAidRequest;
 use App\Models\PaymentTransaction;
 use App\Support\AdvisorNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\SignatureVerificationException;
@@ -57,7 +59,8 @@ class StripePaymentController extends Controller
         try {
             $session = $this->stripe()->checkout->sessions->create([
                 'mode' => 'payment',
-                'payment_method_types' => ['card'],
+                // Bank transfers via Stripe are enabled in Dashboard — don't restrict to card only.
+                // Stripe will show card + any additional online banking / transfer methods you enable.
                 'customer_email' => $legalAidRequest->email,
                 'line_items' => [[
                     'price_data' => [
@@ -242,7 +245,7 @@ class StripePaymentController extends Controller
             $intent = $this->stripe()->paymentIntents->create([
                 'amount' => $amountCents,
                 'currency' => $currency,
-                'payment_method_types' => ['card'],
+                'automatic_payment_methods' => ['enabled' => true],
                 'receipt_email' => $legalAidRequest->email,
                 'description' => 'Legal aid request '.$legalAidRequest->ticketLabel,
                 'statement_descriptor_suffix' => 'MAROCLOI',
@@ -557,6 +560,11 @@ class StripePaymentController extends Controller
             'paid_at' => now(),
             'receipt_path' => null,
         ]);
+
+        // Option A: notify customer payment received + advisors
+        Mail::to($legalAidRequest->email)
+            ->locale($legalAidRequest->locale ?: app()->getLocale())
+            ->queue(new LegalAidPaymentReceivedMail($legalAidRequest));
 
         AdvisorNotifier::caseReady($legalAidRequest);
     }

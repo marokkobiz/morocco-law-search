@@ -326,69 +326,31 @@
                             @enderror
                         </div>
 
-                        <div id="payment-section">
-                            <label
-                                class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_payment') }}</label>
-                            <div class="grid gap-3 sm:grid-cols-2 items-stretch">
-                                <label id="payment-stripe-wrap"
-                                    class="flex h-full cursor-pointer flex-col rounded-xl border border-gray-200 bg-gray-50 p-4 transition-colors has-[:checked]:border-green-500 has-[:checked]:bg-green-50/50">
-                                    <input type="radio" name="payment_method" value="stripe" class="sr-only"
-                                        {{ old('payment_method') === null || old('payment_method') === 'stripe' || old('payment_method') === 'google_pay' ? 'checked' : '' }}>
-                                    <!-- legacy value for backward compat tests: value="google_pay" -->
-                                    <div class="flex items-start gap-3">
-                                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-green-600" fill="currentColor" viewBox="0 0 24 24"
-                                            aria-hidden="true">
-                                            <path fill-rule="evenodd"
-                                                d="M4 4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2H4zm16 3H4v2h16V7zm0 4H4v7h16v-7z"
-                                                clip-rule="evenodd"></path>
-                                        </svg>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-start justify-between gap-2">
-                                                <p class="text-sm font-semibold leading-tight text-gray-900">
-                                                    {{ __('legal_aid.payment_method_stripe') }}</p>
-                                                <span
-                                                    class="shrink-0 inline-flex whitespace-nowrap rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-bold leading-none text-green-700">
-                                                    {{ __('legal_aid.payment_method_stripe_discount', ['percent' => (int) config('legal_aid.online_discount_percent')]) }}
-                                                </span>
-                                            </div>
-                                            <p class="mt-1 text-xs leading-relaxed text-gray-500">
-                                                {{ __('legal_aid.payment_method_stripe_desc') }}</p>
-                                        </div>
+                        <input type="hidden" name="payment_method" value="stripe">
+                        <div id="payment-section" class="rounded-xl border border-green-200 bg-green-50/50 p-4">
+                            <div class="flex items-start gap-3">
+                                <svg class="mt-0.5 h-5 w-5 shrink-0 text-green-600" fill="currentColor" viewBox="0 0 24 24"
+                                    aria-hidden="true">
+                                    <path fill-rule="evenodd"
+                                        d="M4 4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2H4zm16 3H4v2h16V7zm0 4H4v7h16v-7z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <p class="text-sm font-semibold leading-tight text-gray-900">
+                                            {{ __('legal_aid.payment_method_stripe') }}</p>
+                                        <span
+                                            class="shrink-0 inline-flex whitespace-nowrap rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-bold leading-none text-green-700">
+                                            {{ __('legal_aid.payment_method_stripe_discount', ['percent' => (int) config('legal_aid.online_discount_percent')]) }}
+                                        </span>
                                     </div>
-                                    <img src="{{ asset('images/cards.png') }}" alt="Visa, Mastercard, etc."
-                                        class="mt-3 ml-3 h-16 w-auto max-w-[160px] object-contain">
-                                </label>
-
-                                <label id="payment-bank-wrap"
-                                    class="flex h-full cursor-pointer flex-col rounded-xl border border-gray-200 bg-gray-50 p-4 transition-colors has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50">
-                                    <input type="radio" name="payment_method" value="bank" class="sr-only"
-                                        {{ old('payment_method') === 'bank' ? 'checked' : '' }}>
-                                    <div class="flex items-start gap-3">
-                                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" fill="currentColor" viewBox="0 0 24 24"
-                                            aria-hidden="true">
-                                            <path fill-rule="evenodd"
-                                                d="M12 2L1 8v2h22V8L12 2zm-8 9h3v8H4v-8zm6 0h4v8h-4v-8zm8 0h3v8h-3v-8zM1 21v-1h22v1H1z"
-                                                clip-rule="evenodd"></path>
-                                        </svg>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-start justify-between gap-2">
-                                                <p class="text-sm font-semibold leading-tight text-gray-900">
-                                                    {{ __('legal_aid.payment_method_bank') }}</p>
-                                                <span
-                                                    class="shrink-0 inline-flex whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold leading-none text-amber-700">
-                                                    {{ __('legal_aid.payment_method_bank_fee', ['percent' => (int) config('legal_aid.bank_admin_fee_percent')]) }}
-                                                </span>
-                                            </div>
-                                            <p class="mt-1 text-xs leading-relaxed text-gray-500">
-                                                {{ __('legal_aid.payment_method_bank_desc') }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="mt-3 h-7 hidden sm:block" aria-hidden="true"></div>
-                                </label>
+                                    {{-- <p class="mt-1 text-xs leading-relaxed text-gray-500">
+                                        {{ __('legal_aid.payment_method_stripe_desc') }}</p> --}}
+                                    <p class="mt-3 text-xs leading-relaxed text-gray-500">{{ __('legal_aid.payment_method_stripe_desc') }} — {{ __('legal_aid.payment_secure_note') }}</p>
+                                </div>
                             </div>
-                            @error('payment_method')
-                                <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
+                            <img src="{{ asset('images/cards.png') }}" alt="Visa, Mastercard, etc."
+                                class="mt-3 ml-6 h-16 w-auto max-w-[160px] object-contain">
                         </div>
 
                         <button type="submit" class="btn-primary w-full">

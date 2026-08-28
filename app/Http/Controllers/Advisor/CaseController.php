@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Advisor;
 
 use App\Http\Controllers\Controller;
+use App\Mail\LegalAidAdvisorClaimedMail;
 use App\Models\LegalAidRequest;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class CaseController extends Controller
@@ -115,6 +117,8 @@ class CaseController extends Controller
             return back()->with('error', 'This case is already claimed by another advisor.');
         }
 
+        $wasFirstClaim = $legalAidRequest->advisor_id === null || $legalAidRequest->first_contact_at === null;
+
         $legalAidRequest->update([
             'advisor_id' => auth()->id(),
             'first_contact_at' => $legalAidRequest->first_contact_at ?? now(),
@@ -122,7 +126,14 @@ class CaseController extends Controller
 
         $legalAidRequest->touchCase();
 
-        return back()->with('success', 'You are now the first contact for '.$legalAidRequest->ticketLabel.'.');
+        if ($wasFirstClaim) {
+            $legalAidRequest->load('advisor');
+            Mail::to($legalAidRequest->email)
+                ->locale($legalAidRequest->locale ?: app()->getLocale())
+                ->queue(new LegalAidAdvisorClaimedMail($legalAidRequest));
+        }
+
+        return back()->with('success', 'You are now the first contact for '.$legalAidRequest->ticketLabel.'. Customer has been notified by email.');
     }
 
     public function close(LegalAidRequest $legalAidRequest): RedirectResponse

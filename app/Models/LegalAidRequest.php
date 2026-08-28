@@ -62,6 +62,7 @@ class LegalAidRequest extends Model
 
     public const PAYMENT_METHOD_STRIPE = 'stripe';
 
+    /** @deprecated Bank transfers are now handled via Stripe — kept for backward compat with existing rows */
     public const PAYMENT_METHOD_BANK = 'bank';
 
     public const CASE_OPEN = 'open';
@@ -146,7 +147,12 @@ class LegalAidRequest extends Model
 
     public function isOnlinePayment(): bool
     {
-        return in_array($this->payment_method, [self::PAYMENT_METHOD_STRIPE, self::PAYMENT_METHOD_GOOGLE_PAY], true);
+        // All new payments are online via Stripe (bank transfers via Stripe included).
+        // Keep legacy bank as non-online for backward compat display, but Stripe handles it.
+        if ($this->payment_method === self::PAYMENT_METHOD_BANK) {
+            return false;
+        }
+        return in_array($this->payment_method, [self::PAYMENT_METHOD_STRIPE, self::PAYMENT_METHOD_GOOGLE_PAY], true) || $this->payment_method === self::PAYMENT_METHOD_STRIPE;
     }
 
     public function getPayableTotalAttribute(): ?float
@@ -155,6 +161,8 @@ class LegalAidRequest extends Model
             return null;
         }
 
+        // Bank transfers are now via Stripe — always use onlineTotal for new records.
+        // Keep bankTotal for historical bank rows.
         return $this->payment_method === self::PAYMENT_METHOD_BANK
             ? $this->bankTotal
             : $this->onlineTotal;

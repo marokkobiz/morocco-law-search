@@ -26,7 +26,7 @@ class StoreLegalAidRequest extends FormRequest
             'service_ids.*' => ['integer', 'distinct', 'exists:services,id'],
             'consultation_mode' => ['nullable', 'in:office,whatsapp'],
             'call_time' => ['nullable', 'string', 'max:20'],
-            'payment_method' => ['nullable', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK])],
+            'payment_method' => ['nullable', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY])],
         ];
     }
 
@@ -61,7 +61,7 @@ class StoreLegalAidRequest extends FormRequest
 
         if ($services->sum('price') > 0) {
             $validator->addRules([
-                'payment_method' => ['required', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK])],
+                'payment_method' => ['required', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY])],
             ]);
         }
     }
