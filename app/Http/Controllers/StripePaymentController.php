@@ -171,29 +171,51 @@ class StripePaymentController extends Controller
         // typically 'complete' for hosted Checkout. Be permissive to avoid false
         // negatives in test mode or with async methods.
         if (($session->payment_status ?? null) === 'paid') {
-            // Sync transaction and mark paid
+            // Mark paid FIRST so customer always gets email even if later DB update races
+            $this->markRequestPaid($legalAidRequest);
+
+            // Sync transaction and link checkout session — wrap in try/catch to avoid 1062 duplicate
             $paymentIntentId = $session->payment_intent ?? null;
             if ($paymentIntentId) {
                 try {
                     $intent = $this->stripe()->paymentIntents->retrieve($paymentIntentId);
                     $this->syncTransactionFromIntent($intent);
-                    // Also update the checkout transaction if exists
+                } catch (Throwable $e) {
+                    report($e);
+                }
+                try {
                     PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
                         'stripe_payment_intent_id' => $paymentIntentId,
-                        'status' => $intent->status,
+                        'status' => PaymentIntent::STATUS_SUCCEEDED,
+                        'payload' => json_decode((string) $session->toJSON(), true),
+                    ]);
+                } catch (\Illuminate\Database\QueryException $e) {
+                    // 1062 duplicate pi already exists from syncTransactionFromIntent — ignore, just update status
+                    if ((string) $e->getCode() !== '23000') {
+                        report($e);
+                    } else {
+                        try {
+                            PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                                'status' => PaymentIntent::STATUS_SUCCEEDED,
+                                'payload' => json_decode((string) $session->toJSON(), true),
+                            ]);
+                        } catch (Throwable $inner) {
+                            report($inner);
+                        }
+                    }
+                } catch (Throwable $e) {
+                    report($e);
+                }
+            } else {
+                try {
+                    PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                        'status' => PaymentTransaction::STATUS_SUCCEEDED,
                         'payload' => json_decode((string) $session->toJSON(), true),
                     ]);
                 } catch (Throwable $e) {
                     report($e);
                 }
-            } else {
-                PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
-                    'status' => PaymentTransaction::STATUS_SUCCEEDED,
-                    'payload' => json_decode((string) $session->toJSON(), true),
-                ]);
             }
-
-            $this->markRequestPaid($legalAidRequest);
 
             return redirect()->route('legal-aid.payment', $ticket)->with('status', __('legal_aid.payment_success'));
         }
@@ -443,7 +465,7 @@ class StripePaymentController extends Controller
         }
         $requestId = (int) $requestIdRaw;
 
-        // Prefer to mark via PaymentIntent if available
+        // Prefer to mark via PaymentIntent if available — mark paid BEFORE risky update
         if ($paymentIntentId) {
             try {
                 $intent = $this->stripe()->paymentIntents->retrieve($paymentIntentId);
@@ -451,12 +473,23 @@ class StripePaymentController extends Controller
                 if ($transaction && ! $transaction->legalAidRequest->isPaid()) {
                     $this->markRequestPaid($transaction->legalAidRequest);
                 }
-                // Update checkout transaction as succeeded
+                // Update checkout transaction as succeeded — ignore 1062 duplicate (pi already exists)
                 if ($sessionId) {
-                    PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
-                        'stripe_payment_intent_id' => $paymentIntentId,
-                        'status' => $intent->status,
-                    ]);
+                    try {
+                        PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                            'stripe_payment_intent_id' => $paymentIntentId,
+                            'status' => $intent->status,
+                        ]);
+                    } catch (\Illuminate\Database\QueryException $e) {
+                        if ((string) $e->getCode() !== '23000') {
+                            throw $e;
+                        }
+                        // duplicate pi — just update status without pi
+                        PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                            'status' => $intent->status,
+                        ]);
+                        report($e);
+                    }
                 }
                 return;
             } catch (Throwable $e) {
@@ -561,12 +594,28 @@ class StripePaymentController extends Controller
             'receipt_path' => null,
         ]);
 
-        // Option A: notify customer payment received + advisors
-        Mail::to($legalAidRequest->email)
-            ->locale($legalAidRequest->locale ?: app()->getLocale())
-            ->queue(new LegalAidPaymentReceivedMail($legalAidRequest));
+        // Option A: notify customer payment received + advisors — sync-safe for UnoEuro shared hosting
+        try {
+            Mail::to($legalAidRequest->email)
+                ->locale($legalAidRequest->locale ?: app()->getLocale())
+                ->queue(new LegalAidPaymentReceivedMail($legalAidRequest));
+        } catch (Throwable $e) {
+            report($e);
+            // Fallback immediate send if queue fails (sync driver on UnoEuro)
+            try {
+                Mail::to($legalAidRequest->email)
+                    ->locale($legalAidRequest->locale ?: app()->getLocale())
+                    ->send(new LegalAidPaymentReceivedMail($legalAidRequest));
+            } catch (Throwable $inner) {
+                report($inner);
+            }
+        }
 
-        AdvisorNotifier::caseReady($legalAidRequest);
+        try {
+            AdvisorNotifier::caseReady($legalAidRequest);
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     private function cancelStaleIntents(LegalAidRequest $legalAidRequest): void

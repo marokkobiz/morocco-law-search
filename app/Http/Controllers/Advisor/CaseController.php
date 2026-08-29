@@ -128,9 +128,20 @@ class CaseController extends Controller
 
         if ($wasFirstClaim) {
             $legalAidRequest->load('advisor');
-            Mail::to($legalAidRequest->email)
-                ->locale($legalAidRequest->locale ?: app()->getLocale())
-                ->queue(new LegalAidAdvisorClaimedMail($legalAidRequest));
+            try {
+                Mail::to($legalAidRequest->email)
+                    ->locale($legalAidRequest->locale ?: app()->getLocale())
+                    ->queue(new LegalAidAdvisorClaimedMail($legalAidRequest));
+            } catch (\Throwable $e) {
+                report($e);
+                try {
+                    Mail::to($legalAidRequest->email)
+                        ->locale($legalAidRequest->locale ?: app()->getLocale())
+                        ->send(new LegalAidAdvisorClaimedMail($legalAidRequest));
+                } catch (\Throwable $inner) {
+                    report($inner);
+                }
+            }
         }
 
         return back()->with('success', 'You are now the first contact for '.$legalAidRequest->ticketLabel.'. Customer has been notified by email.');
