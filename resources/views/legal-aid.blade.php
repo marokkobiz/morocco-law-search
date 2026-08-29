@@ -130,11 +130,11 @@
                                     <div class="relative" id="call-time-dropdown">
                                         <button type="button" id="call-time-btn" aria-haspopup="listbox"
                                             aria-expanded="false"
-                                            class="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-left text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500">
+                                            class="relative flex w-full items-center justify-center rounded-lg border border-gray-200 bg-gray-50 px-8 py-1.5 text-center text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500">
                                             <span id="call-time-label"
-                                                class="truncate tabular-nums text-gray-400">{{ __('legal_aid.call_time_placeholder') }}</span>
+                                                class="truncate tabular-nums text-center text-gray-400">{{ __('legal_aid.call_time_placeholder') }}</span>
                                             <svg id="call-time-chevron"
-                                                class="pointer-events-none h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200"
+                                                class="pointer-events-none absolute right-3 h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200"
                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M19 9l-7 7-7-7" />
@@ -144,49 +144,49 @@
                                         <ul id="call-time-options"
                                             class="absolute z-20 mt-1.5 hidden max-h-56 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white py-1.5 shadow-md shadow-gray-200/40 tabular-nums">
                                             <li data-value=""
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 {{ __('legal_aid.call_time_placeholder') }}</li>
                                             <li data-value="09:00-09:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 09:00 - 09:30</li>
                                             <li data-value="09:30-10:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 09:30 - 10:00</li>
                                             <li data-value="10:00-10:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 10:00 - 10:30</li>
                                             <li data-value="10:30-11:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 10:30 - 11:00</li>
                                             <li data-value="11:00-11:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 11:00 - 11:30</li>
                                             <li data-value="11:30-12:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 11:30 - 12:00</li>
                                             <li data-value="12:00-12:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 12:00 - 12:30</li>
                                             <li data-value="12:30-13:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 12:30 - 13:00</li>
                                             <li data-value="13:00-13:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 13:00 - 13:30</li>
                                             <li data-value="13:30-14:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 13:30 - 14:00</li>
                                             <li data-value="14:00-14:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 14:00 - 14:30</li>
                                             <li data-value="14:30-15:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 14:30 - 15:00</li>
                                             <li data-value="15:00-15:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 15:00 - 15:30</li>
                                             <li data-value="15:30-16:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600">
                                                 15:30 - 16:00</li>
                                         </ul>
                                     </div>
