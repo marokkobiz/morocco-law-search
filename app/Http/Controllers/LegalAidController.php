@@ -27,7 +27,7 @@ class LegalAidController
     public function index(): View
     {
         return view('legal-aid', [
-            'services' => Service::orderBy('price')->get(),
+            'services' => Service::ordered()->get(),
         ]);
     }
 

@@ -82,6 +82,18 @@
 
             <div class="space-y-4">
                 <div>
+                    <h3 class="text-sm font-bold text-slate-900">Display Order</h3>
+                    <p class="text-xs text-slate-400">Controls the order on the booking form. Lower numbers appear first. Example: 1 = first, 10 = last.</p>
+                </div>
+                <div class="sm:max-w-xs">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Order</label>
+                    <input type="number" name="sort_order" value="{{ old('sort_order', $service->sort_order ?? 1) }}" min="1" step="1"
+                           class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
                     <h3 class="text-sm font-bold text-slate-900">Notes</h3>
                     <p class="text-xs text-slate-400">Short conditions shown to clients when they select this service (e.g. "Only by WhatsApp").</p>
                 </div>

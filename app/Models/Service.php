@@ -26,6 +26,7 @@ class Service extends Model
         'additional_notes_ar',
         'allows_office',
         'allows_whatsapp',
+        'sort_order',
     ];
 
     protected function casts(): array
@@ -34,7 +35,13 @@ class Service extends Model
             'price' => 'decimal:2',
             'allows_office' => 'boolean',
             'allows_whatsapp' => 'boolean',
+            'sort_order' => 'integer',
         ];
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order')->orderBy('id');
     }
 
     public function getConsultationModesAttribute(): array

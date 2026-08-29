@@ -7,7 +7,7 @@ Services
 @endsection
 
 @section('page-description')
-Manage legal aid services and their prices.
+Manage legal aid services and their prices. Order controls the display on the booking form.
 @endsection
 
 @section('content')
@@ -26,6 +26,7 @@ Manage legal aid services and their prices.
         <table class="w-full text-left border-collapse min-w-[640px]">
             <thead class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider font-semibold border-b border-slate-200">
                 <tr>
+                    <th class="px-6 py-4 w-16 text-center">Order</th>
                     <th class="px-6 py-4">Service</th>
                     <th class="px-6 py-4">Price</th>
                     <th class="px-6 py-4">Google Pay Total (−{{ config('legal_aid.online_discount_percent') }}%)</th>
@@ -37,6 +38,9 @@ Manage legal aid services and their prices.
             <tbody class="divide-y divide-slate-100 text-sm">
                 @forelse($services as $service)
                 <tr class="hover:bg-slate-50/70 transition">
+                    <td class="px-6 py-4 text-center">
+                        <span class="inline-flex items-center justify-center min-w-8 h-7 px-2.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">{{ $service->sort_order }}</span>
+                    </td>
                     <!-- Service -->
                     <td class="px-6 py-4">
                         <div class="font-semibold text-slate-900">{{ $service->name }}</div>
@@ -96,7 +100,7 @@ Manage legal aid services and their prices.
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="px-6 py-12 text-center text-sm text-slate-400 italic">
+                    <td colspan="6" class="px-6 py-12 text-center text-sm text-slate-400 italic">
                         No services yet. Create your first service.
                     </td>
                 </tr>

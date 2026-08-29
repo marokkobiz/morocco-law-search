@@ -84,6 +84,7 @@ Route::middleware(['auth', 'admin'])
         Route::get('/services/{service}/edit', [ServiceController::class, 'edit'])->name('services.edit');
         Route::put('/services/{service}', [ServiceController::class, 'update'])->name('services.update');
         Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+        Route::post('/services/reorder', [ServiceController::class, 'reorder'])->name('services.reorder');
         Route::get('/legal-aid', [LegalAidController::class, 'adminIndex'])->name('legal-aid.index');
         Route::get('/legal-aid/{legalAidRequest}', [LegalAidController::class, 'show'])->name('legal-aid.show');
         Route::post('/legal-aid/{legalAidRequest}/confirm', [LegalAidController::class, 'confirm'])->name('legal-aid.confirm');

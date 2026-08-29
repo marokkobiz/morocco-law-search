@@ -32,6 +32,7 @@ class StoreServiceRequest extends FormRequest
             'additional_notes_ar' => ['nullable', 'string', 'max:500'],
             'allows_office' => ['sometimes', 'boolean'],
             'allows_whatsapp' => ['sometimes', 'boolean'],
+            'sort_order' => ['nullable', 'integer', 'min:1', 'max:10000'],
         ];
     }
 

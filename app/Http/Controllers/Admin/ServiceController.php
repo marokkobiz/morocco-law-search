@@ -13,14 +13,17 @@ class ServiceController extends Controller
     public function index(): View
     {
         return view('admin.services.index', [
-            'services' => Service::orderBy('price')->get(),
+            'services' => Service::ordered()->get(),
         ]);
     }
 
     public function create(): View
     {
+        $nextOrder = (Service::max('sort_order') ?? 0) + 1;
+        $service = new Service(['sort_order' => $nextOrder]);
+
         return view('admin.services.form', [
-            'service' => new Service,
+            'service' => $service,
         ]);
     }
 
@@ -54,5 +57,19 @@ class ServiceController extends Controller
         $service->delete();
 
         return back()->with('success', 'Service deleted successfully.');
+    }
+
+    public function reorder(\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'order' => ['required', 'array'],
+            'order.*' => ['integer', 'exists:services,id'],
+        ]);
+
+        foreach ($validated['order'] as $index => $id) {
+            Service::where('id', $id)->update(['sort_order' => $index + 1]);
+        }
+
+        return response()->json(['success' => true]);
     }
 }
