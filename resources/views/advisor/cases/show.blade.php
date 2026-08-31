@@ -99,10 +99,21 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
 <div class="grid lg:grid-cols-3 gap-6">
 
     <!-- Services & Tasks -->
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100">
+    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
+        <div class="px-6 py-4 border-b border-slate-100 rounded-t-xl overflow-visible">
             <div class="flex items-center justify-between gap-4">
-                <h3 class="text-sm font-bold text-slate-900">Services & Tasks</h3>
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                    Services & Tasks
+                    <span class="relative inline-flex group">
+                        <svg class="w-4 h-4 text-amber-500 shrink-0 cursor-help rounded-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 hidden group-hover:block z-30 w-64 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium leading-relaxed text-white shadow-lg">
+                            In order to mark a task as done, the case must be claimed first.
+                            <span class="absolute left-1/2 -translate-x-1/2 -top-1 h-2 w-2 rotate-45 bg-slate-900"></span>
+                        </span>
+                    </span>
+                </h3>
                 @if($totalServices > 0)
                     <span class="text-xs font-bold {{ $request->isFullyCompleted() ? 'text-emerald-600' : 'text-amber-600' }}">
                         {{ $doneServices }}/{{ $totalServices }} done
