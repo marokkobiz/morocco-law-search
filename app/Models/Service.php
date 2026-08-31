@@ -15,6 +15,7 @@ class Service extends Model
         'description_fr',
         'description_ar',
         'price',
+        'sort_order',
         'price_display_en',
         'price_display_fr',
         'price_display_ar',
@@ -35,6 +36,7 @@ class Service extends Model
     {
         return [
             'price' => 'decimal:2',
+            'sort_order' => 'integer',
             'allows_office' => 'boolean',
             'allows_whatsapp' => 'boolean',
             'is_active' => 'boolean',
@@ -43,6 +45,16 @@ class Service extends Model
 
     public function scopeOrdered($query)
     {
+        // Defensive: if sort_order column does not exist yet (pending migration after merge),
+        // fall back to ordering by id to avoid SQL error 1054 on production.
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasColumn('services', 'sort_order')) {
+                return $query->orderBy('id');
+            }
+        } catch (\Throwable $e) {
+            return $query->orderBy('id');
+        }
+
         return $query->orderBy('sort_order')->orderBy('id');
     }
 

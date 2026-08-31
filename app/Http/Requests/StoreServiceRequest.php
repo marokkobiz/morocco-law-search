@@ -21,6 +21,7 @@ class StoreServiceRequest extends FormRequest
             'description_fr' => ['nullable', 'string', 'max:1000'],
             'description_ar' => ['nullable', 'string', 'max:1000'],
             'price' => ['required', 'numeric', 'min:0'],
+            'sort_order' => ['sometimes', 'integer', 'min:1'],
             'price_display_en' => ['nullable', 'string', 'max:255'],
             'price_display_fr' => ['nullable', 'string', 'max:255'],
             'price_display_ar' => ['nullable', 'string', 'max:255'],
