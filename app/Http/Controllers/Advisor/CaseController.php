@@ -58,7 +58,8 @@ class CaseController extends Controller
 
         return view('advisor.cases.index', [
             'requests' => $query->orderBy('case_status')
-                ->orderBy('created_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->paginate(4)
                 ->withQueryString(),
             'advisors' => User::where('role', 'advisor')->orderBy('name')->get(),

@@ -10,6 +10,8 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/search-workspace.js',
                 'resources/js/stripe-payment-request.js',
+                'resources/js/shop.js',
+                'resources/js/shop-checkout.js',
             ],
             refresh: true,
         }),

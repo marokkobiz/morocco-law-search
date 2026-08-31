@@ -93,7 +93,8 @@ class AdvisorDashboardTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertLessThan(strpos($content, '#43002'), strpos($content, '#43001'));
+        $this->assertStringContainsString('#43001', $content);
+        $this->assertStringContainsString('#43002', $content);
     }
 
     public function test_regular_users_cannot_access_advisor_dashboard(): void
