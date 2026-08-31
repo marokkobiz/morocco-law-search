@@ -32,7 +32,7 @@ class StoreServiceRequest extends FormRequest
             'additional_notes_ar' => ['nullable', 'string', 'max:500'],
             'allows_office' => ['sometimes', 'boolean'],
             'allows_whatsapp' => ['sometimes', 'boolean'],
-            'sort_order' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -41,6 +41,7 @@ class StoreServiceRequest extends FormRequest
         $this->merge([
             'allows_office' => $this->boolean('allows_office'),
             'allows_whatsapp' => $this->boolean('allows_whatsapp'),
+            'is_active' => $this->has('is_active') ? $this->boolean('is_active') : true,
         ]);
     }
 }

@@ -6,6 +6,7 @@ return [
     'coverage' => 'Mission',
     'customer-service' => 'Service client',
     'legal_aid' => 'Aide juridique',
+    'shop' => 'Boutique',
     'login' => 'Connexion',
     'start' => 'Commencer',
     'footer' => 'Information juridique issue de sources indexees. Ne remplace pas un avis juridique.',

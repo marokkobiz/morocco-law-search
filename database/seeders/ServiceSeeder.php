@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Service;
+use App\Services\StripeProductSyncService;
 use Illuminate\Database\Seeder;
 
 class ServiceSeeder extends Seeder
@@ -17,10 +18,10 @@ class ServiceSeeder extends Seeder
                 'description_en' => '30-minute initial interview to analysis your case.',
                 'description_fr' => 'Entretien initial de 30 minutes pour examiner votre dossier.',
                 'description_ar' => 'مقابلة أولية لمدة 30 دقيقة لمراجعة قضيتك.',
-                'price' => 0,
-                'price_display_en' => 'Free',
-                'price_display_fr' => 'Gratuit',
-                'price_display_ar' => 'مجاني',
+                'price' => 25,
+                'price_display_en' => '25.00 MAD',
+                'price_display_fr' => '25.00 MAD',
+                'price_display_ar' => '25.00 درهم',
                 'notes_en' => 'Only by WhatsApp',
                 'notes_fr' => 'Uniquement par WhatsApp',
                 'notes_ar' => 'عبر واتساب فقط',
@@ -157,10 +158,18 @@ class ServiceSeeder extends Seeder
         Service::whereNotIn('name_en', $names)->delete();
 
         foreach ($services as $service) {
-            Service::updateOrCreate(
+            $model = Service::updateOrCreate(
                 ['name_en' => $service['name_en']],
                 $service,
             );
+            // Ensure Stripe sync even if model events were disabled (e.g. caller uses WithoutModelEvents)
+            // Observer normally handles this, but seeder with WithoutModelEvents would leave pending sync.
+            // This explicit call is idempotent — sync() refreshes and creates only if missing.
+            try {
+                app(StripeProductSyncService::class)->sync($model->fresh() ?? $model);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('ServiceSeeder Stripe sync failed for '.$model->name_en.': '.$e->getMessage());
+            }
         }
     }
 }

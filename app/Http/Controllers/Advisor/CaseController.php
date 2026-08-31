@@ -58,7 +58,8 @@ class CaseController extends Controller
 
         return view('advisor.cases.index', [
             'requests' => $query->orderBy('case_status')
-                ->orderBy('created_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->paginate(4)
                 ->withQueryString(),
             'advisors' => User::where('role', 'advisor')->orderBy('name')->get(),
@@ -79,14 +80,30 @@ class CaseController extends Controller
 
         $legalAidRequest->load(['services', 'service', 'advisor', 'caseNotes.user']);
 
+        // Load users who completed services to show badge (You / advisor name)
+        $completedByIds = $legalAidRequest->services
+            ->pluck('pivot.completed_by')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $completedByUsers = $completedByIds->isNotEmpty()
+            ? User::whereIn('id', $completedByIds)->get()->keyBy('id')
+            : collect();
+
         return view('advisor.cases.show', [
             'request' => $legalAidRequest,
+            'completedByUsers' => $completedByUsers,
         ]);
     }
 
     public function toggleService(LegalAidRequest $legalAidRequest, Service $service): RedirectResponse
     {
         abort_unless($legalAidRequest->isVisibleToAdvisors(), 404);
+
+        if (! $legalAidRequest->advisor_id) {
+            return back()->with('error', 'You must claim this case as first contact before managing tasks.');
+        }
 
         $pivot = $legalAidRequest->services()->whereKey($service->id)->first();
 
@@ -95,10 +112,12 @@ class CaseController extends Controller
         if ($pivot) {
             $legalAidRequest->services()->updateExistingPivot($service->id, [
                 'completed_at' => $markComplete ? now() : null,
+                'completed_by' => $markComplete ? auth()->id() : null,
             ]);
         } else {
             $legalAidRequest->services()->attach($service->id, [
                 'completed_at' => now(),
+                'completed_by' => auth()->id(),
             ]);
         }
 

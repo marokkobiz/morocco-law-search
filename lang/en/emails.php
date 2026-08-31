@@ -77,4 +77,16 @@ return [
     'advisor_claimed_role' => 'Legal Advisor',
     'advisor_claimed_body' => 'They will contact you shortly on your WhatsApp number :whatsapp. Please keep your phone nearby and feel free to reply to this email with your ticket number if you have any questions.',
     'advisor_claimed_note' => 'Thank you for trusting MarocLoi.',
+
+    'shop_confirmation_subject' => 'Payment confirmed — Ticket :ticket',
+    'shop_hello' => 'Hello :name,',
+    'shop_intro' => 'Payment confirmed! Your order ticket is :ticket. Thank you for your purchase.',
+    'shop_amount' => 'Amount paid: :amount',
+    'shop_cin_note' => 'Your CIN is your Ticket Number — keep it for all correspondence.',
+    'shop_items' => 'Items',
+    'shop_qty' => 'Qty :qty',
+    'shop_each' => 'each',
+    'shop_total' => 'Total',
+    'shop_body' => 'Your CIN (:cin) is now your ticket number. Please keep it for all communication about your order.',
+    'shop_note' => 'You have paid directly through our secure webshop via Stripe — no payment link was needed.',
 ];

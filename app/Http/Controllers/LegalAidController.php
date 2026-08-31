@@ -220,8 +220,9 @@ class LegalAidController
             return back()->with('error', __('legal_aid.already_confirmed'));
         }
 
-        // Stripe is now the sole payment method — no receipt required.
-        // Confirm is mainly for free consultations; paid Stripe cases are auto-PAID.
+        if (! $legalAidRequest->isFree() && ! $legalAidRequest->receipt_path) {
+            return back()->with('error', __('legal_aid.cannot_confirm_without_receipt'));
+        }
 
         $legalAidRequest->update([
             'status' => LegalAidRequest::STATUS_CONFIRMED,

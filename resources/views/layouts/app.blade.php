@@ -153,7 +153,7 @@
                 <a href="/#coverage"
                     class="rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:bg-gray-800 hover:text-white">{{ $layoutCopy('coverage') }}</a>
                 <a href="{{ route('legal-aid') }}"
-                    class="rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-300 no-underline opacity-60 transition-colors hover:bg-gray-800 hover:text-white">{{ $layoutCopy('legal_aid') }}</a>
+                    class="rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-blue-500">{{ $layoutCopy('legal_aid') }}</a>
                 <a href="https://web.facebook.com/profile.php?id=61590564394012" target="_blank" rel="noopener noreferrer"
                     class="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:bg-gray-800 hover:text-white">
                     <span class="relative flex h-2.5 w-2.5 shrink-0">

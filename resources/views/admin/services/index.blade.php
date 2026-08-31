@@ -29,8 +29,8 @@ Manage legal aid services and their prices. Order controls the display on the bo
                     <th class="px-6 py-4 w-16 text-center">Order</th>
                     <th class="px-6 py-4">Service</th>
                     <th class="px-6 py-4">Price</th>
-                    <th class="px-6 py-4">Google Pay Total (−{{ config('legal_aid.online_discount_percent') }}%)</th>
-                    <th class="px-6 py-4">Bank Transfer Total (+{{ config('legal_aid.bank_admin_fee_percent') }}%)</th>
+                    <th class="px-6 py-4">Stripe Price</th>
+                    <th class="px-6 py-4">Status</th>
                     <th class="px-6 py-4 text-center">Actions</th>
                 </tr>
             </thead>
@@ -69,14 +69,28 @@ Manage legal aid services and their prices. Order controls the display on the bo
                         {{ $service->priceLabel }}
                     </td>
 
-                    <!-- Google Total -->
-                    <td class="px-6 py-4 text-emerald-700 whitespace-nowrap">
-                        {{ number_format((float) $service->price * (1 - (float) config('legal_aid.online_discount_percent', 10) / 100), 0) }} MAD
+                    <!-- Stripe -->
+                    <td class="px-6 py-4 font-mono text-xs whitespace-nowrap">
+                        @php $isFree = (float) $service->price < 0.50; @endphp
+                        @if ($isFree)
+                            @if ($service->stripe_product_id)
+                                <span class="rounded bg-slate-50 px-2 py-1 text-slate-600 border border-slate-200">Free — no price</span>
+                            @else
+                                <span class="text-amber-600" title="Stripe Product not yet created. Will auto-sync via Observer, or run: php artisan services:sync-stripe --force">pending sync</span>
+                            @endif
+                        @elseif ($service->stripe_price_id)
+                            <span class="rounded bg-green-50 px-2 py-1 text-green-700 border border-green-200">{{ $service->stripe_price_id }}</span>
+                        @else
+                            <span class="text-amber-600" title="Will auto-sync via Observer on save. If stuck, run: php artisan services:sync-stripe --force">pending sync</span>
+                        @endif
                     </td>
-
-                    <!-- Bank Total -->
-                    <td class="px-6 py-4 text-rose-700 whitespace-nowrap">
-                        {{ number_format((float) $service->price * (1 + (float) config('legal_aid.bank_admin_fee_percent', 10) / 100), 0) }} MAD
+                    <!-- Status -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        @if ($service->is_active)
+                            <span class="rounded-full bg-green-50 px-2 py-0.5 text-xs font-bold text-green-700 border border-green-200">Active</span>
+                        @else
+                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-600 border border-gray-200">Hidden</span>
+                        @endif
                     </td>
 
                     <!-- Actions -->

@@ -77,4 +77,16 @@ return [
     'advisor_claimed_role' => 'Conseiller juridique',
     'advisor_claimed_body' => 'Il vous contactera prochainement sur votre numéro WhatsApp :whatsapp. Veuillez garder votre téléphone à proximité et n\'hésitez pas à répondre à cet e-mail avec votre numéro de ticket si vous avez des questions.',
     'advisor_claimed_note' => 'Merci de faire confiance à MarocLoi.',
+
+    'shop_confirmation_subject' => 'Paiement confirmé — Ticket :ticket',
+    'shop_hello' => 'Bonjour :name,',
+    'shop_intro' => 'Paiement confirmé ! Votre ticket de commande est :ticket. Merci pour votre achat.',
+    'shop_amount' => 'Montant payé : :amount',
+    'shop_cin_note' => 'Votre CIN est votre numéro de ticket — conservez-le pour toute correspondance.',
+    'shop_items' => 'Articles',
+    'shop_qty' => 'Qté :qty',
+    'shop_each' => 'chacun',
+    'shop_total' => 'Total',
+    'shop_body' => 'Votre CIN (:cin) est désormais votre numéro de ticket. Veuillez le conserver pour toute communication concernant votre commande.',
+    'shop_note' => 'Vous avez payé directement via notre boutique sécurisée Stripe — aucun lien de paiement n’a été nécessaire.',
 ];

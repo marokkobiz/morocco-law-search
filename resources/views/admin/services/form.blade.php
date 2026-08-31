@@ -151,6 +151,35 @@
                 </div>
             </div>
 
+            <div class="space-y-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Webshop & Stripe</h3>
+                    <p class="text-xs text-slate-400">Control shop visibility and Stripe sync. App is source of truth — Stripe product/price is created automatically.</p>
+                </div>
+                <label class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 cursor-pointer transition hover:border-amber-300">
+                    <input type="checkbox" name="is_active" value="1"
+                           {{ old('is_active', $service->is_active ?? true) ? 'checked' : '' }}
+                           class="mt-0.5 h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-900">Active in webshop</p>
+                        <p class="text-xs text-slate-500 mt-0.5">When disabled, the service is hidden from the shop and its Stripe product is deactivated.</p>
+                    </div>
+                </label>
+                @if ($service->exists && ($service->stripe_product_id || $service->stripe_price_id))
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs">
+                        <p class="font-semibold text-gray-700">Stripe Sync</p>
+                        @if ($service->stripe_product_id)
+                            <p class="mt-1 font-mono text-gray-600">Product: {{ $service->stripe_product_id }}</p>
+                        @endif
+                        @if ($service->stripe_price_id)
+                            <p class="font-mono text-gray-600">Price: {{ $service->stripe_price_id }}</p>
+                        @else
+                            <p class="text-amber-700">No Stripe price yet — will be created on next sync (price must be ≥ 0.50 MAD).</p>
+                        @endif
+                    </div>
+                @endif
+            </div>
+
             <div class="flex items-center justify-end gap-3 pt-2">
                 <a href="{{ route('admin.services.index') }}"
                    class="text-sm font-semibold px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition">

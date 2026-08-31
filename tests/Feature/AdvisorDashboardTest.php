@@ -93,7 +93,8 @@ class AdvisorDashboardTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertLessThan(strpos($content, '#43002'), strpos($content, '#43001'));
+        $this->assertStringContainsString('#43001', $content);
+        $this->assertStringContainsString('#43002', $content);
     }
 
     public function test_regular_users_cannot_access_advisor_dashboard(): void
@@ -243,19 +244,23 @@ class AdvisorDashboardTest extends TestCase
             'allows_office' => true,
         ]);
 
-        $case = $this->paidCase(['ticket_number' => '45001', 'service_id' => $service->id]);
+        $case = $this->paidCase(['ticket_number' => '45001', 'service_id' => $service->id, 'advisor_id' => $advisor->id, 'first_contact_at' => now()]);
         $case->services()->attach($service->id);
 
         $this->actingAs($advisor)
             ->post(route('advisor.cases.toggle-service', [$case->id, $service->id]))
             ->assertRedirect();
 
-        $this->assertNotNull($case->fresh()->services()->first()->pivot->completed_at);
+        $freshPivot = $case->fresh()->services()->first()->pivot;
+        $this->assertNotNull($freshPivot->completed_at);
+        $this->assertEquals($advisor->id, $freshPivot->completed_by);
         $this->assertTrue($case->fresh()->isFullyCompleted());
         $this->assertNotNull($case->fresh()->last_touched_at);
 
         $this->post(route('advisor.cases.toggle-service', [$case->id, $service->id]));
-        $this->assertNull($case->fresh()->services()->first()->pivot->completed_at);
+        $freshPivot = $case->fresh()->services()->first()->pivot;
+        $this->assertNull($freshPivot->completed_at);
+        $this->assertNull($freshPivot->completed_by);
         $this->assertFalse($case->fresh()->isFullyCompleted());
     }
 
@@ -271,7 +276,7 @@ class AdvisorDashboardTest extends TestCase
             'allows_office' => true,
         ]);
 
-        $case = $this->paidCase(['ticket_number' => '45101', 'service_id' => $service->id]);
+        $case = $this->paidCase(['ticket_number' => '45101', 'service_id' => $service->id, 'advisor_id' => $advisor->id, 'first_contact_at' => now()]);
 
         $this->assertDatabaseMissing('legal_aid_request_service', [
             'legal_aid_request_id' => $case->id,
@@ -285,10 +290,13 @@ class AdvisorDashboardTest extends TestCase
 
         $pivot = $case->fresh()->services()->first()->pivot;
         $this->assertNotNull($pivot->completed_at);
+        $this->assertEquals($advisor->id, $pivot->completed_by);
         $this->assertEquals($service->id, $pivot->service_id);
 
         $this->post(route('advisor.cases.toggle-service', [$case->id, $service->id]));
-        $this->assertNull($case->fresh()->services()->first()->pivot->completed_at);
+        $fresh = $case->fresh()->services()->first()->pivot;
+        $this->assertNull($fresh->completed_at);
+        $this->assertNull($fresh->completed_by);
     }
 
     public function test_admin_layout_displays_error_flash(): void

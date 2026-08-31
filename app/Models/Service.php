@@ -26,7 +26,9 @@ class Service extends Model
         'additional_notes_ar',
         'allows_office',
         'allows_whatsapp',
-        'sort_order',
+        'stripe_product_id',
+        'stripe_price_id',
+        'is_active',
     ];
 
     protected function casts(): array
@@ -35,7 +37,7 @@ class Service extends Model
             'price' => 'decimal:2',
             'allows_office' => 'boolean',
             'allows_whatsapp' => 'boolean',
-            'sort_order' => 'integer',
+            'is_active' => 'boolean',
         ];
     }
 

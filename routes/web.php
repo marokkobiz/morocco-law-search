@@ -2,37 +2,47 @@
 
 use App\Http\Controllers\Admin\AdvisorManagementController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\LegalAidController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Advisor\CaseController;
 use App\Http\Controllers\Advisor\DashboardController as AdvisorDashboardController;
 use App\Http\Controllers\LandingController;
-use App\Http\Controllers\LegalAidController;
+use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/', [LandingController::class, 'index'])->name('landing');
-Route::get('/test/beta/legal-aid', [LegalAidController::class, 'index'])->name('legal-aid');
-Route::post('/test/beta/legal-aid', [LegalAidController::class, 'store'])->name('legal-aid.store');
+
+// Legal Aid – now the shop (renamed from /shop, physical views in resources/views/legal-aid/*)
+Route::get('/test/beta/legal-aid', [ShopController::class, 'index'])->name('legal-aid');
+Route::get('/test/beta/legal-aid/cart', [ShopController::class, 'cart'])->name('legal-aid.cart');
+Route::get('/test/beta/legal-aid/api/products', [ShopController::class, 'apiProducts'])->name('legal-aid.api.products');
+Route::post('/test/beta/legal-aid/checkout', [ShopController::class, 'createCheckoutSession'])->name('legal-aid.checkout.create');
+Route::get('/test/beta/legal-aid/success/{order}', [ShopController::class, 'success'])->name('legal-aid.success');
+Route::get('/test/beta/legal-aid/cancel/{order}', [ShopController::class, 'cancel'])->name('legal-aid.cancel');
+
+// Legacy shop URLs – 301 redirect for browsing, keep API aliases for old Stripe sessions / JS
+Route::get('/shop', fn() => redirect('/test/beta/legal-aid', 301))->name('shop.index');
+Route::get('/shop/cart', fn() => redirect('/test/beta/legal-aid/cart', 301))->name('shop.cart');
+Route::post('/shop/checkout', [ShopController::class, 'createCheckoutSession'])->name('shop.checkout.create');
+Route::get('/shop/success/{order}', [ShopController::class, 'success'])->name('shop.success');
+Route::get('/shop/cancel/{order}', [ShopController::class, 'cancel'])->name('shop.cancel');
+Route::get('/shop/api/products', [ShopController::class, 'apiProducts'])->name('shop.api.products');
+
+// Legacy legal-aid ticket routes (kept for existing tickets / tests, not linked from nav)
 Route::get('/legal-aid/confirm/{token}', [LegalAidController::class, 'confirmBooking'])->name('legal-aid.confirm-booking');
 Route::get('/legal-aid/confirmed/{ticket}', [LegalAidController::class, 'confirmed'])->name('legal-aid.confirmed');
 Route::get('/legal-aid/payment/{ticket}', [LegalAidController::class, 'payment'])->name('legal-aid.payment');
 Route::get('/legal-aid/ticket/{ticket}/pdf', [LegalAidController::class, 'downloadTicketPdf'])->name('legal-aid.ticket-pdf');
-
-// Stripe Checkout endpoints (hosted payment page)
-Route::post('/legal-aid/payment/{ticket}/stripe/checkout', [StripePaymentController::class, 'createCheckoutSession'])
-    ->name('legal-aid.payment.checkout');
-Route::get('/legal-aid/payment/{ticket}/stripe/success', [StripePaymentController::class, 'checkoutSuccess'])
-    ->name('legal-aid.payment.checkout.success');
-
-// Legacy PaymentIntent endpoints (kept for backward compatibility / webhooks)
-Route::post('/legal-aid/payment/{ticket}/stripe/intent', [StripePaymentController::class, 'createIntent'])
-    ->name('legal-aid.payment.intent');
-Route::post('/legal-aid/payment/{ticket}/stripe/verify', [StripePaymentController::class, 'verify'])
-    ->name('legal-aid.payment.verify');
+Route::post('/legal-aid/payment/{ticket}/stripe/checkout', [StripePaymentController::class, 'createCheckoutSession'])->name('legal-aid.payment.checkout');
+Route::get('/legal-aid/payment/{ticket}/stripe/success', [StripePaymentController::class, 'checkoutSuccess'])->name('legal-aid.payment.checkout.success');
+Route::post('/legal-aid/payment/{ticket}/stripe/intent', [StripePaymentController::class, 'createIntent'])->name('legal-aid.payment.intent');
+Route::post('/legal-aid/payment/{ticket}/stripe/verify', [StripePaymentController::class, 'verify'])->name('legal-aid.payment.verify');
 
 // Stripe webhook (signature-verified, CSRF-exempt — see bootstrap/app.php)
 Route::post('/stripe/webhook', [StripePaymentController::class, 'webhook'])
@@ -84,11 +94,8 @@ Route::middleware(['auth', 'admin'])
         Route::get('/services/{service}/edit', [ServiceController::class, 'edit'])->name('services.edit');
         Route::put('/services/{service}', [ServiceController::class, 'update'])->name('services.update');
         Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
-        Route::post('/services/reorder', [ServiceController::class, 'reorder'])->name('services.reorder');
-        Route::get('/legal-aid', [LegalAidController::class, 'adminIndex'])->name('legal-aid.index');
-        Route::get('/legal-aid/{legalAidRequest}', [LegalAidController::class, 'show'])->name('legal-aid.show');
-        Route::post('/legal-aid/{legalAidRequest}/confirm', [LegalAidController::class, 'confirm'])->name('legal-aid.confirm');
-        Route::post('/legal-aid/{legalAidRequest}/resend', [LegalAidController::class, 'resendPaymentLink'])->name('legal-aid.resend');
+        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
 
         // Advisor management (admin only)
         Route::get('/advisors', [AdvisorManagementController::class, 'index'])->name('advisors.index');

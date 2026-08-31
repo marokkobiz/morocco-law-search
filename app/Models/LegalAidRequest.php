@@ -22,6 +22,7 @@ class LegalAidRequest extends Model
         'call_time',
         'payment_method',
         'service_id',
+        'order_id',
         'base_price',
         'status',
         'locale',
@@ -173,6 +174,11 @@ class LegalAidRequest extends Model
         return '#'.$this->ticket_number;
     }
 
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
@@ -182,7 +188,7 @@ class LegalAidRequest extends Model
     {
         return $this->belongsToMany(Service::class)
             ->using(LegalAidRequestService::class)
-            ->withPivot('completed_at');
+            ->withPivot(['completed_at', 'completed_by']);
     }
 
     public function advisor(): BelongsTo
