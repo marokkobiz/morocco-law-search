@@ -118,7 +118,16 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
 
         <ul class="divide-y divide-slate-100">
             @forelse($request->selectedServices as $service)
-                @php $completed = $request->serviceIsCompleted($service); @endphp
+                @php
+                    $completed = $request->serviceIsCompleted($service);
+                    $isUnclaimed = ! $request->advisor_id;
+                    $completedById = $service->pivot->completed_by ?? null;
+                    $completedByUser = $completedById ? ($completedByUsers[$completedById] ?? null) : null;
+                    $completedByLabel = null;
+                    if ($completed && $completedById) {
+                        $completedByLabel = $completedById === auth()->id() ? 'You' : ($completedByUser->name ?? 'Advisor');
+                    }
+                @endphp
                 <li class="px-6 py-4 {{ $completed ? 'bg-emerald-50/40' : '' }} flex items-center justify-between gap-4">
                     <div class="min-w-0">
                         <div class="font-semibold text-slate-900 flex items-center gap-2">
@@ -143,22 +152,28 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
                             @endif
                         </div>
                     </div>
-                    <form action="{{ route('advisor.cases.toggle-service', [$request->id, $service->id]) }}" method="POST" class="shrink-0">
-                        @csrf
-                        <button type="submit"
-                                class="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition shadow-sm
-                                {{ $completed
-                                    ? 'bg-white hover:bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-300'
-                                    : 'bg-slate-900 hover:bg-slate-800 text-white border-transparent' }}">
-                            @if($completed)
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                Mark as missing
-                            @else
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                Mark as done
-                            @endif
-                        </button>
-                    </form>
+                    <div class="flex items-center gap-2 shrink-0">
+                        @if($completed && $completedByLabel)
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                Done by {{ $completedByLabel }}
+                            </span>
+                        @endif
+                        <form action="{{ route('advisor.cases.toggle-service', [$request->id, $service->id]) }}" method="POST" class="shrink-0">
+                            @csrf
+                            <button type="submit"
+                                    @if($isUnclaimed) disabled title="Claim this case as first contact to manage tasks" @endif
+                                    class="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition shadow-sm
+                                    {{ $isUnclaimed ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60' : ($completed ? 'bg-white hover:bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-300' : 'bg-slate-900 hover:bg-slate-800 text-white border-transparent') }}">
+                                @if($completed)
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    Mark as missing
+                                @else
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    Mark as done
+                                @endif
+                            </button>
+                        </form>
+                    </div>
                 </li>
             @empty
                 <li class="p-6 text-sm text-slate-400 italic">No services recorded for this case.</li>

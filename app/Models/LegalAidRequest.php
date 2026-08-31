@@ -188,7 +188,7 @@ class LegalAidRequest extends Model
     {
         return $this->belongsToMany(Service::class)
             ->using(LegalAidRequestService::class)
-            ->withPivot('completed_at');
+            ->withPivot(['completed_at', 'completed_by']);
     }
 
     public function advisor(): BelongsTo
