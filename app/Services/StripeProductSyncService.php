@@ -18,6 +18,13 @@ class StripeProductSyncService
      */
     public function sync(Service $service): void
     {
+        // Defensive: if caller passed a stale instance (e.g. Service::create() return
+        // value before observer's saveQuietly persisted IDs), refresh from DB so
+        // we don't create a duplicate Stripe product on the second sync.
+        if ($service->exists) {
+            $service->refresh();
+        }
+
         // In testing, generate dummy Stripe IDs without hitting real API for speed
         if (app()->runningUnitTests()) {
             $needsProduct = empty($service->stripe_product_id);

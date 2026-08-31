@@ -96,11 +96,6 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
-        // Legacy admin legal-aid (kept for existing tests / historical data, not linked from nav)
-        Route::get('/legal-aid', [\App\Http\Controllers\LegalAidController::class, 'adminIndex'])->name('legal-aid.index');
-        Route::get('/legal-aid/{legalAidRequest}', [\App\Http\Controllers\LegalAidController::class, 'show'])->name('legal-aid.show');
-        Route::post('/legal-aid/{legalAidRequest}/confirm', [\App\Http\Controllers\LegalAidController::class, 'confirm'])->name('legal-aid.confirm');
-        Route::post('/legal-aid/{legalAidRequest}/resend', [\App\Http\Controllers\LegalAidController::class, 'resendPaymentLink'])->name('legal-aid.resend');
 
         // Advisor management (admin only)
         Route::get('/advisors', [AdvisorManagementController::class, 'index'])->name('advisors.index');

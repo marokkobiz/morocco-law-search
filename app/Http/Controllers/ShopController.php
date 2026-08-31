@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\ShopOrderConfirmationMail;
 use App\Models\Order;
 use App\Models\Service;
+use App\Services\OrderCaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -397,8 +398,13 @@ class ShopController extends Controller
     {
         $sessionId = $request->query('session_id');
 
-        // If webhook already marked paid, just show success
+        // If webhook already marked paid, ensure advisor case exists
         if ($order->isPaid()) {
+            try {
+                OrderCaseService::createCaseFromOrder($order);
+            } catch (Throwable $e) {
+                report($e);
+            }
             return view('legal-aid.success', ['order' => $order->load('items.service'), 'verified' => true]);
         }
 
@@ -530,6 +536,20 @@ class ShopController extends Controller
                 } else {
                     $order->update(['status' => Order::STATUS_PAID, 'paid_at' => now()]);
                     Mail::to($order->email)->locale($order->locale ?: app()->getLocale())->queue(new ShopOrderConfirmationMail($order->fresh()->load('items.service')));
+                }
+                $order->refresh();
+                $order->load('items.service');
+                try {
+                    OrderCaseService::createCaseFromOrder($order);
+                } catch (Throwable $e) {
+                    report($e);
+                }
+            } else {
+                // Already paid but ensure advisor case exists (webhook may have raced)
+                try {
+                    OrderCaseService::createCaseFromOrder($order);
+                } catch (Throwable $e) {
+                    report($e);
                 }
             }
             return view('legal-aid.success', ['order' => $order->fresh()->load('items.service'), 'verified' => true]);

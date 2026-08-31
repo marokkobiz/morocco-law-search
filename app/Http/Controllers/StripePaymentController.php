@@ -7,6 +7,7 @@ use App\Mail\ShopOrderConfirmationMail;
 use App\Models\LegalAidRequest;
 use App\Models\Order;
 use App\Models\PaymentTransaction;
+use App\Services\OrderCaseService;
 use App\Support\AdvisorNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -496,8 +497,13 @@ class StripePaymentController extends Controller
             report('Shop webhook: order not found '.$orderId);
             return;
         }
-        // Idempotent: already paid -> don't duplicate email
+        // Idempotent: already paid -> ensure advisor case exists, don't duplicate email
         if ($order->isPaid()) {
+            try {
+                OrderCaseService::createCaseFromOrder($order);
+            } catch (\Throwable $e) {
+                report($e);
+            }
             return;
         }
 
@@ -564,9 +570,17 @@ class StripePaymentController extends Controller
         }
 
         $order->update($updateData);
+        $order->refresh();
+        $order->load('items.service');
+
+        // Make it visible to advisors: create LegalAidRequest case so advisor can contact customer
+        try {
+            OrderCaseService::createCaseFromOrder($order);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         // Send confirmation email once (idempotent via isPaid check above)
-        $order->load('items.service');
         $freshEmail = $order->fresh()->email;
         Mail::to($freshEmail)->locale($order->locale ?: app()->getLocale())->queue(new ShopOrderConfirmationMail($order->fresh()->load('items.service')));
     }

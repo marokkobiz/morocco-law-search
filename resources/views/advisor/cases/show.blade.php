@@ -32,7 +32,7 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
     <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
-            <div class="w-12 h-12 shrink-0 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold font-mono">
+            <div class="w-fit px-4 h-12 shrink-0 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold font-mono">
                 {{ $request->ticket_number }}
             </div>
             <div class="min-w-0">
@@ -165,7 +165,7 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
             @endforelse
         </ul>
 
-        <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm">
+        {{-- <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm">
             <div>
                 <dt class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Base Price</dt>
                 <dd class="font-semibold text-slate-900">{{ $request->base_price !== null ? number_format((float) $request->base_price, 0).' MAD' : '—' }}</dd>
@@ -184,7 +184,7 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
                     </span>
                 </dd>
             </div>
-        </div>
+        </div> --}}
     </div>
 
     <!-- Client Details -->
@@ -205,7 +205,7 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">WhatsApp</dt>
                 <dd class="text-slate-700">{{ $request->whatsapp ?: '—' }}</dd>
             </div>
-            <div>
+            {{-- <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Consultation Mode</dt>
                 <dd>
                     @if($request->consultation_mode === 'whatsapp')
@@ -216,17 +216,17 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
                         <span class="text-slate-400">—</span>
                     @endif
                 </dd>
-            </div>
+            </div> --}}
             @if($request->call_time)
             <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Preferred Call Time</dt>
                 <dd class="text-slate-700">{{ $request->call_time }}</dd>
             </div>
             @endif
-            <div>
+            {{-- <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Locale</dt>
                 <dd class="text-slate-700 uppercase">{{ $request->locale ?? '—' }}</dd>
-            </div>
+            </div> --}}
         </dl>
     </div>
 

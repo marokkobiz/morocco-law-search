@@ -67,10 +67,17 @@ Manage legal aid services and their prices.
 
                     <!-- Stripe -->
                     <td class="px-6 py-4 font-mono text-xs whitespace-nowrap">
-                        @if ($service->stripe_price_id)
+                        @php $isFree = (float) $service->price < 0.50; @endphp
+                        @if ($isFree)
+                            @if ($service->stripe_product_id)
+                                <span class="rounded bg-slate-50 px-2 py-1 text-slate-600 border border-slate-200">Free — no price</span>
+                            @else
+                                <span class="text-amber-600" title="Stripe Product not yet created. Will auto-sync via Observer, or run: php artisan services:sync-stripe --force">pending sync</span>
+                            @endif
+                        @elseif ($service->stripe_price_id)
                             <span class="rounded bg-green-50 px-2 py-1 text-green-700 border border-green-200">{{ $service->stripe_price_id }}</span>
                         @else
-                            <span class="text-amber-600">pending sync</span>
+                            <span class="text-amber-600" title="Will auto-sync via Observer on save. If stuck, run: php artisan services:sync-stripe --force">pending sync</span>
                         @endif
                     </td>
                     <!-- Status -->

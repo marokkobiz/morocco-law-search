@@ -22,6 +22,7 @@ class LegalAidRequest extends Model
         'call_time',
         'payment_method',
         'service_id',
+        'order_id',
         'base_price',
         'status',
         'locale',
@@ -171,6 +172,11 @@ class LegalAidRequest extends Model
     public function getTicketLabelAttribute(): string
     {
         return '#'.$this->ticket_number;
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
     }
 
     public function service(): BelongsTo
