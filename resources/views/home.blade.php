@@ -239,42 +239,42 @@
                     data-animate="scale-in" style="--delay: 0s">
                     <div
                         class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        BO</div>
+                        OB</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_bulletin') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-emerald-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.05s">
                     <div
                         class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        CT</div>
+                        LL</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_work_code') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-rose-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.1s">
                     <div
                         class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        CP</div>
+                        CL</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_penal_law') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-violet-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.15s">
                     <div
                         class="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        CF</div>
+                        FL</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_family_code') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-amber-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.2s">
                     <div
                         class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        DO</div>
+                        CM</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_doc') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-cyan-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.25s">
                     <div
                         class="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        CL</div>
+                        CV</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_civil_law') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-indigo-200 transition-colors cursor-default"
@@ -288,7 +288,7 @@
                     data-animate="scale-in" style="--delay: 0.35s">
                     <div
                         class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        CO</div>
+                        CN</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_constitutional') }}</span>
                 </div>
             </div>
@@ -311,8 +311,8 @@
         <div class="relative z-10 container-page text-center" data-animate="fade-up">
             <h2 class="text-3xl md:text-5xl font-serif font-bold text-white leading-tight">{{ __('landing.cta_title') }}
             </h2>
-            <p class="mt-4 text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">{{ __('landing.cta_desc') }}</p>
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+            <p class="mt-4 text-lg md:text-xl text-blue-100 max-w-none mx-auto text-center lg:whitespace-nowrap">{{ __('landing.cta_desc') }}</p>
+            <div class="flex items-center justify-center mt-10">
                 @guest
                     <a href="{{ route('register') }}"
                         class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-blue-700 bg-white hover:bg-blue-50 shadow-2xl shadow-blue-900/30 transition-all duration-200 no-underline">
@@ -330,11 +330,6 @@
                         Dashboard &rarr;
                     </a>
                 @endauth
-
-                <a href="https://www.marokkobiz.com/"
-                    class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-white border border-white/30 hover:bg-white/10 transition-all duration-200 no-underline">
-                    {{ __('landing.cta_learn') }}
-                </a>
             </div>
         </div>
     </section>

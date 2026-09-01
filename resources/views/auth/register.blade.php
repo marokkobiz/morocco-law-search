@@ -34,15 +34,24 @@
           <input type="text" name="company" value="{{ old('company') }}" placeholder="{{ __('auth.company_placeholder') }}" autocomplete="organization" required>
         </label>
         <label>
-          {{ __('auth.phone') }}
-          <input type="tel" name="phone" value="{{ old('phone') }}" placeholder="+212 6 00 00 00 00" autocomplete="tel" required>
+          <span class="inline-flex items-center gap-1.5">
+            {{ __('auth.phone') }} <span class="text-red-600">*</span>
+            <span class="group relative inline-flex items-center" tabindex="0" aria-describedby="phone-tooltip">
+              <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-100 text-gray-500 border border-gray-200 cursor-help text-[10px] font-bold leading-none" aria-label="{{ __('auth.phone_tooltip') }}">?</span>
+              <span id="phone-tooltip" role="tooltip" class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block group-focus-within:block w-64 z-10 rounded-lg bg-gray-900 px-3 py-2.5 text-xs font-normal leading-relaxed text-white shadow-xl">
+                {{ __('auth.phone_tooltip') }}
+                <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45" aria-hidden="true"></span>
+              </span>
+            </span>
+          </span>
+          <input type="tel" name="phone" value="{{ old('phone') }}" placeholder="+212 6 00 00 00 00" autocomplete="tel" required title="{{ __('auth.phone_tooltip') }}" aria-describedby="phone-tooltip">
         </label>
         <label>
-          {{ __('auth.email') }}
-          <input type="email" name="email" value="{{ old('email') }}" placeholder="name@company.com" autocomplete="email" required>
+          {{ __('auth.email') }} <span class="text-red-600">*</span>
+          <input type="email" name="email" value="{{ old('email') }}" placeholder="name@company.com" autocomplete="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="Please enter a valid email with a domain like name@company.com">
         </label>
         <label class="auth-field-full">
-          {{ __('auth.bar') }}
+          {{ __('auth.bar') }} <span class="text-red-600">*</span>
           <select name="bar" required data-other-bar-select data-other-bar-value="{{ $customBarValue }}">
             <option value="">{{ __('auth.bar_placeholder') }}</option>
             @foreach ($courts as $court)

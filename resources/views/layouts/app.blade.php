@@ -215,10 +215,13 @@
         <div class="container-page">
             <p class="mb-8 text-center text-sm text-gray-400">{{ $layoutCopy('footer') }}</p>
             <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
-                <div class="flex items-center gap-3">
-                    <img src="/icons/a.png" alt="MarocLoi" class="h-8 w-8 rounded-lg opacity-80">
-                    <span class="text-sm font-semibold text-gray-400">Maroc<span
-                            class="text-gray-300">Loi.com</span></span>
+                <div class="flex flex-col items-center gap-2 md:items-start">
+                    <div class="flex items-center gap-3">
+                        <img src="/icons/a.png" alt="MarocLoi" class="h-8 w-8 rounded-lg opacity-80">
+                        <span class="text-sm font-semibold text-gray-400">Maroc<span
+                                class="text-gray-300">Loi.com</span></span>
+                    </div>
+                    <img src="{{ asset('images/stripe.png') }}" alt="Stripe" class="h-6 w-auto opacity-90">
                 </div>
                 <div>
                     <p class="text-center text-sm text-gray-500">Copyright Marokko Biz of 31.01.12 SARL</p>
@@ -240,6 +243,11 @@
                             <a href="https://www.marokkobiztv.com" target="_blank" rel="noopener noreferrer"
                                 class="no-underline transition-colors duration-200 hover:text-slate-500">
                                 marokkobiztv.com
+                            </a>
+                            <span class="select-none"> - </span>
+                            <a href="https://2ndmb.com/" target="_blank" rel="noopener noreferrer"
+                                class="no-underline transition-colors duration-200 hover:text-slate-500">
+                                2ndmb.com
                             </a>
                         </div>
                     </div>

@@ -29,7 +29,7 @@ return [
     'coverage_item_3_title' => 'Official sources',
     'coverage_item_3_desc' => 'Every document links back to its original source',
 
-    'coverage_footer_title' => 'By law! the country should be built',
+    'coverage_footer_title' => 'By law! The land will be build',
 
     'database_label' => 'Indexed Database',
     'database_title' => 'Sources',

@@ -14,11 +14,24 @@ class StoreLegalAidRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('email')) {
+            $this->merge([
+                'email' => strtolower(trim((string) $this->input('email'))),
+            ]);
+        }
+        $this->merge([
+            'phone' => $this->normalizePhone($this->input('phone')),
+            'whatsapp' => $this->normalizePhone($this->input('whatsapp')),
+        ]);
+    }
+
     public function rules(): array
     {
         return [
             'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email:rfc', 'max:255'],
+            'email' => ['required', 'string', 'email:filter', 'max:255', 'regex:/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/'],
             'phone' => ['required', 'string', 'regex:/^\+?0?[1-9][0-9]{7,14}$/'],
             'whatsapp' => ['nullable', 'string', 'regex:/^\+?0?[1-9][0-9]{7,14}$/'],
             'case_description' => ['required', 'string', 'max:5000'],
@@ -60,14 +73,6 @@ class StoreLegalAidRequest extends FormRequest
         }
     }
 
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'phone' => $this->normalizePhone($this->input('phone')),
-            'whatsapp' => $this->normalizePhone($this->input('whatsapp')),
-        ]);
-    }
-
     private function normalizePhone(?string $value): ?string
     {
         if ($value === null) {
@@ -85,6 +90,7 @@ class StoreLegalAidRequest extends FormRequest
             'service_ids.*.exists' => __('legal_aid.service_invalid'),
             'phone.regex' => __('legal_aid.phone_invalid'),
             'whatsapp.regex' => __('legal_aid.whatsapp_invalid'),
+            'email.regex' => 'The :attribute must be a valid email address with a domain like name@company.com.',
         ];
     }
 

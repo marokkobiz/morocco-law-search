@@ -9,7 +9,7 @@ return [
     'shop' => 'Shop',
     'login' => 'Login',
     'start' => 'Get Started',
-    'footer' => 'Legal information from indexed sources. Not a substitute for legal advice.',
+    'footer' => 'Legal information from indexed sources.',
     'privacy' => 'Privacy policy',
     'terms' => 'Terms and conditions',
 ];

@@ -85,7 +85,7 @@ class ShopController extends Controller
         $validated = $request->validate([
             // Customer info – required (like old legal-aid page), except whatsapp
             'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email:rfc', 'max:255'],
+            'email' => ['required', 'string', 'email:filter', 'max:255', 'regex:/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/'],
             'phone' => ['required', 'string', 'regex:/^\+?0?[1-9][0-9]{7,14}$/'],
             'whatsapp' => ['nullable', 'string', 'regex:/^\+?0?[1-9][0-9]{7,14}$/'],
             'case_description' => ['required', 'string', 'min:100', 'max:5000'],
@@ -99,6 +99,7 @@ class ShopController extends Controller
             'cin.regex' => __('shop.cin_invalid'),
             'phone.regex' => __('shop.phone_invalid'),
             'whatsapp.regex' => __('shop.whatsapp_invalid'),
+            'email.regex' => 'The email must be a valid email address with a domain like name@company.com.',
             'items.required' => __('shop.cart_empty'),
             'items.min' => __('shop.cart_empty'),
         ]);
