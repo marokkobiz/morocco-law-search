@@ -18,7 +18,7 @@ class ShopController extends Controller
     public function index()
     {
         $services = Service::where('is_active', true)
-            ->orderBy('price')
+            ->orderBy('sort_order')
             ->get();
 
         $shopProducts = $services->map(function (Service $s) {
@@ -41,7 +41,7 @@ class ShopController extends Controller
     public function apiProducts(): JsonResponse
     {
         $services = Service::where('is_active', true)
-            ->orderBy('price')
+            ->orderBy('sort_order')
             ->get()
             ->map(fn (Service $s) => [
                 'id' => $s->id,
@@ -59,7 +59,7 @@ class ShopController extends Controller
 
     public function cart()
     {
-        $services = Service::where('is_active', true)->orderBy('price')->get();
+        $services = Service::where('is_active', true)->orderBy('sort_order')->get();
         return view('legal-aid.cart', ['services' => $services]);
     }
 
