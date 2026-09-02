@@ -155,12 +155,16 @@
     </section>
 
     {{-- Mission Section --}}
-    <section id="coverage" class="py-20 md:py-28 bg-linear-to-b from-gray-50 to-white">
+    <section id="coverage" class="pt-20 md:pt-10 bg-linear-to-b from-gray-50 to-white">
         <div class="container-page">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-                <div class="hidden lg:flex justify-center" data-animate="fade-up">
-                    <img src="{{ asset('/images/hero.jpg') }}" alt="Mission Visualization"
-                        class="img-elevate w-full max-w-md rounded-2xl shadow-lg shadow-blue-500/5 ring-1 ring-blue-100">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-stretch">
+                <div class="hidden lg:flex" data-animate="fade-up">
+                    <div class="relative w-full h-full p-1">
+                        <div class="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-2xl border border-sky-300/40 pointer-events-none hidden sm:block" aria-hidden="true"></div>
+                        <div class="absolute inset-0 rounded-2xl border border-sky-400/30 pointer-events-none" aria-hidden="true"></div>
+                        <img src="{{ asset('/images/hero.jpg') }}" alt="Mission Visualization"
+                            class="relative w-full h-full object-cover rounded-2xl shadow-2xl shadow-blue-900/10 ring-1 ring-blue-100 img-elevate">
+                    </div>
                 </div>
 
                 <div data-animate="fade-up" style="--delay: 0.15s">
@@ -224,7 +228,7 @@
     </section>
 
     {{-- Database Section --}}
-    <section id="sources" class="py-20 md:py-28">
+    <section id="sources" class="py-16 md:py-16">
         <div class="container-page">
             <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6" data-animate="fade-up">
                 <div class="max-w-3xl lg:max-w-none">
