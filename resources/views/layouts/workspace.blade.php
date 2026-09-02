@@ -18,13 +18,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="description" content="@hasSection('meta_description')@yield('meta_description')@else{{ __('landing.subtitle') }}@endif">
     <title>@yield('title', 'Workspace | MarocLoi')</title>
     <link rel="icon" href="/icons/a.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap"
-        rel="stylesheet">
+        rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet"></noscript>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
@@ -34,7 +37,7 @@
     <header class="sticky top-0 z-40 bg-gray-900 border-b border-gray-800 select-none">
         <div class="flex items-center h-14 px-4 lg:px-6 gap-4">
             <a href="/" class="flex items-center gap-2.5 shrink-0 no-underline">
-                <img src="/icons/a.png" alt="MarocLoi" class="w-8 h-8 rounded-lg">
+                <img src="/icons/a.png" alt="MarocLoi" class="w-8 h-8 rounded-lg" width="32" height="32" loading="eager" decoding="async" fetchpriority="high">
                 <span class="text-sm font-bold text-white hidden sm:inline">Maroc<span
                         class="text-blue-400">Loi</span></span>
             </a>

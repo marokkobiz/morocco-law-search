@@ -61,8 +61,11 @@
                     <div class="relative w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
                         <div class="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-2xl border border-sky-300/40 pointer-events-none hidden sm:block" aria-hidden="true"></div>
                         <div class="absolute inset-0 rounded-2xl border border-sky-400/30 pointer-events-none" aria-hidden="true"></div>
-                        <img src="{{ asset('images/hero2.jpg') }}" alt="MarocLoi Dashboard Preview"
-                            class="relative w-full aspect-[4/3] sm:aspect-[4/3] object-cover rounded-2xl shadow-2xl shadow-blue-900/40 ring-1 ring-white/10">
+                        <picture>
+                            <source type="image/webp" srcset="{{ asset('images/hero2-640.webp') }} 640w, {{ asset('images/hero2-960.webp') }} 960w" sizes="(max-width: 1024px) 448px, 512px">
+                            <img src="{{ asset('images/hero2-640.jpg') }}" srcset="{{ asset('images/hero2-640.jpg') }} 640w, {{ asset('images/hero2-960.jpg') }} 960w, {{ asset('images/hero2.webp') }} 1920w" sizes="(max-width: 1024px) 448px, 512px" alt="MarocLoi Dashboard Preview" width="640" height="427" loading="eager" fetchpriority="high" decoding="async"
+                                class="relative w-full aspect-[4/3] sm:aspect-[4/3] object-cover rounded-2xl shadow-2xl shadow-blue-900/40 ring-1 ring-white/10">
+                        </picture>
                     </div>
 
                     <a tabindex="-1" aria-disabled="true" href="{{ route('legal-aid') }}"
@@ -162,8 +165,11 @@
                     <div class="relative w-full h-full p-1">
                         <div class="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-2xl border border-sky-300/40 pointer-events-none hidden sm:block" aria-hidden="true"></div>
                         <div class="absolute inset-0 rounded-2xl border border-sky-400/30 pointer-events-none" aria-hidden="true"></div>
-                        <img src="{{ asset('/images/hero.jpg') }}" alt="Mission Visualization"
-                            class="relative w-full h-full object-cover rounded-2xl shadow-2xl shadow-blue-900/10 ring-1 ring-blue-100 img-elevate">
+                        <picture>
+                            <source type="image/webp" srcset="{{ asset('images/hero-800.webp') }} 800w, {{ asset('images/hero-1200.webp') }} 1200w" sizes="(max-width: 1024px) 100vw, 400px">
+                            <img src="{{ asset('images/hero-800.jpg') }}" srcset="{{ asset('images/hero-800.jpg') }} 800w, {{ asset('images/hero-1200.jpg') }} 1200w" sizes="(max-width: 1024px) 100vw, 400px" alt="Mission Visualization" width="800" height="571" loading="lazy" decoding="async"
+                                class="relative w-full h-full object-cover rounded-2xl shadow-2xl shadow-blue-900/10 ring-1 ring-blue-100 img-elevate">
+                        </picture>
                     </div>
                 </div>
 
@@ -308,7 +314,10 @@
     {{-- CTA Section --}}
     <section class="relative overflow-hidden py-20 md:py-28 bg-gray-900">
         <div class="absolute inset-0">
-            <img src="{{ asset('images/cta-background.jpg') }}" alt="" class="w-full h-full object-cover">
+            <picture>
+                <source type="image/webp" srcset="{{ asset('images/cta-background-960.webp') }} 960w, {{ asset('images/cta-background-1280.webp') }} 1280w, {{ asset('images/cta-background-1920.webp') }} 1920w" sizes="100vw">
+                <img src="{{ asset('images/cta-background-1280.jpg') }}" srcset="{{ asset('images/cta-background-960.jpg') }} 960w, {{ asset('images/cta-background-1280.jpg') }} 1280w, {{ asset('images/cta-background-1920.jpg') }} 1920w" sizes="100vw" alt="" class="w-full h-full object-cover" width="1280" height="960" loading="lazy" decoding="async">
+            </picture>
             <div class="absolute inset-0 bg-black/20"></div>
             <div class="absolute inset-0 bg-linear-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
         </div>
