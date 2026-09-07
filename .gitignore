@@ -24,4 +24,5 @@ Homestead.yaml
 Thumbs.db
 /bin/*
 PYTHON_INTEGRATION.md
+micro-webshop-stripe-implementation-prompt.md
 /storage/framework/lsp-*

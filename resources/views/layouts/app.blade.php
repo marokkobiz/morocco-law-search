@@ -20,13 +20,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="description" content="@hasSection('meta_description')@yield('meta_description')@else{{ __('landing.subtitle') }}@endif">
     <title>@yield('title', 'Moroccan Legal Research | MarocLoi')</title>
     <link rel="icon" href="/icons/a.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap">
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
-        rel="stylesheet">
+        rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet"></noscript>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
@@ -35,7 +38,7 @@
     <header class="sticky top-0 z-40 border-b border-gray-800 bg-gray-900">
         <div class="flex h-14 items-center justify-between gap-4 px-4 lg:px-6">
             <a href="/" class="flex shrink-0 items-center gap-2.5 no-underline">
-                <img src="/icons/a.png" alt="MarocLoi" class="h-8 w-8 rounded-lg">
+                <img src="/icons/a.png" alt="MarocLoi" class="h-8 w-8 rounded-lg" width="32" height="32" loading="eager" decoding="async" fetchpriority="high">
                 <span class="text-sm font-bold text-white">Maroc<span
                         class="text-blue-400">Loi.com</span></span>
             </a>
@@ -153,7 +156,7 @@
                 <a href="/#coverage"
                     class="rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:bg-gray-800 hover:text-white">{{ $layoutCopy('coverage') }}</a>
                 <a href="{{ route('legal-aid') }}"
-                    class="rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-300 no-underline opacity-60 transition-colors hover:bg-gray-800 hover:text-white">{{ $layoutCopy('legal_aid') }}</a>
+                    class="rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-blue-500">{{ $layoutCopy('legal_aid') }}</a>
                 <a href="https://web.facebook.com/profile.php?id=61590564394012" target="_blank" rel="noopener noreferrer"
                     class="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:bg-gray-800 hover:text-white">
                     <span class="relative flex h-2.5 w-2.5 shrink-0">
@@ -215,14 +218,17 @@
         <div class="container-page">
             <p class="mb-8 text-center text-sm text-gray-400">{{ $layoutCopy('footer') }}</p>
             <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
-                <div class="flex items-center gap-3">
-                    <img src="/icons/a.png" alt="MarocLoi" class="h-8 w-8 rounded-lg opacity-80">
-                    <span class="text-sm font-semibold text-gray-400">Maroc<span
-                            class="text-gray-300">Loi.com</span></span>
+                <div class="flex flex-col items-center gap-2 md:items-start">
+                    <div class="flex items-center gap-3">
+                        <img src="/icons/a.png" alt="MarocLoi" class="h-8 w-8 rounded-lg opacity-80" width="32" height="32" loading="lazy" decoding="async">
+                        <span class="text-sm font-semibold text-gray-400">Maroc<span
+                                class="text-gray-300">Loi.com</span></span>
+                    </div>
+                    <img src="{{ asset('images/stripe.png') }}" srcset="{{ asset('images/stripe-150.png') }} 150w, {{ asset('images/stripe-300.png') }} 300w" sizes="72px" alt="Stripe" class="h-6 w-auto opacity-90" width="72" height="30" loading="lazy" decoding="async">
                 </div>
                 <div>
-                    <p class="text-center text-sm text-gray-500">Copyright Marokko Biz of 31.01.12 SARL</p>
-                    <p class="mt-3 text-center text-xs text-slate-400">www.marocloi.com is part of Marokko Biz of
+                    <p class="text-center text-sm text-gray-400">Copyright Marokko Biz of 31.01.12 SARL</p>
+                    <p class="mt-3 text-center text-xs text-slate-300">www.marocloi.com is part of Marokko Biz of
                         31.01.12 SARL</p>
                     <div class="text-center">
                         <div
@@ -240,6 +246,11 @@
                             <a href="https://www.marokkobiztv.com" target="_blank" rel="noopener noreferrer"
                                 class="no-underline transition-colors duration-200 hover:text-slate-500">
                                 marokkobiztv.com
+                            </a>
+                            <span class="select-none"> - </span>
+                            <a href="https://2ndmb.com/" target="_blank" rel="noopener noreferrer"
+                                class="no-underline transition-colors duration-200 hover:text-slate-500">
+                                2ndmb.com
                             </a>
                         </div>
                     </div>

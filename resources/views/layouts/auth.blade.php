@@ -7,13 +7,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="@hasSection('meta_description')@yield('meta_description')@else{{ __('landing.subtitle') }}@endif">
     <title>@yield('title') | MarocLoi</title>
     <link rel="icon" href="/icons/a.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800&display=swap">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800&display=swap"
-        rel="stylesheet">
+        rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet"></noscript>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
@@ -25,7 +28,10 @@
 
         <div class="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
             <div class="absolute inset-0 bg-black/20"></div>
-            <img src="/images/auth.jpg" alt="" class="absolute inset-0 w-full h-full object-cover">
+            <picture>
+                <source type="image/webp" srcset="{{ asset('images/auth-640.webp') }} 640w, {{ asset('images/auth-960.webp') }} 960w" sizes="50vw">
+                <img src="{{ asset('images/auth-640.jpg') }}" srcset="{{ asset('images/auth-640.jpg') }} 640w, {{ asset('images/auth-960.jpg') }} 960w" sizes="50vw" alt="" class="absolute inset-0 w-full h-full object-cover" width="960" height="720" loading="lazy" decoding="async">
+            </picture>
             <div class="absolute inset-0 bg-linear-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
         </div>
 

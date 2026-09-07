@@ -32,7 +32,7 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
     <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
-            <div class="w-12 h-12 shrink-0 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold font-mono">
+            <div class="w-fit px-4 h-12 shrink-0 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold font-mono">
                 {{ $request->ticket_number }}
             </div>
             <div class="min-w-0">
@@ -99,10 +99,21 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
 <div class="grid lg:grid-cols-3 gap-6">
 
     <!-- Services & Tasks -->
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100">
+    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
+        <div class="px-6 py-4 border-b border-slate-100 rounded-t-xl overflow-visible">
             <div class="flex items-center justify-between gap-4">
-                <h3 class="text-sm font-bold text-slate-900">Services & Tasks</h3>
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                    Services & Tasks
+                    <span class="relative inline-flex group">
+                        <svg class="w-4 h-4 text-amber-500 shrink-0 cursor-help rounded-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 hidden group-hover:block z-30 w-64 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium leading-relaxed text-white shadow-lg">
+                            In order to mark a task as done, the case must be claimed first.
+                            <span class="absolute left-1/2 -translate-x-1/2 -top-1 h-2 w-2 rotate-45 bg-slate-900"></span>
+                        </span>
+                    </span>
+                </h3>
                 @if($totalServices > 0)
                     <span class="text-xs font-bold {{ $request->isFullyCompleted() ? 'text-emerald-600' : 'text-amber-600' }}">
                         {{ $doneServices }}/{{ $totalServices }} done
@@ -118,7 +129,16 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
 
         <ul class="divide-y divide-slate-100">
             @forelse($request->selectedServices as $service)
-                @php $completed = $request->serviceIsCompleted($service); @endphp
+                @php
+                    $completed = $request->serviceIsCompleted($service);
+                    $isUnclaimed = ! $request->advisor_id;
+                    $completedById = $service->pivot->completed_by ?? null;
+                    $completedByUser = $completedById ? ($completedByUsers[$completedById] ?? null) : null;
+                    $completedByLabel = null;
+                    if ($completed && $completedById) {
+                        $completedByLabel = $completedById === auth()->id() ? 'You' : ($completedByUser->name ?? 'Advisor');
+                    }
+                @endphp
                 <li class="px-6 py-4 {{ $completed ? 'bg-emerald-50/40' : '' }} flex items-center justify-between gap-4">
                     <div class="min-w-0">
                         <div class="font-semibold text-slate-900 flex items-center gap-2">
@@ -143,29 +163,35 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
                             @endif
                         </div>
                     </div>
-                    <form action="{{ route('advisor.cases.toggle-service', [$request->id, $service->id]) }}" method="POST" class="shrink-0">
-                        @csrf
-                        <button type="submit"
-                                class="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition shadow-sm
-                                {{ $completed
-                                    ? 'bg-white hover:bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-300'
-                                    : 'bg-slate-900 hover:bg-slate-800 text-white border-transparent' }}">
-                            @if($completed)
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                Mark as missing
-                            @else
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                Mark as done
-                            @endif
-                        </button>
-                    </form>
+                    <div class="flex items-center gap-2 shrink-0">
+                        @if($completed && $completedByLabel)
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                Done by {{ $completedByLabel }}
+                            </span>
+                        @endif
+                        <form action="{{ route('advisor.cases.toggle-service', [$request->id, $service->id]) }}" method="POST" class="shrink-0">
+                            @csrf
+                            <button type="submit"
+                                    @if($isUnclaimed) disabled title="Claim this case as first contact to manage tasks" @endif
+                                    class="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition shadow-sm
+                                    {{ $isUnclaimed ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60' : ($completed ? 'bg-white hover:bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-300' : 'bg-slate-900 hover:bg-slate-800 text-white border-transparent') }}">
+                                @if($completed)
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    Mark as missing
+                                @else
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    Mark as done
+                                @endif
+                            </button>
+                        </form>
+                    </div>
                 </li>
             @empty
                 <li class="p-6 text-sm text-slate-400 italic">No services recorded for this case.</li>
             @endforelse
         </ul>
 
-        <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm">
+        {{-- <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm">
             <div>
                 <dt class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Base Price</dt>
                 <dd class="font-semibold text-slate-900">{{ $request->base_price !== null ? number_format((float) $request->base_price, 0).' MAD' : '—' }}</dd>
@@ -184,7 +210,7 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
                     </span>
                 </dd>
             </div>
-        </div>
+        </div> --}}
     </div>
 
     <!-- Client Details -->
@@ -205,7 +231,7 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">WhatsApp</dt>
                 <dd class="text-slate-700">{{ $request->whatsapp ?: '—' }}</dd>
             </div>
-            <div>
+            {{-- <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Consultation Mode</dt>
                 <dd>
                     @if($request->consultation_mode === 'whatsapp')
@@ -216,17 +242,17 @@ Manage the advisor work on case {{ $request->ticketLabel }}.
                         <span class="text-slate-400">—</span>
                     @endif
                 </dd>
-            </div>
+            </div> --}}
             @if($request->call_time)
             <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Preferred Call Time</dt>
                 <dd class="text-slate-700">{{ $request->call_time }}</dd>
             </div>
             @endif
-            <div>
+            {{-- <div>
                 <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Locale</dt>
                 <dd class="text-slate-700 uppercase">{{ $request->locale ?? '—' }}</dd>
-            </div>
+            </div> --}}
         </dl>
     </div>
 

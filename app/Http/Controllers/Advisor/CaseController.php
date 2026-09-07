@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Advisor;
 
 use App\Http\Controllers\Controller;
+use App\Mail\LegalAidAdvisorClaimedMail;
 use App\Models\LegalAidRequest;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class CaseController extends Controller
@@ -56,7 +58,8 @@ class CaseController extends Controller
 
         return view('advisor.cases.index', [
             'requests' => $query->orderBy('case_status')
-                ->orderBy('created_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->paginate(4)
                 ->withQueryString(),
             'advisors' => User::where('role', 'advisor')->orderBy('name')->get(),
@@ -77,14 +80,30 @@ class CaseController extends Controller
 
         $legalAidRequest->load(['services', 'service', 'advisor', 'caseNotes.user']);
 
+        // Load users who completed services to show badge (You / advisor name)
+        $completedByIds = $legalAidRequest->services
+            ->pluck('pivot.completed_by')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $completedByUsers = $completedByIds->isNotEmpty()
+            ? User::whereIn('id', $completedByIds)->get()->keyBy('id')
+            : collect();
+
         return view('advisor.cases.show', [
             'request' => $legalAidRequest,
+            'completedByUsers' => $completedByUsers,
         ]);
     }
 
     public function toggleService(LegalAidRequest $legalAidRequest, Service $service): RedirectResponse
     {
         abort_unless($legalAidRequest->isVisibleToAdvisors(), 404);
+
+        if (! $legalAidRequest->advisor_id) {
+            return back()->with('error', 'You must claim this case as first contact before managing tasks.');
+        }
 
         $pivot = $legalAidRequest->services()->whereKey($service->id)->first();
 
@@ -93,10 +112,12 @@ class CaseController extends Controller
         if ($pivot) {
             $legalAidRequest->services()->updateExistingPivot($service->id, [
                 'completed_at' => $markComplete ? now() : null,
+                'completed_by' => $markComplete ? auth()->id() : null,
             ]);
         } else {
             $legalAidRequest->services()->attach($service->id, [
                 'completed_at' => now(),
+                'completed_by' => auth()->id(),
             ]);
         }
 
@@ -115,6 +136,8 @@ class CaseController extends Controller
             return back()->with('error', 'This case is already claimed by another advisor.');
         }
 
+        $wasFirstClaim = $legalAidRequest->advisor_id === null || $legalAidRequest->first_contact_at === null;
+
         $legalAidRequest->update([
             'advisor_id' => auth()->id(),
             'first_contact_at' => $legalAidRequest->first_contact_at ?? now(),
@@ -122,7 +145,25 @@ class CaseController extends Controller
 
         $legalAidRequest->touchCase();
 
-        return back()->with('success', 'You are now the first contact for '.$legalAidRequest->ticketLabel.'.');
+        if ($wasFirstClaim) {
+            $legalAidRequest->load('advisor');
+            try {
+                Mail::to($legalAidRequest->email)
+                    ->locale($legalAidRequest->locale ?: app()->getLocale())
+                    ->queue(new LegalAidAdvisorClaimedMail($legalAidRequest));
+            } catch (\Throwable $e) {
+                report($e);
+                try {
+                    Mail::to($legalAidRequest->email)
+                        ->locale($legalAidRequest->locale ?: app()->getLocale())
+                        ->send(new LegalAidAdvisorClaimedMail($legalAidRequest));
+                } catch (\Throwable $inner) {
+                    report($inner);
+                }
+            }
+        }
+
+        return back()->with('success', 'You are now the first contact for '.$legalAidRequest->ticketLabel.'. Customer has been notified by email.');
     }
 
     public function close(LegalAidRequest $legalAidRequest): RedirectResponse

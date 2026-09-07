@@ -27,9 +27,10 @@ class AdvisorManagementController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'email:filter', 'max:255', 'unique:users,email', 'regex:/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/'],
             'phone' => ['nullable', 'string', 'max:40'],
         ]);
 
@@ -68,9 +69,10 @@ class AdvisorManagementController extends Controller
     {
         abort_unless($advisor->isAdvisor(), 404);
 
+        $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$advisor->id],
+            'email' => ['required', 'string', 'email:filter', 'max:255', 'unique:users,email,'.$advisor->id, 'regex:/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/'],
             'phone' => ['nullable', 'string', 'max:40'],
         ]);
 

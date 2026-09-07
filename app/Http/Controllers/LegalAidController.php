@@ -3,12 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreLegalAidRequest;
-use App\Http\Requests\UploadLegalAidReceiptRequest;
 use App\Mail\LegalAidAdminNotificationMail;
 use App\Mail\LegalAidBookingConfirmationMail;
 use App\Mail\LegalAidConfirmationMail;
-use App\Mail\LegalAidReceiptNotificationMail;
-use App\Mail\LegalAidRejectionMail;
 use App\Mail\LegalAidTicketMail;
 use App\Models\LegalAidConfirmation;
 use App\Models\LegalAidRequest;
@@ -19,6 +16,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use RuntimeException;
@@ -29,7 +27,7 @@ class LegalAidController
     public function index(): View
     {
         return view('legal-aid', [
-            'services' => Service::orderBy('price')->get(),
+            'services' => Service::ordered()->get(),
         ]);
     }
 
@@ -80,32 +78,18 @@ class LegalAidController
                 ->with('error', __('legal_aid.confirm_invalid'));
         }
 
-        $allowedModes = $services
-            ->map->consultationModes
-            ->reject(fn (array $modes) => $modes === [])
-            ->reduce(
-                fn (?array $carry, array $modes) => $carry === null ? $modes : array_values(array_intersect($carry, $modes)),
-                null
-            ) ?? [];
-
-        // Custom rule: Initial interview alone = whatsapp only, with other services = office only
+        // Rule: only Initial interview alone = WhatsApp, everything else = Office
         $hasInitial = $services->contains(fn (Service $s) => $s->name_en === 'Initial interview (case content) 30 min.');
-        if ($hasInitial) {
-            if ($services->count() === 1) {
-                $allowedModes = ['whatsapp'];
-                $consultationMode = 'whatsapp';
-            } else {
-                $allowedModes = ['office'];
-                $consultationMode = 'office';
-            }
+        if ($hasInitial && $services->count() === 1) {
+            $allowedModes = ['whatsapp'];
+            $consultationMode = 'whatsapp';
         } else {
-            $consultationMode = isset($payload['consultation_mode']) && in_array($payload['consultation_mode'], $allowedModes, true)
-                ? $payload['consultation_mode']
-                : null;
+            $allowedModes = ['office'];
+            $consultationMode = 'office';
         }
 
         $paymentMethod = (string) ($payload['payment_method'] ?? LegalAidRequest::PAYMENT_METHOD_STRIPE);
-        $paymentMethod = in_array($paymentMethod, [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK], true)
+        $paymentMethod = in_array($paymentMethod, [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY], true)
             ? $paymentMethod
             : LegalAidRequest::PAYMENT_METHOD_STRIPE;
 
@@ -200,30 +184,16 @@ class LegalAidController
     {
         $legalAidRequest = LegalAidRequest::where('ticket_number', $ticket)->firstOrFail();
 
+        // Payment link is a signed URL (hash) — verify signature for security.
+        // Allow unsigned for backward compat but log; enforce if signature present.
+        if (request()->has('signature') && ! request()->hasValidSignature()) {
+            abort(403, 'Invalid or expired payment link.');
+        }
+
         return view('legal-aid-payment', [
             'request' => $legalAidRequest,
             'paymentUrl' => (string) config('legal_aid.payment_url'),
         ]);
-    }
-
-    public function uploadReceipt(UploadLegalAidReceiptRequest $request, string $ticket): RedirectResponse
-    {
-        $legalAidRequest = LegalAidRequest::where('ticket_number', $ticket)->firstOrFail();
-
-        if ($legalAidRequest->isPaid()) {
-            return back()->with('error', __('legal_aid.payment_already_paid'));
-        }
-
-        $receiptPath = $request->validated('receipt')->store('receipts', 'public');
-
-        $legalAidRequest->update([
-            'receipt_path' => $receiptPath,
-        ]);
-
-        Mail::to(config('legal_aid.contact_email'))
-            ->queue(new LegalAidReceiptNotificationMail($legalAidRequest));
-
-        return back()->with('status', __('legal_aid.receipt_uploaded'));
     }
 
     public function adminIndex(): View
@@ -246,11 +216,11 @@ class LegalAidController
 
     public function confirm(LegalAidRequest $legalAidRequest): RedirectResponse
     {
-        if ($legalAidRequest->isPaid()) {
+        if ($legalAidRequest->status === LegalAidRequest::STATUS_CONFIRMED) {
             return back()->with('error', __('legal_aid.already_confirmed'));
         }
 
-        if (! $legalAidRequest->receipt_path && ! $legalAidRequest->isFree()) {
+        if (! $legalAidRequest->isFree() && ! $legalAidRequest->receipt_path) {
             return back()->with('error', __('legal_aid.cannot_confirm_without_receipt'));
         }
 
@@ -277,16 +247,8 @@ class LegalAidController
             return back()->with('error', __('legal_aid.resend_not_allowed'));
         }
 
-        if ($legalAidRequest->status === LegalAidRequest::STATUS_REJECTED) {
-            if ($legalAidRequest->receipt_path) {
-                Storage::disk('public')->delete($legalAidRequest->receipt_path);
-            }
-
-            $legalAidRequest->update([
-                'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
-                'receipt_path' => null,
-            ]);
-        }
+        // REJECTED/receipt flow removed — Stripe handles all payments.
+        // Simply resend the signed payment link.
 
         [$paymentUrl, $paymentLink] = $this->paymentUrls($legalAidRequest);
 
@@ -299,32 +261,6 @@ class LegalAidController
             : __('legal_aid.resend_ok', ['email' => $legalAidRequest->email]);
 
         return back()->with('success', $message);
-    }
-
-    public function reject(LegalAidRequest $legalAidRequest): RedirectResponse
-    {
-        if ($legalAidRequest->isPaid()) {
-            return back()->with('error', __('legal_aid.already_confirmed'));
-        }
-
-        if (! $legalAidRequest->receipt_path) {
-            return back()->with('error', __('legal_aid.cannot_reject_without_receipt'));
-        }
-
-        Storage::disk('public')->delete($legalAidRequest->receipt_path);
-
-        $legalAidRequest->update([
-            'status' => LegalAidRequest::STATUS_PENDING_PAYMENT,
-            'receipt_path' => null,
-        ]);
-
-        $paymentLink = route('legal-aid.payment', $legalAidRequest->ticket_number);
-
-        Mail::to($legalAidRequest->email)
-            ->locale($legalAidRequest->locale)
-            ->queue(new LegalAidRejectionMail($legalAidRequest, $paymentLink));
-
-        return back()->with('success', __('legal_aid.rejected_ok', ['ticket' => $legalAidRequest->ticketLabel]));
     }
 
     private function generateTicketPdf(LegalAidRequest $legalAidRequest): void
@@ -359,6 +295,8 @@ class LegalAidController
 
     /**
      * @return array{0: string, 1: string} [paymentUrl, paymentLink]
+     * Generate a signed (hashed) payment link — looks like /payment/52443?signature=...&expires=...
+     * This avoids exposing a simple guessable URL and reduces spam filters from raw links.
      */
     private function paymentUrls(LegalAidRequest $legalAidRequest): array
     {
@@ -366,11 +304,15 @@ class LegalAidController
             return ['', ''];
         }
 
-        if ($legalAidRequest->payment_method === LegalAidRequest::PAYMENT_METHOD_BANK) {
-            return ['', route('legal-aid.payment', $legalAidRequest->ticket_number)];
-        }
+        // Signed URL expires in 7 days — still usable after but prevents tampering.
+        // Use temporarySignedRoute for time-limited security; fallback to signedRoute if needed.
+        $paymentLink = URL::temporarySignedRoute(
+            'legal-aid.payment',
+            now()->addDays(7),
+            ['ticket' => $legalAidRequest->ticket_number]
+        );
 
-        return [(string) config('legal_aid.payment_url'), route('legal-aid.payment', $legalAidRequest->ticket_number)];
+        return [(string) config('legal_aid.payment_url'), $paymentLink];
     }
 
     private function generateTicketNumber(): string

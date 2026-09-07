@@ -61,7 +61,7 @@
 
                 <div class="sm:max-w-xs">
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Price (MAD)</label>
-                    <input type="number" name="price" value="{{ old('price', $service->price) }}" step="0.01" min="0"
+                    <input type="number" id="price-input" name="price" value="{{ old('price', $service->price) }}" step="0.01" min="0"
                            required
                            class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
                 </div>
@@ -70,11 +70,25 @@
                     @foreach(['en', 'fr', 'ar'] as $locale)
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1.5">Price display ({{ strtoupper($locale) }})</label>
-                            <input type="text" name="price_display_{{ $locale }}" value="{{ old('price_display_' . $locale, $service->{'price_display_' . $locale}) }}"
+                            <input type="text" id="price-display-{{ $locale }}" name="price_display_{{ $locale }}" value="{{ old('price_display_' . $locale, $service->{'price_display_' . $locale}) }}"
                                    maxlength="255" placeholder="{{ $locale === 'en' ? 'e.g. Free' : ($locale === 'fr' ? 'ex. Gratuit' : 'مثال: مجاني') }}"
+                                   data-auto="1"
                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
                         </div>
                     @endforeach
+                </div>
+                <p class="mt-1 text-xs text-slate-400">Leave empty to auto-format, or type a custom label like “Free” / “from 3.000,00 MAD”. Editing price auto-fills empty displays.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Display Order</h3>
+                    <p class="text-xs text-slate-400">Controls the order on the booking form. Lower numbers appear first. Example: 1 = first, 10 = last.</p>
+                </div>
+                <div class="sm:max-w-xs">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Order</label>
+                    <input type="number" name="sort_order" value="{{ old('sort_order', $service->sort_order ?? 1) }}" min="1" step="1"
+                           class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
                 </div>
             </div>
 
@@ -137,6 +151,35 @@
                 </div>
             </div>
 
+            <div class="space-y-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Webshop & Stripe</h3>
+                    <p class="text-xs text-slate-400">Control shop visibility and Stripe sync. App is source of truth — Stripe product/price is created automatically.</p>
+                </div>
+                <label class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 cursor-pointer transition hover:border-amber-300">
+                    <input type="checkbox" name="is_active" value="1"
+                           {{ old('is_active', $service->is_active ?? true) ? 'checked' : '' }}
+                           class="mt-0.5 h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-900">Active in webshop</p>
+                        <p class="text-xs text-slate-500 mt-0.5">When disabled, the service is hidden from the shop and its Stripe product is deactivated.</p>
+                    </div>
+                </label>
+                @if ($service->exists && ($service->stripe_product_id || $service->stripe_price_id))
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs">
+                        <p class="font-semibold text-gray-700">Stripe Sync</p>
+                        @if ($service->stripe_product_id)
+                            <p class="mt-1 font-mono text-gray-600">Product: {{ $service->stripe_product_id }}</p>
+                        @endif
+                        @if ($service->stripe_price_id)
+                            <p class="font-mono text-gray-600">Price: {{ $service->stripe_price_id }}</p>
+                        @else
+                            <p class="text-amber-700">No Stripe price yet — will be created on next sync (price must be ≥ 0.50 MAD).</p>
+                        @endif
+                    </div>
+                @endif
+            </div>
+
             <div class="flex items-center justify-end gap-3 pt-2">
                 <a href="{{ route('admin.services.index') }}"
                    class="text-sm font-semibold px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition">
@@ -150,5 +193,62 @@
         </form>
     </div>
 </div>
+
+<script>
+(function() {
+    const priceInput = document.getElementById('price-input');
+    const fields = {
+        en: document.getElementById('price-display-en'),
+        fr: document.getElementById('price-display-fr'),
+        ar: document.getElementById('price-display-ar'),
+    };
+    if (!priceInput || !fields.en) return;
+
+    function formatPrice(price, locale) {
+        const num = parseFloat(price);
+        if (isNaN(num) || price === '') return '';
+        if (num === 0) {
+            if (locale === 'en') return 'Free';
+            if (locale === 'fr') return 'Gratuit';
+            return 'مجاني';
+        }
+        const formatted = num.toLocaleString(locale === 'ar' ? 'ar-MA' : 'fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (locale === 'ar') return formatted + ' درهم';
+        return formatted + ' MAD';
+    }
+
+    function autoFill() {
+        const price = priceInput.value;
+        Object.keys(fields).forEach(locale => {
+            const input = fields[locale];
+            if (!input) return;
+            if (input.dataset.auto === '1' || input.value.trim() === '') {
+                input.value = formatPrice(price, locale);
+                input.dataset.auto = '1';
+            }
+        });
+    }
+
+    Object.values(fields).forEach(input => {
+        input.addEventListener('input', () => {
+            if (input.value.trim() === '') {
+                input.dataset.auto = '1';
+            } else {
+                const locale = input.id.replace('price-display-', '');
+                const autoVal = formatPrice(priceInput.value, locale);
+                input.dataset.auto = (input.value === autoVal) ? '1' : '0';
+            }
+        });
+        if (input.value.trim() !== '') {
+            const locale = input.id.replace('price-display-', '');
+            input.dataset.auto = (input.value === formatPrice(priceInput.value, locale)) ? '1' : '0';
+        }
+    });
+
+    priceInput.addEventListener('input', autoFill);
+    priceInput.addEventListener('change', autoFill);
+    autoFill();
+})();
+</script>
 
 @endsection

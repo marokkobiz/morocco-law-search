@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Service;
+use App\Observers\ServiceObserver;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
 use Stripe\StripeClient;
@@ -26,6 +28,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Service::observe(ServiceObserver::class);
     }
 }

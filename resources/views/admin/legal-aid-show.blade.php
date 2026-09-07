@@ -13,10 +13,7 @@ Full details for legal aid request {{ $request->ticketLabel }}.
 @section('content')
 
 @php
-    $isBank = $request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_BANK;
-    $isGooglePay = $request->payment_method === \App\Models\LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY;
     $discountPercent = (float) config('legal_aid.online_discount_percent', 10);
-    $bankFeePercent = (float) config('legal_aid.bank_admin_fee_percent', 10);
 @endphp
 
 <div class="mb-6">
@@ -66,7 +63,7 @@ Full details for legal aid request {{ $request->ticketLabel }}.
                 </a>
             @endif
 
-            @if(($request->receipt_path || $request->isFree()) && in_array($request->status, [\App\Models\LegalAidRequest::STATUS_PENDING_PAYMENT, \App\Models\LegalAidRequest::STATUS_PENDING, \App\Models\LegalAidRequest::STATUS_PAID], true))
+            @if($request->status !== \App\Models\LegalAidRequest::STATUS_CONFIRMED && in_array($request->status, [\App\Models\LegalAidRequest::STATUS_PENDING_PAYMENT, \App\Models\LegalAidRequest::STATUS_PENDING, \App\Models\LegalAidRequest::STATUS_PAID], true))
                 <form action="{{ route('admin.legal-aid.confirm', $request->id) }}" method="POST">
                     @csrf
                     <button type="submit"
@@ -82,17 +79,6 @@ Full details for legal aid request {{ $request->ticketLabel }}.
                     <button type="submit"
                             class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition shadow-sm bg-white hover:bg-blue-50 text-blue-600 border-blue-200 hover:border-blue-300">
                         {{ $request->isFree() ? 'Resend Email' : 'Resend Link' }}
-                    </button>
-                </form>
-            @endif
-
-            @if($request->receipt_path && $request->status !== \App\Models\LegalAidRequest::STATUS_CONFIRMED && $request->status !== \App\Models\LegalAidRequest::STATUS_REJECTED)
-                <form action="{{ route('admin.legal-aid.reject', $request->id) }}" method="POST"
-                      onsubmit="return confirm('Reject this request? The client will be notified.')">
-                    @csrf
-                    <button type="submit"
-                            class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition shadow-sm bg-white hover:bg-rose-50 text-rose-600 border-rose-200 hover:border-rose-300">
-                        Reject
                     </button>
                 </form>
             @endif
@@ -184,13 +170,7 @@ Full details for legal aid request {{ $request->ticketLabel }}.
                 <div>
                     <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment Method</dt>
                     <dd>
-                        @if($isBank)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">Bank Transfer</span>
-                        @elseif($isGooglePay || $request->isOnlinePayment())
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Card</span>
-                        @else
-                            <span class="text-slate-400">—</span>
-                        @endif
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Stripe</span>
                     </dd>
                 </div>
 
@@ -202,41 +182,19 @@ Full details for legal aid request {{ $request->ticketLabel }}.
                         </span>
                         @if($request->base_price !== null && $request->payableTotal !== null && (float) $request->base_price !== $request->payableTotal)
                             <p class="mt-1 text-xs text-slate-400">
-                                Base price {{ number_format((float) $request->base_price, 0) }} MAD
-                                @if($isBank) · +{{ $bankFeePercent }}% bank fee
-                                @elseif($isGooglePay || $request->isOnlinePayment()) · −{{ $discountPercent }}% online discount
-                                @endif
+                                Base price {{ number_format((float) $request->base_price, 0) }} MAD · −{{ $discountPercent }}% online discount
                             </p>
                         @endif
                     </dd>
                 </div>
 
-                @if($isGooglePay || $request->isOnlinePayment())
-                    <div>
-                        <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment Link</dt>
-                        <dd>
-                            @if($paymentUrl)
-                                <a href="{{ $paymentUrl }}" target="_blank" rel="noopener noreferrer"
-                                   class="text-blue-600 hover:text-blue-800 hover:underline break-all">{{ $paymentUrl }}</a>
-                            @else
-                                <span class="text-slate-400">Not configured</span>
-                            @endif
-                        </dd>
-                    </div>
-                @endif
+                <div>
+                    <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Stripe</dt>
+                    <dd>
+                        <span class="text-xs text-slate-500">Paid via Stripe Checkout</span>
+                    </dd>
+                </div>
             @endif
-
-            <div>
-                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Receipt</dt>
-                <dd>
-                    @if($request->receipt_path)
-                        <a href="{{ Storage::url($request->receipt_path) }}" target="_blank"
-                           class="text-blue-600 hover:text-blue-800 hover:underline">View / Download</a>
-                    @else
-                        <span class="text-slate-400">No receipt uploaded</span>
-                    @endif
-                </dd>
-            </div>
         </dl>
     </div>
 

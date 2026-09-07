@@ -61,8 +61,11 @@
                     <div class="relative w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
                         <div class="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-2xl border border-sky-300/40 pointer-events-none hidden sm:block" aria-hidden="true"></div>
                         <div class="absolute inset-0 rounded-2xl border border-sky-400/30 pointer-events-none" aria-hidden="true"></div>
-                        <img src="{{ asset('images/hero2.jpg') }}" alt="MarocLoi Dashboard Preview"
-                            class="relative w-full aspect-[4/3] sm:aspect-[4/3] object-cover rounded-2xl shadow-2xl shadow-blue-900/40 ring-1 ring-white/10">
+                        <picture>
+                            <source type="image/webp" srcset="{{ asset('images/hero2-640.webp') }} 640w, {{ asset('images/hero2-960.webp') }} 960w" sizes="(max-width: 1024px) 448px, 512px">
+                            <img src="{{ asset('images/hero2-640.jpg') }}" srcset="{{ asset('images/hero2-640.jpg') }} 640w, {{ asset('images/hero2-960.jpg') }} 960w, {{ asset('images/hero2.webp') }} 1920w" sizes="(max-width: 1024px) 448px, 512px" alt="MarocLoi Dashboard Preview" width="640" height="427" loading="eager" fetchpriority="high" decoding="async"
+                                class="relative w-full aspect-[4/3] sm:aspect-[4/3] object-cover rounded-2xl shadow-2xl shadow-blue-900/40 ring-1 ring-white/10">
+                        </picture>
                     </div>
 
                     <a tabindex="-1" aria-disabled="true" href="{{ route('legal-aid') }}"
@@ -155,12 +158,19 @@
     </section>
 
     {{-- Mission Section --}}
-    <section id="coverage" class="py-20 md:py-28 bg-linear-to-b from-gray-50 to-white">
+    <section id="coverage" class="pt-20 md:pt-10 bg-linear-to-b from-gray-50 to-white">
         <div class="container-page">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-                <div class="hidden lg:flex justify-center" data-animate="fade-up">
-                    <img src="{{ asset('/images/hero.jpg') }}" alt="Mission Visualization"
-                        class="img-elevate w-full max-w-md rounded-2xl shadow-lg shadow-blue-500/5 ring-1 ring-blue-100">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-stretch">
+                <div class="hidden lg:flex" data-animate="fade-up">
+                    <div class="relative w-full h-full p-1">
+                        <div class="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-2xl border border-sky-300/40 pointer-events-none hidden sm:block" aria-hidden="true"></div>
+                        <div class="absolute inset-0 rounded-2xl border border-sky-400/30 pointer-events-none" aria-hidden="true"></div>
+                        <picture>
+                            <source type="image/webp" srcset="{{ asset('images/hero-800.webp') }} 800w, {{ asset('images/hero-1200.webp') }} 1200w" sizes="(max-width: 1024px) 100vw, 400px">
+                            <img src="{{ asset('images/hero-800.jpg') }}" srcset="{{ asset('images/hero-800.jpg') }} 800w, {{ asset('images/hero-1200.jpg') }} 1200w" sizes="(max-width: 1024px) 100vw, 400px" alt="Mission Visualization" width="800" height="571" loading="lazy" decoding="async"
+                                class="relative w-full h-full object-cover rounded-2xl shadow-2xl shadow-blue-900/10 ring-1 ring-blue-100 img-elevate">
+                        </picture>
+                    </div>
                 </div>
 
                 <div data-animate="fade-up" style="--delay: 0.15s">
@@ -224,7 +234,7 @@
     </section>
 
     {{-- Database Section --}}
-    <section id="sources" class="py-20 md:py-28">
+    <section id="sources" class="py-16 md:py-16">
         <div class="container-page">
             <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6" data-animate="fade-up">
                 <div class="max-w-3xl lg:max-w-none">
@@ -239,42 +249,42 @@
                     data-animate="scale-in" style="--delay: 0s">
                     <div
                         class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        BO</div>
+                        OB</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_bulletin') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-emerald-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.05s">
                     <div
                         class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        CT</div>
+                        LL</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_work_code') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-rose-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.1s">
                     <div
                         class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        CP</div>
+                        CL</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_penal_law') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-violet-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.15s">
                     <div
                         class="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        CF</div>
+                        FL</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_family_code') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-amber-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.2s">
                     <div
                         class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        DO</div>
+                        CM</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_doc') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-cyan-200 transition-colors cursor-default"
                     data-animate="scale-in" style="--delay: 0.25s">
                     <div
                         class="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        CL</div>
+                        CV</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_civil_law') }}</span>
                 </div>
                 <div class="card p-5 text-center hover:border-indigo-200 transition-colors cursor-default"
@@ -288,7 +298,7 @@
                     data-animate="scale-in" style="--delay: 0.35s">
                     <div
                         class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mx-auto font-bold text-sm">
-                        CO</div>
+                        CN</div>
                     <span class="block mt-3 text-sm font-semibold text-gray-800">{{ __('landing.source_constitutional') }}</span>
                 </div>
             </div>
@@ -304,15 +314,18 @@
     {{-- CTA Section --}}
     <section class="relative overflow-hidden py-20 md:py-28 bg-gray-900">
         <div class="absolute inset-0">
-            <img src="{{ asset('images/cta-background.jpg') }}" alt="" class="w-full h-full object-cover">
+            <picture>
+                <source type="image/webp" srcset="{{ asset('images/cta-background-960.webp') }} 960w, {{ asset('images/cta-background-1280.webp') }} 1280w, {{ asset('images/cta-background-1920.webp') }} 1920w" sizes="100vw">
+                <img src="{{ asset('images/cta-background-1280.jpg') }}" srcset="{{ asset('images/cta-background-960.jpg') }} 960w, {{ asset('images/cta-background-1280.jpg') }} 1280w, {{ asset('images/cta-background-1920.jpg') }} 1920w" sizes="100vw" alt="" class="w-full h-full object-cover" width="1280" height="960" loading="lazy" decoding="async">
+            </picture>
             <div class="absolute inset-0 bg-black/20"></div>
             <div class="absolute inset-0 bg-linear-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
         </div>
         <div class="relative z-10 container-page text-center" data-animate="fade-up">
             <h2 class="text-3xl md:text-5xl font-serif font-bold text-white leading-tight">{{ __('landing.cta_title') }}
             </h2>
-            <p class="mt-4 text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">{{ __('landing.cta_desc') }}</p>
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+            <p class="mt-4 text-lg md:text-xl text-blue-100 max-w-none mx-auto text-center lg:whitespace-nowrap">{{ __('landing.cta_desc') }}</p>
+            <div class="flex items-center justify-center mt-10">
                 @guest
                     <a href="{{ route('register') }}"
                         class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-blue-700 bg-white hover:bg-blue-50 shadow-2xl shadow-blue-900/30 transition-all duration-200 no-underline">
@@ -330,11 +343,6 @@
                         Dashboard &rarr;
                     </a>
                 @endauth
-
-                <a href="https://www.marokkobiz.com/"
-                    class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-white border border-white/30 hover:bg-white/10 transition-all duration-200 no-underline">
-                    {{ __('landing.cta_learn') }}
-                </a>
             </div>
         </div>
     </section>

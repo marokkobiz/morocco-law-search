@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\LegalAidPaymentReceivedMail;
+use App\Mail\ShopOrderConfirmationMail;
 use App\Models\LegalAidRequest;
+use App\Models\Order;
 use App\Models\PaymentTransaction;
+use App\Services\OrderCaseService;
 use App\Support\AdvisorNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\SignatureVerificationException;
@@ -57,7 +62,8 @@ class StripePaymentController extends Controller
         try {
             $session = $this->stripe()->checkout->sessions->create([
                 'mode' => 'payment',
-                'payment_method_types' => ['card'],
+                // Bank transfers via Stripe are enabled in Dashboard — don't restrict to card only.
+                // Stripe will show card + any additional online banking / transfer methods you enable.
                 'customer_email' => $legalAidRequest->email,
                 'line_items' => [[
                     'price_data' => [
@@ -65,6 +71,7 @@ class StripePaymentController extends Controller
                         'product_data' => [
                             'name' => 'Legal aid request '.$legalAidRequest->ticketLabel,
                             'description' => $legalAidRequest->servicesSummary ?: 'Legal consultation services',
+                            'tax_code' => 'txcd_10103000',
                         ],
                         'unit_amount' => $amountCents,
                     ],
@@ -78,7 +85,6 @@ class StripePaymentController extends Controller
                 ],
                 'payment_intent_data' => [
                     'description' => 'Legal aid request '.$legalAidRequest->ticketLabel,
-                    'receipt_email' => $legalAidRequest->email,
                     'metadata' => [
                         'legal_aid_request_id' => (string) $legalAidRequest->id,
                         'ticket_number' => $legalAidRequest->ticket_number,
@@ -168,29 +174,51 @@ class StripePaymentController extends Controller
         // typically 'complete' for hosted Checkout. Be permissive to avoid false
         // negatives in test mode or with async methods.
         if (($session->payment_status ?? null) === 'paid') {
-            // Sync transaction and mark paid
+            // Mark paid FIRST so customer always gets email even if later DB update races
+            $this->markRequestPaid($legalAidRequest);
+
+            // Sync transaction and link checkout session — wrap in try/catch to avoid 1062 duplicate
             $paymentIntentId = $session->payment_intent ?? null;
             if ($paymentIntentId) {
                 try {
                     $intent = $this->stripe()->paymentIntents->retrieve($paymentIntentId);
                     $this->syncTransactionFromIntent($intent);
-                    // Also update the checkout transaction if exists
+                } catch (Throwable $e) {
+                    report($e);
+                }
+                try {
                     PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
                         'stripe_payment_intent_id' => $paymentIntentId,
-                        'status' => $intent->status,
+                        'status' => PaymentIntent::STATUS_SUCCEEDED,
+                        'payload' => json_decode((string) $session->toJSON(), true),
+                    ]);
+                } catch (\Illuminate\Database\QueryException $e) {
+                    // 1062 duplicate pi already exists from syncTransactionFromIntent — ignore, just update status
+                    if ((string) $e->getCode() !== '23000') {
+                        report($e);
+                    } else {
+                        try {
+                            PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                                'status' => PaymentIntent::STATUS_SUCCEEDED,
+                                'payload' => json_decode((string) $session->toJSON(), true),
+                            ]);
+                        } catch (Throwable $inner) {
+                            report($inner);
+                        }
+                    }
+                } catch (Throwable $e) {
+                    report($e);
+                }
+            } else {
+                try {
+                    PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                        'status' => PaymentTransaction::STATUS_SUCCEEDED,
                         'payload' => json_decode((string) $session->toJSON(), true),
                     ]);
                 } catch (Throwable $e) {
                     report($e);
                 }
-            } else {
-                PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
-                    'status' => PaymentTransaction::STATUS_SUCCEEDED,
-                    'payload' => json_decode((string) $session->toJSON(), true),
-                ]);
             }
-
-            $this->markRequestPaid($legalAidRequest);
 
             return redirect()->route('legal-aid.payment', $ticket)->with('status', __('legal_aid.payment_success'));
         }
@@ -242,7 +270,7 @@ class StripePaymentController extends Controller
             $intent = $this->stripe()->paymentIntents->create([
                 'amount' => $amountCents,
                 'currency' => $currency,
-                'payment_method_types' => ['card'],
+                'automatic_payment_methods' => ['enabled' => true],
                 'receipt_email' => $legalAidRequest->email,
                 'description' => 'Legal aid request '.$legalAidRequest->ticketLabel,
                 'statement_descriptor_suffix' => 'MAROCLOI',
@@ -430,6 +458,19 @@ class StripePaymentController extends Controller
         $sessionId = $session->id ?? null;
         $paymentIntentId = $session->payment_intent ?? null;
         $metadata = $session->metadata ?? [];
+        // Detect shop order vs legal aid via metadata
+        $orderIdRaw = $metadata['order_id'] ?? $metadata->order_id ?? null;
+        if (is_object($metadata)) {
+            $orderIdRaw = $metadata->order_id ?? $metadata['order_id'] ?? $orderIdRaw;
+        }
+        $orderId = $orderIdRaw ? (int) $orderIdRaw : null;
+
+        // Shop order handling - CIN is ticket_number
+        if ($orderId) {
+            $this->handleShopCheckoutCompleted($session, $orderId);
+            return;
+        }
+
         $ticket = $metadata['ticket_number'] ?? $metadata->ticket_number ?? null;
         if (is_object($metadata)) {
             $ticket = $metadata->ticket_number ?? $metadata['ticket_number'] ?? $ticket;
@@ -440,7 +481,7 @@ class StripePaymentController extends Controller
         }
         $requestId = (int) $requestIdRaw;
 
-        // Prefer to mark via PaymentIntent if available
+        // Prefer to mark via PaymentIntent if available — mark paid BEFORE risky update
         if ($paymentIntentId) {
             try {
                 $intent = $this->stripe()->paymentIntents->retrieve($paymentIntentId);
@@ -448,12 +489,23 @@ class StripePaymentController extends Controller
                 if ($transaction && ! $transaction->legalAidRequest->isPaid()) {
                     $this->markRequestPaid($transaction->legalAidRequest);
                 }
-                // Update checkout transaction as succeeded
+                // Update checkout transaction as succeeded — ignore 1062 duplicate (pi already exists)
                 if ($sessionId) {
-                    PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
-                        'stripe_payment_intent_id' => $paymentIntentId,
-                        'status' => $intent->status,
-                    ]);
+                    try {
+                        PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                            'stripe_payment_intent_id' => $paymentIntentId,
+                            'status' => $intent->status,
+                        ]);
+                    } catch (\Illuminate\Database\QueryException $e) {
+                        if ((string) $e->getCode() !== '23000') {
+                            throw $e;
+                        }
+                        // duplicate pi — just update status without pi
+                        PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->update([
+                            'status' => $intent->status,
+                        ]);
+                        report($e);
+                    }
                 }
                 return;
             } catch (Throwable $e) {
@@ -471,15 +523,127 @@ class StripePaymentController extends Controller
         }
     }
 
+    private function handleShopCheckoutCompleted(object $session, int $orderId): void
+    {
+        $order = Order::find($orderId);
+        if (! $order) {
+            report('Shop webhook: order not found '.$orderId);
+            return;
+        }
+        // Idempotent: already paid -> ensure advisor case exists, don't duplicate email
+        if ($order->isPaid()) {
+            try {
+                OrderCaseService::createCaseFromOrder($order);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+            return;
+        }
+
+        // Only mark paid if Stripe says paid
+        if (($session->payment_status ?? null) !== 'paid') {
+            return;
+        }
+
+        // Extract CIN from Stripe custom_fields (collected inside Checkout)
+        $extractedCin = null;
+        if (isset($session->custom_fields) && is_array($session->custom_fields)) {
+            foreach ($session->custom_fields as $field) {
+                $key = is_object($field) ? ($field->key ?? null) : ($field['key'] ?? null);
+                if ($key === 'cin') {
+                    $val = null;
+                    if (is_object($field) && isset($field->text)) {
+                        $val = is_object($field->text) ? ($field->text->value ?? null) : ($field->text['value'] ?? null);
+                    } elseif (is_array($field) && isset($field['text'])) {
+                        $val = $field['text']['value'] ?? null;
+                    }
+                    $extractedCin = $val ? strtoupper(trim((string) $val)) : null;
+                }
+            }
+        }
+        if (!$extractedCin) {
+            $meta = $session->metadata ?? [];
+            $extractedCin = is_object($meta) ? ($meta->cin ?? $meta->ticket_number ?? null) : ($meta['cin'] ?? $meta['ticket_number'] ?? null);
+            if ($extractedCin) $extractedCin = strtoupper(trim((string) $extractedCin));
+        }
+        $extractedEmail = null;
+        $customerDetails = $session->customer_details ?? null;
+        if ($customerDetails) {
+            $extractedEmail = is_object($customerDetails) ? ($customerDetails->email ?? null) : ($customerDetails['email'] ?? null);
+        }
+        if (!$extractedEmail) {
+            $extractedEmail = $session->customer_email ?? null;
+            if (!$extractedEmail) {
+                $meta = $session->metadata ?? [];
+                $extractedEmail = is_object($meta) ? ($meta->email ?? null) : ($meta['email'] ?? null);
+            }
+        }
+        if ($extractedEmail) $extractedEmail = strtolower(trim((string) $extractedEmail));
+
+        // Validate CIN format if extracted
+        $validCin = $extractedCin && preg_match('/^[A-Z]{1,2}[0-9]{6}$/', $extractedCin) ? $extractedCin : null;
+        $validEmail = $extractedEmail && filter_var($extractedEmail, FILTER_VALIDATE_EMAIL) ? $extractedEmail : null;
+
+        $paymentIntentId = $session->payment_intent ?? null;
+        $sessionId = $session->id ?? null;
+
+        $updateData = [
+            'status' => Order::STATUS_PAID,
+            'paid_at' => now(),
+            'stripe_payment_intent_id' => $paymentIntentId ?: $order->stripe_payment_intent_id,
+            'stripe_checkout_session_id' => $sessionId ?: $order->stripe_checkout_session_id,
+            'payload' => array_merge($order->payload ?? [], ['webhook_session' => (array) $session]),
+        ];
+        if ($validCin) {
+            $updateData['cin'] = $validCin;
+            $updateData['ticket_number'] = $validCin;
+        }
+        if ($validEmail) {
+            $updateData['email'] = $validEmail;
+        }
+
+        $order->update($updateData);
+        $order->refresh();
+        $order->load('items.service');
+
+        // Make it visible to advisors: create LegalAidRequest case so advisor can contact customer
+        try {
+            OrderCaseService::createCaseFromOrder($order);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        // Send confirmation email once (idempotent via isPaid check above)
+        $freshEmail = $order->fresh()->email;
+        Mail::to($freshEmail)->locale($order->locale ?: app()->getLocale())->queue(new ShopOrderConfirmationMail($order->fresh()->load('items.service')));
+    }
+
     private function handleCheckoutSessionExpired(object $session): void
     {
         $sessionId = $session->id ?? null;
         if (! $sessionId) {
             return;
         }
+        $metadata = $session->metadata ?? [];
+        $orderIdRaw = $metadata['order_id'] ?? $metadata->order_id ?? null;
+        if (is_object($metadata)) {
+            $orderIdRaw = $metadata->order_id ?? $metadata['order_id'] ?? $orderIdRaw;
+        }
+        if ($orderIdRaw) {
+            $order = Order::find((int) $orderIdRaw);
+            if ($order && $order->status === Order::STATUS_PENDING) {
+                $order->update(['status' => Order::STATUS_EXPIRED]);
+            }
+            return;
+        }
         $transaction = PaymentTransaction::where('stripe_checkout_session_id', $sessionId)->first();
         if ($transaction) {
             $transaction->update(['status' => PaymentTransaction::STATUS_CANCELED]);
+        }
+        // Also handle shop order by session id lookup
+        $shopOrder = Order::where('stripe_checkout_session_id', $sessionId)->first();
+        if ($shopOrder && $shopOrder->status === Order::STATUS_PENDING) {
+            $shopOrder->update(['status' => Order::STATUS_EXPIRED]);
         }
     }
 
@@ -558,7 +722,28 @@ class StripePaymentController extends Controller
             'receipt_path' => null,
         ]);
 
-        AdvisorNotifier::caseReady($legalAidRequest);
+        // Option A: notify customer payment received + advisors — sync-safe for UnoEuro shared hosting
+        try {
+            Mail::to($legalAidRequest->email)
+                ->locale($legalAidRequest->locale ?: app()->getLocale())
+                ->queue(new LegalAidPaymentReceivedMail($legalAidRequest));
+        } catch (Throwable $e) {
+            report($e);
+            // Fallback immediate send if queue fails (sync driver on UnoEuro)
+            try {
+                Mail::to($legalAidRequest->email)
+                    ->locale($legalAidRequest->locale ?: app()->getLocale())
+                    ->send(new LegalAidPaymentReceivedMail($legalAidRequest));
+            } catch (Throwable $inner) {
+                report($inner);
+            }
+        }
+
+        try {
+            AdvisorNotifier::caseReady($legalAidRequest);
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     private function cancelStaleIntents(LegalAidRequest $legalAidRequest): void

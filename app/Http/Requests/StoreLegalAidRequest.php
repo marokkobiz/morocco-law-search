@@ -14,11 +14,24 @@ class StoreLegalAidRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('email')) {
+            $this->merge([
+                'email' => strtolower(trim((string) $this->input('email'))),
+            ]);
+        }
+        $this->merge([
+            'phone' => $this->normalizePhone($this->input('phone')),
+            'whatsapp' => $this->normalizePhone($this->input('whatsapp')),
+        ]);
+    }
+
     public function rules(): array
     {
         return [
             'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email:rfc', 'max:255'],
+            'email' => ['required', 'string', 'email:filter', 'max:255', 'regex:/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/'],
             'phone' => ['required', 'string', 'regex:/^\+?0?[1-9][0-9]{7,14}$/'],
             'whatsapp' => ['nullable', 'string', 'regex:/^\+?0?[1-9][0-9]{7,14}$/'],
             'case_description' => ['required', 'string', 'max:5000'],
@@ -26,7 +39,7 @@ class StoreLegalAidRequest extends FormRequest
             'service_ids.*' => ['integer', 'distinct', 'exists:services,id'],
             'consultation_mode' => ['nullable', 'in:office,whatsapp'],
             'call_time' => ['nullable', 'string', 'max:20'],
-            'payment_method' => ['nullable', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK])],
+            'payment_method' => ['nullable', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY])],
         ];
     }
 
@@ -39,18 +52,12 @@ class StoreLegalAidRequest extends FormRequest
             return;
         }
 
-        $allowed = $services
-            ->map->consultationModes
-            ->reject(fn (array $modes) => $modes === [])
-            ->reduce(
-                fn (?array $carry, array $modes) => $carry === null ? $modes : array_values(array_intersect($carry, $modes)),
-                null
-            ) ?? [];
-
-        // Custom rule: Initial interview alone = whatsapp only, with others = office only
+        // Rule: only Initial interview alone = WhatsApp, everything else = Office
         $hasInitial = $services->contains(fn (Service $s) => $s->name_en === 'Initial interview (case content) 30 min.');
-        if ($hasInitial) {
-            $allowed = $services->count() === 1 ? ['whatsapp'] : ['office'];
+        if ($hasInitial && $services->count() === 1) {
+            $allowed = ['whatsapp'];
+        } else {
+            $allowed = ['office'];
         }
 
         if ($allowed !== []) {
@@ -61,17 +68,9 @@ class StoreLegalAidRequest extends FormRequest
 
         if ($services->sum('price') > 0) {
             $validator->addRules([
-                'payment_method' => ['required', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY, LegalAidRequest::PAYMENT_METHOD_BANK])],
+                'payment_method' => ['required', 'in:'.implode(',', [LegalAidRequest::PAYMENT_METHOD_STRIPE, LegalAidRequest::PAYMENT_METHOD_GOOGLE_PAY])],
             ]);
         }
-    }
-
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'phone' => $this->normalizePhone($this->input('phone')),
-            'whatsapp' => $this->normalizePhone($this->input('whatsapp')),
-        ]);
     }
 
     private function normalizePhone(?string $value): ?string
@@ -91,6 +90,7 @@ class StoreLegalAidRequest extends FormRequest
             'service_ids.*.exists' => __('legal_aid.service_invalid'),
             'phone.regex' => __('legal_aid.phone_invalid'),
             'whatsapp.regex' => __('legal_aid.whatsapp_invalid'),
+            'email.regex' => 'The :attribute must be a valid email address with a domain like name@company.com.',
         ];
     }
 

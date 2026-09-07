@@ -21,6 +21,7 @@ class StoreServiceRequest extends FormRequest
             'description_fr' => ['nullable', 'string', 'max:1000'],
             'description_ar' => ['nullable', 'string', 'max:1000'],
             'price' => ['required', 'numeric', 'min:0'],
+            'sort_order' => ['sometimes', 'integer', 'min:1'],
             'price_display_en' => ['nullable', 'string', 'max:255'],
             'price_display_fr' => ['nullable', 'string', 'max:255'],
             'price_display_ar' => ['nullable', 'string', 'max:255'],
@@ -32,6 +33,7 @@ class StoreServiceRequest extends FormRequest
             'additional_notes_ar' => ['nullable', 'string', 'max:500'],
             'allows_office' => ['sometimes', 'boolean'],
             'allows_whatsapp' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -40,6 +42,7 @@ class StoreServiceRequest extends FormRequest
         $this->merge([
             'allows_office' => $this->boolean('allows_office'),
             'allows_whatsapp' => $this->boolean('allows_whatsapp'),
+            'is_active' => $this->has('is_active') ? $this->boolean('is_active') : true,
         ]);
     }
 }

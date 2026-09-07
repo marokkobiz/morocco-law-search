@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class LegalAidRequestService extends Pivot
@@ -11,5 +12,10 @@ class LegalAidRequestService extends Pivot
         return [
             'completed_at' => 'datetime',
         ];
+    }
+
+    public function completedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'completed_by');
     }
 }

@@ -210,7 +210,7 @@
                             </td>
 
                             <!-- Payment Status -->
-                            <td class="flex px-6 py-4">
+                            <td class="px-6 py-4">
                                 <span
                                     class="@if ($request->status === \App\Models\LegalAidRequest::STATUS_CONFIRMED) bg-emerald-50 text-emerald-700 border-emerald-200
                             @elseif($request->status === \App\Models\LegalAidRequest::STATUS_PAID) bg-blue-50 text-blue-700 border-blue-200
@@ -242,7 +242,7 @@
                             </td>
 
                             <!-- First Contact -->
-                            <td class="px-6 py-4 flex justify-center flex-col items-center">
+                            <td class="flex flex-col items-center justify-center px-6 py-4">
                                 @if ($request->advisor)
                                     <div class="flex items-center gap-1.5">
                                         @if ((int) $request->advisor_id != (int) auth()->id())

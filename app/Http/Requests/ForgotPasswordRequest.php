@@ -11,10 +11,26 @@ class ForgotPasswordRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('email')) {
+            $this->merge([
+                'email' => strtolower(trim((string) $this->input('email'))),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'string', 'email:filter', 'max:255', 'regex:/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.regex' => 'The :attribute must be a valid email address with a domain like name@company.com.',
         ];
     }
 

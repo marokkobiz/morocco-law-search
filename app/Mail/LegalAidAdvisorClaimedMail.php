@@ -10,26 +10,25 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class LegalAidRejectionMail extends Mailable implements ShouldQueue
+class LegalAidAdvisorClaimedMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public function __construct(
         public LegalAidRequest $request,
-        public string $paymentLink,
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: __('emails.legal_aid_rejection_subject', ['ticket' => $this->request->ticketLabel]),
+            subject: __('emails.legal_aid_advisor_claimed_subject', ['ticket' => $this->request->ticketLabel]),
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'emails.legal-aid.rejection',
+            view: 'emails.legal-aid.advisor-claimed',
         );
     }
 }

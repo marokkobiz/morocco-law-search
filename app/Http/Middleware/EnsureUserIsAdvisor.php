@@ -12,11 +12,11 @@ class EnsureUserIsAdvisor
     {
         $user = $request->user();
 
-        if (! $user || ! in_array($user->role, ['admin', 'advisor'], true)) {
+        if (! $user || $user->role !== 'advisor') {
             abort(403, 'Unauthorized access.');
         }
 
-        if ($user->role === 'advisor' && $user->access_status === 'suspended') {
+        if ($user->access_status === 'suspended') {
             abort(403, 'Your account has been suspended.');
         }
 

@@ -2,6 +2,32 @@
 
 @section('title', __('legal_aid.badge') . ' | MarocLoi')
 
+@push('styles')
+    <style>
+        #call-time-options::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #call-time-options::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #call-time-options::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 9999px;
+        }
+
+        #call-time-options::-webkit-scrollbar-thumb:hover {
+            background: #d1d5db;
+        }
+
+        #call-time-options {
+            scrollbar-width: thin;
+            scrollbar-color: #e5e7eb transparent;
+        }
+    </style>
+@endpush
+
 @section('content')
     <section class="bg-gray-50 py-16">
         <div class="container-page">
@@ -42,7 +68,7 @@
                         @csrf
 
                         <div class="space-y-4">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
                                     <label
                                         class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_name') }}</label>
@@ -120,11 +146,11 @@
                                     <div class="relative" id="call-time-dropdown">
                                         <button type="button" id="call-time-btn" aria-haspopup="listbox"
                                             aria-expanded="false"
-                                            class="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-[9px] text-left text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 hover:border-gray-300 hover:bg-white focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500">
+                                            class="relative flex w-full items-center justify-center rounded-lg border border-gray-200 bg-gray-50 px-8 py-1.5 text-center text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500">
                                             <span id="call-time-label"
-                                                class="truncate text-gray-400">{{ __('legal_aid.call_time_placeholder') }}</span>
+                                                class="truncate text-center tabular-nums text-gray-400">{{ __('legal_aid.call_time_placeholder') }}</span>
                                             <svg id="call-time-chevron"
-                                                class="pointer-events-none h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200"
+                                                class="pointer-events-none absolute right-3 h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200"
                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M19 9l-7 7-7-7" />
@@ -132,51 +158,51 @@
                                         </button>
                                         <input type="hidden" name="call_time" id="call-time-value" required>
                                         <ul id="call-time-options"
-                                            class="absolute z-20 mt-2 hidden max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl shadow-gray-200/50">
+                                            class="absolute left-0 z-20 mt-2 hidden max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl shadow-gray-200/50">
                                             <li data-value=""
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-400 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center text-sm text-gray-400 hover:bg-blue-50 hover:text-blue-600">
                                                 {{ __('legal_aid.call_time_placeholder') }}</li>
                                             <li data-value="09:00-09:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 09:00 - 09:30</li>
                                             <li data-value="09:30-10:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 09:30 - 10:00</li>
                                             <li data-value="10:00-10:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 10:00 - 10:30</li>
                                             <li data-value="10:30-11:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 10:30 - 11:00</li>
                                             <li data-value="11:00-11:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 11:00 - 11:30</li>
                                             <li data-value="11:30-12:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 11:30 - 12:00</li>
                                             <li data-value="12:00-12:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 12:00 - 12:30</li>
                                             <li data-value="12:30-13:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 12:30 - 13:00</li>
                                             <li data-value="13:00-13:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 13:00 - 13:30</li>
                                             <li data-value="13:30-14:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 13:30 - 14:00</li>
                                             <li data-value="14:00-14:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 14:00 - 14:30</li>
                                             <li data-value="14:30-15:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 14:30 - 15:00</li>
                                             <li data-value="15:00-15:30"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 15:00 - 15:30</li>
                                             <li data-value="15:30-16:00"
-                                                class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                                class="cursor-pointer px-3 py-2 text-center font-mono text-sm tabular-nums tracking-wide text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                                 15:30 - 16:00</li>
                                         </ul>
                                     </div>
@@ -326,69 +352,33 @@
                             @enderror
                         </div>
 
-                        <div id="payment-section">
-                            <label
-                                class="mb-1.5 block text-sm font-semibold text-gray-700">{{ __('legal_aid.field_payment') }}</label>
-                            <div class="grid gap-3 sm:grid-cols-2 items-stretch">
-                                <label id="payment-stripe-wrap"
-                                    class="flex h-full cursor-pointer flex-col rounded-xl border border-gray-200 bg-gray-50 p-4 transition-colors has-[:checked]:border-green-500 has-[:checked]:bg-green-50/50">
-                                    <input type="radio" name="payment_method" value="stripe" class="sr-only"
-                                        {{ old('payment_method') === null || old('payment_method') === 'stripe' || old('payment_method') === 'google_pay' ? 'checked' : '' }}>
-                                    <!-- legacy value for backward compat tests: value="google_pay" -->
-                                    <div class="flex items-start gap-3">
-                                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-green-600" fill="currentColor" viewBox="0 0 24 24"
-                                            aria-hidden="true">
-                                            <path fill-rule="evenodd"
-                                                d="M4 4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2H4zm16 3H4v2h16V7zm0 4H4v7h16v-7z"
-                                                clip-rule="evenodd"></path>
-                                        </svg>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-start justify-between gap-2">
-                                                <p class="text-sm font-semibold leading-tight text-gray-900">
-                                                    {{ __('legal_aid.payment_method_stripe') }}</p>
-                                                <span
-                                                    class="shrink-0 inline-flex whitespace-nowrap rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-bold leading-none text-green-700">
-                                                    {{ __('legal_aid.payment_method_stripe_discount', ['percent' => (int) config('legal_aid.online_discount_percent')]) }}
-                                                </span>
-                                            </div>
-                                            <p class="mt-1 text-xs leading-relaxed text-gray-500">
-                                                {{ __('legal_aid.payment_method_stripe_desc') }}</p>
-                                        </div>
+                        <input type="hidden" name="payment_method" value="stripe">
+                        <div id="payment-section" class="rounded-xl border border-green-200 bg-green-50/50 p-4">
+                            <div class="flex items-start gap-3">
+                                <svg class="mt-0.5 h-5 w-5 shrink-0 text-green-600" fill="currentColor"
+                                    viewBox="0 0 24 24" aria-hidden="true">
+                                    <path fill-rule="evenodd"
+                                        d="M4 4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2H4zm16 3H4v2h16V7zm0 4H4v7h16v-7z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <p class="text-sm font-semibold leading-tight text-gray-900">
+                                            {{ __('legal_aid.payment_method_stripe') }}</p>
+                                        <span
+                                            class="inline-flex shrink-0 whitespace-nowrap rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-bold leading-none text-green-700">
+                                            {{ __('legal_aid.payment_method_stripe_discount', ['percent' => (int) config('legal_aid.online_discount_percent')]) }}
+                                        </span>
                                     </div>
-                                    <img src="{{ asset('images/cards.png') }}" alt="Visa, Mastercard, etc."
-                                        class="mt-3 ml-3 h-16 w-auto max-w-[160px] object-contain">
-                                </label>
-
-                                <label id="payment-bank-wrap"
-                                    class="flex h-full cursor-pointer flex-col rounded-xl border border-gray-200 bg-gray-50 p-4 transition-colors has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50">
-                                    <input type="radio" name="payment_method" value="bank" class="sr-only"
-                                        {{ old('payment_method') === 'bank' ? 'checked' : '' }}>
-                                    <div class="flex items-start gap-3">
-                                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" fill="currentColor" viewBox="0 0 24 24"
-                                            aria-hidden="true">
-                                            <path fill-rule="evenodd"
-                                                d="M12 2L1 8v2h22V8L12 2zm-8 9h3v8H4v-8zm6 0h4v8h-4v-8zm8 0h3v8h-3v-8zM1 21v-1h22v1H1z"
-                                                clip-rule="evenodd"></path>
-                                        </svg>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-start justify-between gap-2">
-                                                <p class="text-sm font-semibold leading-tight text-gray-900">
-                                                    {{ __('legal_aid.payment_method_bank') }}</p>
-                                                <span
-                                                    class="shrink-0 inline-flex whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold leading-none text-amber-700">
-                                                    {{ __('legal_aid.payment_method_bank_fee', ['percent' => (int) config('legal_aid.bank_admin_fee_percent')]) }}
-                                                </span>
-                                            </div>
-                                            <p class="mt-1 text-xs leading-relaxed text-gray-500">
-                                                {{ __('legal_aid.payment_method_bank_desc') }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="mt-3 h-7 hidden sm:block" aria-hidden="true"></div>
-                                </label>
+                                    {{-- <p class="mt-1 text-xs leading-relaxed text-gray-500">
+                                        {{ __('legal_aid.payment_method_stripe_desc') }}</p> --}}
+                                    <p class="mt-3 text-xs leading-relaxed text-gray-500">
+                                        {{ __('legal_aid.payment_method_stripe_desc') }} —
+                                        {{ __('legal_aid.payment_secure_note') }}</p>
+                                </div>
                             </div>
-                            @error('payment_method')
-                                <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
+                            <img src="{{ asset('images/cards.png') }}" alt="Visa, Mastercard, etc."
+                                class="ml-6 mt-3 h-16 w-auto max-w-[160px] object-contain">
                         </div>
 
                         <button type="submit" class="btn-primary w-full">
@@ -435,10 +425,9 @@
                     return;
                 }
 
-                // Custom rule for Initial interview (case content) 30 min.
+                // Rule: only Initial interview alone = WhatsApp, everything else = Office
                 const hasInitial = checked.some((box) => box.dataset.initial === '1');
                 const onlyInitial = hasInitial && checked.length === 1 && checked[0].dataset.initial === '1';
-                const initialWithOthers = hasInitial && checked.length > 1;
 
                 if (onlyInitial) {
                     section.classList.remove('hidden');
@@ -452,56 +441,15 @@
                     return;
                 }
 
-                if (initialWithOthers) {
-                    section.classList.remove('hidden');
-                    if (questionDiv) questionDiv.classList.add('hidden');
-                    if (whatsappOnlyDiv) whatsappOnlyDiv.classList.add('hidden');
-                    if (officeOnlyDiv) officeOnlyDiv.classList.remove('hidden');
-                    modeRadios.forEach((r) => {
-                        r.checked = false;
-                    });
-                    setConsultationMode('office');
-                    return;
-                }
-
-                const modeSets = checked
-                    .map((box) => (box.dataset.modes || '').split(',').filter(Boolean))
-                    .filter((modes) => modes.length > 0);
-
-                let allowed = modeSets.length === 0 ? [] : modeSets[0];
-                for (let i = 1; i < modeSets.length; i++) {
-                    allowed = allowed.filter((mode) => modeSets[i].includes(mode));
-                }
-
-                if (allowed.length === 0) {
-                    allowed = ['office'];
-                }
-
-                const isSingleMode = allowed.length === 1;
-                const singleMode = isSingleMode ? allowed[0] : null;
-
+                // Any other selection (including Tracking/Submission/Participation without Initial) = Office only
                 section.classList.remove('hidden');
-                if (questionDiv) questionDiv.classList.toggle('hidden', isSingleMode);
-                Object.keys(singleBanners).forEach((key) => {
-                    if (singleBanners[key]) singleBanners[key].classList.toggle('hidden', !(isSingleMode &&
-                        key === singleMode));
+                if (questionDiv) questionDiv.classList.add('hidden');
+                if (whatsappOnlyDiv) whatsappOnlyDiv.classList.add('hidden');
+                if (officeOnlyDiv) officeOnlyDiv.classList.remove('hidden');
+                modeRadios.forEach((r) => {
+                    r.checked = false;
                 });
-
-                if (isSingleMode) {
-                    modeRadios.forEach((r) => {
-                        r.checked = false;
-                    });
-                    setConsultationMode(singleMode);
-                } else {
-                    modeRadios.forEach((radio) => {
-                        const wrap = modeWraps[radio.value];
-                        const isAllowed = allowed.includes(radio.value);
-                        if (wrap) wrap.classList.toggle('hidden', !isAllowed);
-                        if (!isAllowed && radio.checked) radio.checked = false;
-                    });
-                    const selected = modeRadios.find((r) => r.checked);
-                    setConsultationMode(selected ? selected.value : 'whatsapp');
-                }
+                setConsultationMode('office');
             }
 
             modeRadios.forEach((radio) => {
