@@ -19,16 +19,16 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 // Legal Aid – now the shop (renamed from /shop, physical views in resources/views/legal-aid/*)
-Route::get('/test/beta/legal-aid', [ShopController::class, 'index'])->name('legal-aid');
-Route::get('/test/beta/legal-aid/cart', [ShopController::class, 'cart'])->name('legal-aid.cart');
-Route::get('/test/beta/legal-aid/api/products', [ShopController::class, 'apiProducts'])->name('legal-aid.api.products');
-Route::post('/test/beta/legal-aid/checkout', [ShopController::class, 'createCheckoutSession'])->name('legal-aid.checkout.create');
-Route::get('/test/beta/legal-aid/success/{order}', [ShopController::class, 'success'])->name('legal-aid.success');
-Route::get('/test/beta/legal-aid/cancel/{order}', [ShopController::class, 'cancel'])->name('legal-aid.cancel');
+Route::get('/legal-aid', [ShopController::class, 'index'])->name('legal-aid');
+Route::get('/legal-aid/cart', [ShopController::class, 'cart'])->name('legal-aid.cart');
+Route::get('/legal-aid/api/products', [ShopController::class, 'apiProducts'])->name('legal-aid.api.products');
+Route::post('/legal-aid/checkout', [ShopController::class, 'createCheckoutSession'])->name('legal-aid.checkout.create');
+Route::get('/legal-aid/success/{order}', [ShopController::class, 'success'])->name('legal-aid.success');
+Route::get('/legal-aid/cancel/{order}', [ShopController::class, 'cancel'])->name('legal-aid.cancel');
 
 // Legacy shop URLs – 301 redirect for browsing, keep API aliases for old Stripe sessions / JS
-Route::get('/shop', fn() => redirect('/test/beta/legal-aid', 301))->name('shop.index');
-Route::get('/shop/cart', fn() => redirect('/test/beta/legal-aid/cart', 301))->name('shop.cart');
+Route::get('/shop', fn() => redirect('/legal-aid', 301))->name('shop.index');
+Route::get('/shop/cart', fn() => redirect('/legal-aid/cart', 301))->name('shop.cart');
 Route::post('/shop/checkout', [ShopController::class, 'createCheckoutSession'])->name('shop.checkout.create');
 Route::get('/shop/success/{order}', [ShopController::class, 'success'])->name('shop.success');
 Route::get('/shop/cancel/{order}', [ShopController::class, 'cancel'])->name('shop.cancel');

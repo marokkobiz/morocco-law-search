@@ -50,8 +50,8 @@
                         class="px-3 py-1.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:text-white">{{ $layoutCopy('sources') }}</a>
                     <a href="/#coverage"
                         class="px-3 py-1.5 text-sm font-semibold text-gray-300 no-underline transition-colors hover:text-white">{{ $layoutCopy('coverage') }}</a>
-                    <a tabindex="-1" aria-disabled="true" href="{{ route('legal-aid') }}"
-                        class="pointer-events-none cursor-not-allowed px-3 py-1.5 text-sm font-semibold text-gray-300 no-underline opacity-50 transition-colors hover:text-white">{{ $layoutCopy('legal_aid') }}</a>
+                    <a href="{{ route('legal-aid') }}"
+                        class="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-blue-500">{{ $layoutCopy('legal_aid') }}</a>
                 </div>
                 <div>
                     <a href="https://web.facebook.com/profile.php?id=61590564394012"
