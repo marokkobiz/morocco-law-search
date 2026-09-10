@@ -6,6 +6,7 @@ use App\Mail\ShopOrderConfirmationMail;
 use App\Models\Order;
 use App\Models\Service;
 use App\Services\OrderCaseService;
+use App\Support\ShopAdminNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -545,6 +546,8 @@ class ShopController extends Controller
                 } catch (Throwable $e) {
                     report($e);
                 }
+                // Internal admin payment alert (info@marocloi.com, hra@marokkobiz.com)
+                ShopAdminNotifier::orderPaid($order->fresh());
             } else {
                 // Already paid but ensure advisor case exists (webhook may have raced)
                 try {

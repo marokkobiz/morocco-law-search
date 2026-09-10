@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\PaymentTransaction;
 use App\Services\OrderCaseService;
 use App\Support\AdvisorNotifier;
+use App\Support\ShopAdminNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -616,6 +617,9 @@ class StripePaymentController extends Controller
         // Send confirmation email once (idempotent via isPaid check above)
         $freshEmail = $order->fresh()->email;
         Mail::to($freshEmail)->locale($order->locale ?: app()->getLocale())->queue(new ShopOrderConfirmationMail($order->fresh()->load('items.service')));
+
+        // Internal admin payment alert (info@marocloi.com, hra@marokkobiz.com)
+        ShopAdminNotifier::orderPaid($order->fresh());
     }
 
     private function handleCheckoutSessionExpired(object $session): void
