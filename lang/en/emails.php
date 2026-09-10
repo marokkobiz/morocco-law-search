@@ -89,4 +89,6 @@ return [
     'shop_total' => 'Total',
     'shop_body' => 'Your CIN (:cin) is now your ticket number. Please keep it for all communication about your order.',
     'shop_note' => 'You have paid directly through our secure webshop via Stripe — no payment link was needed.',
+
+    'shop_admin_subject' => 'New paid shop order :ticket — :amount MAD',
 ];
