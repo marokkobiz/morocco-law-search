@@ -63,6 +63,8 @@ class StripePaymentController extends Controller
         try {
             $session = $this->stripe()->checkout->sessions->create([
                 'mode' => 'payment',
+                // Render the "Add promotion code" input on the hosted Checkout page
+                'allow_promotion_codes' => true,
                 // Bank transfers via Stripe are enabled in Dashboard — don't restrict to card only.
                 // Stripe will show card + any additional online banking / transfer methods you enable.
                 'customer_email' => $legalAidRequest->email,
