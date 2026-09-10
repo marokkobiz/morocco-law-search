@@ -326,6 +326,8 @@ class ShopController extends Controller
             try {
                 $sessionParams = [
                     'mode' => 'payment',
+                    // Render the "Add promotion code" input on the hosted Checkout page
+                    'allow_promotion_codes' => true,
                     'line_items' => $lineItems,
                     'success_url' => $successUrl,
                     'cancel_url' => $cancelUrl,
